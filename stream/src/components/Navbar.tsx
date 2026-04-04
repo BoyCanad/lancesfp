@@ -30,7 +30,7 @@ export default function Navbar() {
               </svg>
             </div>
             <span className="navbar__logo-text">
-              LSFPlus Live
+              LSFPlus
             </span>
           </div>
           <button className="navbar__discord">
