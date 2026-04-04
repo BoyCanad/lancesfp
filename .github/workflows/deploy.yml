@@ -23,8 +23,11 @@ jobs:
         run: npm run build
         working-directory: stream
         
-      - name: Deploy to Wasmer
-        uses: wasmer-labs/deploy-action@v1
-        with:
-          wasmer-token: ${{ secrets.WASMER_TOKEN }}
-          project-path: stream
+      - name: Setup Wasmer
+        uses: wasmerio/setup-wasmer@v3.1
+
+      - name: Deploy to Wasmer Edge
+        working-directory: stream
+        run: wasmer deploy
+        env:
+          WASMER_TOKEN: ${{ secrets.WASMER_TOKEN }}
