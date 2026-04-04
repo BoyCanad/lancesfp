@@ -1,0 +1,306 @@
+/* ─────────────────────────────────────────────────────────────
+   Hero Carousel  –  matches xprime reference design
+   ───────────────────────────────────────────────────────────── */
+
+.hero {
+  width: 100%;
+  overflow: visible;
+}
+
+/* The three-panel stage */
+.hero__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0 24px; /* 80px = navbar height + visual breathing room */
+  overflow: hidden; /* Prevent side scroll when peeks bleed out */
+  width: 100%;
+}
+
+/* ── Peek cards (Flexible wide cut-offs) ────────────────────── */
+.hero__peek {
+  flex: 1;
+  min-width: 0;
+  height: 480px;
+  border-radius: 18px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  margin: 0 -40px; /* Tuck under the main card */
+  z-index: 1;
+}
+
+.hero__peek:hover { filter: brightness(1.2); }
+
+.hero__peek-veil {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__peek--left .hero__peek-veil {
+  background: linear-gradient(
+    to right,
+    rgba(13,13,20,0.98) 0%,
+    rgba(13,13,20,0.6)  100%
+  );
+}
+
+.hero__peek--right .hero__peek-veil {
+  background: linear-gradient(
+    to left,
+    rgba(13,13,20,0.98) 0%,
+    rgba(13,13,20,0.6)  100%
+  );
+}
+
+/* ── Main card ──────────────────────────────────────────────── */
+.hero__card {
+  flex-shrink: 0;
+  width: min(1050px, calc(100vw - 200px));
+  height: 540px;
+  border-radius: 18px;
+  background-size: cover;
+  background-position: center top;
+  background-color: #1a1a30; /* fallback if image fails */
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.15),
+    0 0 60px rgba(255,255,255,0.1),
+    0 30px 80px rgba(0,0,0,0.9);
+}
+
+.hero__gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(13,13,20,0.9) 0%, rgba(13,13,20,0.4) 55%, transparent 100%),
+    linear-gradient(to top,   rgba(13,13,20,0.8) 0%, transparent 55%);
+}
+
+/* ── Content ────────────────────────────────────────────────── */
+.hero__content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 32px 36px;
+  gap: 10px;
+}
+
+.hero__title {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: -0.8px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.hero__logo {
+  max-width: 320px;
+  height: auto;
+  position: relative;
+  top: 28px; /* Move it further down */
+  margin-bottom: -10px; /* Pull the next items up to overlap even more */
+  filter: drop-shadow(0 4px 15px rgba(0,0,0,0.4));
+  z-index: 5;
+}
+
+.hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero__rating {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.hero__year {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.6);
+}
+
+.hero__badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  padding: 1px 7px;
+  letter-spacing: 0.2px;
+}
+
+.hero__desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.65;
+  max-width: 360px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* ── Action buttons ─────────────────────────────────────────── */
+.hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.hero__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+}
+
+.hero__btn--play {
+  background: #7c3aed;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.5);
+}
+.hero__btn--play:hover {
+  background: #6d28d9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(124,58,237,0.65);
+}
+
+.hero__btn--secondary {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.88);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+}
+.hero__btn--secondary:hover {
+  background: rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+}
+
+/* ── Progress Dots ──────────────────────────────────────────── */
+.hero__dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 32px;
+  width: 100%;
+  z-index: 20;
+}
+
+.hero__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.hero__dot--on {
+  width: 24px;
+  border-radius: 4px;
+  background: #fff;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .hero__peek { width: 120px; height: 280px; }
+  .hero__card  { height: 360px; width: calc(100vw - 280px); }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    position: relative; /* important for dots */
+  }
+  .hero__stage {
+    padding: 0;
+    gap: 0;
+  }
+  .hero__peek {
+    display: none;
+  }
+  .hero__card {
+    width: 100%;
+    height: 80vh;
+    min-height: 550px;
+    border-radius: 0;
+  }
+  .hero__gradient {
+    background: linear-gradient(to top, rgba(13,13,20,1) 0%, rgba(13,13,20,0.85) 25%, transparent 60%);
+  }
+  .hero__content {
+    padding: 24px 16px 24px;
+    width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+  .hero__logo {
+    margin-left: 0;
+    max-width: 50%;
+    position: relative;
+    top: 30px;
+    margin-bottom: -15px;
+  }
+  .hero__meta {
+    justify-content: center;
+  }
+  .hero__desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+  /* Move dots to top */
+  .hero__dots {
+    position: absolute;
+    top: 90px;
+    bottom: auto;
+    padding: 0;
+  }
+  .hero__dot {
+    background: rgba(255,255,255,0.4);
+  }
+  /* Buttons layout */
+  .hero__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+  }
+  .hero__btn {
+    justify-content: center;
+    padding: 12px;
+  }
+  .hero__btn--play {
+    grid-column: 1 / -1;
+    font-size: 16px;
+    background: #a855f7;
+  }
+}

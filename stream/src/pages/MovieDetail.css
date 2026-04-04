@@ -1,0 +1,284 @@
+/* MovieDetail.css */
+
+.mdetail-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  margin-top: -80px; /* Offset the global navbar */
+  padding-top: 80px; 
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background-color: #0b0b12;
+}
+
+.mdetail-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center right;
+  z-index: 1;
+}
+
+.mdetail-gradient-left {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(13,11,20,1) 0%, rgba(13,11,20,0.9) 30%, transparent 70%);
+  z-index: 2;
+}
+
+.mdetail-gradient-bottom {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(13,11,20,1) 0%, transparent 20%);
+  z-index: 2;
+}
+
+.mdetail-content {
+  position: relative;
+  z-index: 10;
+  padding: 0 4vw;
+  max-width: 650px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.mdetail-logo {
+  max-width: 280px;
+  height: auto;
+  position: relative;
+  top: 24px;
+  margin-bottom: -5px;
+  z-index: 5;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+}
+
+.mdetail-title {
+  font-size: 48px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 24px;
+}
+
+.mdetail-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mdetail-meta-text {
+  color: #d1d5db;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.mdetail-badge {
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.mdetail-badge-cam {
+  color: #eab308;
+  border-color: #eab308;
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.mdetail-rating {
+  color: #eab308;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.mdetail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mdetail-genre-pill {
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 6px 18px;
+  border-radius: 24px;
+  font-size: 14px;
+  color: #e5e7eb;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(4px);
+  transition: background 0.2s;
+}
+.mdetail-genre-pill:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.mdetail-description {
+  color: rgba(255,255,255,0.85);
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+/* Actions Layout */
+.mdetail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 440px; /* Keep them contained */
+}
+
+.mdetail-actions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.mdetail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.mdetail-btn-play {
+  width: 100%;
+  background: #ffffff;
+  color: #000000;
+}
+.mdetail-btn-play:hover {
+  background: #e5e5e5;
+  transform: scale(1.02);
+}
+
+.mdetail-btn-secondary {
+  flex: 1; /* equal width in the row */
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+}
+.mdetail-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Responsive constraints */
+@media (max-width: 768px) {
+  .mdetail-container {
+    display: block; /* Override default centered flex */
+    padding-top: 0; 
+    margin-top: 0; /* Clear offset */
+    background-color: #110d17; /* Sligt purple-dark fade */
+  }
+
+  .mdetail-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    bottom: auto;
+    height: 56.25vw; /* Perfectly captures the 1920x1080 16:9 aspect ratio */
+    background-position: top center;
+    z-index: 1;
+  }
+
+  .mdetail-gradient-left {
+    display: none; /* No side gradient needed on mobile */
+  }
+
+  .mdetail-gradient-bottom {
+    top: 0;
+    bottom: auto;
+    height: 58vw; /* Ensure smooth fade out to container bg just below the poster */
+    background: linear-gradient(to top, #110d17 2%, transparent 90%);
+    z-index: 2;
+  }
+
+  .mdetail-content {
+    margin-top: 35vw; /* Pulled upwards tightly against the poster */
+    padding: 0 20px 100px; /* Space for bottom mobile nav */
+    align-items: flex-start;
+    text-align: left;
+    max-width: 100%;
+  }
+
+  .mdetail-title {
+    text-align: center;
+    width: 100%;
+  }
+
+  .mdetail-logo {
+    margin: 0 auto;
+    position: relative;
+    top: 15px;
+    margin-bottom: -5px;
+    display: block;
+    max-width: 65%;
+    width: 220px;
+  }
+
+  .mdetail-meta-row {
+    justify-content: flex-start;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .mdetail-meta-text {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .mdetail-badge {
+    border-color: #3b2063;
+    background: transparent;
+    color: #fff;
+    padding: 2px 8px;
+    font-size: 14px;
+  }
+
+  .mdetail-badge-cam {
+    color: #bfa1f6;
+    border-color: #4c2a85;
+    background: rgba(76, 42, 133, 0.15);
+  }
+
+  .mdetail-rating {
+    color: #eab308;
+    margin-left: 2px;
+  }
+
+  .mdetail-genres {
+    justify-content: flex-start;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .mdetail-genre-pill {
+    border-color: #3b2063;
+    background: transparent;
+    color: #e5e7eb;
+    padding: 6px 18px;
+    font-size: 14px;
+  }
+
+  .mdetail-description {
+    text-align: left;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #d1d5db;
+    margin-bottom: 32px;
+  }
+
+  .mdetail-actions {
+    width: 100%;
+    max-width: 100%;
+  }
+}
