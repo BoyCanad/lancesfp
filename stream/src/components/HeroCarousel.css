@@ -58,7 +58,7 @@
 
 /* ── Main card ──────────────────────────────────────────────── */
 
-/* Viewport clips the sliding card without affecting layout */
+/* Clips the scrolling track — nothing bleeds outside */
 .hero__card-viewport {
   flex-shrink: 0;
   width: min(1050px, calc(100vw - 200px));
@@ -69,50 +69,30 @@
   z-index: 10;
 }
 
+/* Horizontal strip holding all slides side-by-side */
+.hero__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.52s cubic-bezier(0.45, 0.05, 0.15, 1);
+  will-change: transform;
+}
+
+/* Each slide occupies exactly the viewport width */
 .hero__card {
+  flex-shrink: 0;
   width: 100%;
   height: 100%;
   border-radius: 18px;
   background-size: cover;
   background-position: center top;
-  background-color: #1a1a30; /* fallback if image fails */
+  background-color: #1a1a30;
   position: relative;
   overflow: hidden;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.15),
     0 0 60px rgba(255,255,255,0.1),
     0 30px 80px rgba(0,0,0,0.9);
-  /* Slide-in from right by default */
-  animation: hero-slide-in-right 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
-/* Directional slide-out classes applied during animation */
-.hero__card--slide-out-left {
-  animation: hero-slide-out-left 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
-.hero__card--slide-out-right {
-  animation: hero-slide-out-right 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
-@keyframes hero-slide-in-right {
-  from { transform: translateX(60px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-
-@keyframes hero-slide-in-left {
-  from { transform: translateX(-60px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
-}
-
-@keyframes hero-slide-out-left {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(-60px); opacity: 0; }
-}
-
-@keyframes hero-slide-out-right {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(60px); opacity: 0; }
 }
 
 .hero__gradient {
@@ -132,16 +112,18 @@
   justify-content: flex-end;
   padding: 32px 36px;
   gap: 10px;
+  /* Inactive slides: content hidden */
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.38s ease 0.3s, transform 0.38s ease 0.3s;
+  pointer-events: none;
 }
 
-/* Staggered fade-up for content on each new slide */
-.hero__content--fade {
-  animation: hero-content-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.22s both;
-}
-
-@keyframes hero-content-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Active slide: content fades up after the slide settles */
+.hero__content--active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .hero__title {

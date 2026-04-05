@@ -11,10 +11,8 @@ interface HeroCarouselProps {
 export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
-  const [contentKey, setContentKey] = useState(0);
-  const animTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
 
   // Filter movies based on screen width
@@ -27,52 +25,44 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const goTo = useCallback((index: number, dir: 'left' | 'right' = 'right') => {
-    if (index === current || isAnimating) return;
-    setDirection(dir);
-    setIsAnimating(true);
-    if (animTimeout.current) clearTimeout(animTimeout.current);
-    animTimeout.current = setTimeout(() => {
-      setCurrent(index);
-      setContentKey(k => k + 1);
-      setIsAnimating(false);
-      setDirection(null);
-    }, 420); // matches CSS transition duration
-  }, [current, isAnimating]);
-
-  // Auto-advance every 6s
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const next = (current + 1) % movies.length;
-      goTo(next, 'right');
+  const resetAutoTimer = useCallback(() => {
+    if (autoTimer.current) clearInterval(autoTimer.current);
+    autoTimer.current = setInterval(() => {
+      setCurrent(c => (c + 1) % movies.length);
     }, 6000);
-    return () => clearInterval(timer);
-  }, [movies.length, current, goTo]);
+  }, [movies.length]);
 
-  const goPrev = () => goTo((current - 1 + movies.length) % movies.length, 'left');
-  const goNext = () => goTo((current + 1) % movies.length, 'right');
+  // Start auto-advance
+  useEffect(() => {
+    resetAutoTimer();
+    return () => { if (autoTimer.current) clearInterval(autoTimer.current); };
+  }, [resetAutoTimer]);
+
+  const goTo = useCallback((index: number) => {
+    if (index === current || isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrent(index);
+    resetAutoTimer();
+    // Unlock after transition completes (matches CSS transition duration)
+    setTimeout(() => setIsTransitioning(false), 520);
+  }, [current, isTransitioning, resetAutoTimer]);
+
+  const goPrev = () => goTo((current - 1 + movies.length) % movies.length);
+  const goNext = () => goTo((current + 1) % movies.length);
 
   const peekLeft  = movies[(current - 1 + movies.length) % movies.length];
   const peekRight = movies[(current + 1) % movies.length];
-  const featured  = movies[current];
 
   // Helper to determine the correct background image source based on screen size
   const getBannerSource = (movie: Movie) => {
     return isMobile && movie.mobileBanner ? movie.mobileBanner : movie.banner;
   };
 
-  const handleMoreInfo = () => {
-    if (featured.id === 'f1' || featured.title === 'Ang Huling El Bimbo') {
+  const handleMoreInfo = (movie: Movie) => {
+    if (movie.id === 'f1' || movie.title === 'Ang Huling El Bimbo') {
       navigate('/el-bimbo');
     }
   };
-
-  // Determine slide class based on animation state
-  const cardSlideClass = isAnimating
-    ? direction === 'right'
-      ? 'hero__card--slide-out-left'
-      : 'hero__card--slide-out-right'
-    : '';
 
   return (
     <section className="hero">
@@ -87,42 +77,51 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <div className="hero__peek-veil" />
         </div>
 
-        {/* Main card — slide wrapper */}
+        {/* Sliding track viewport */}
         <div className="hero__card-viewport">
+          {/* Track: all slides rendered side-by-side, translateX drives the switch */}
           <div
-            className={`hero__card${featured.id === 'f1' ? ' hero__card--el-bimbo' : ''} ${cardSlideClass}`}
-            style={{ backgroundImage: `url(${getBannerSource(featured)})` }}
+            className="hero__track"
+            style={{ transform: `translateX(-${current * 100}%)` }}
           >
-            <div className="hero__gradient" />
+            {movies.map((movie, i) => (
+              <div
+                key={movie.id}
+                className={`hero__card${movie.id === 'f1' ? ' hero__card--el-bimbo' : ''}`}
+                style={{ backgroundImage: `url(${getBannerSource(movie)})` }}
+              >
+                <div className="hero__gradient" />
 
-            {/* Info — fades in fresh on each slide */}
-            <div key={contentKey} className="hero__content hero__content--fade">
-              {featured.logo ? (
-                <img src={featured.logo} alt={featured.title} className="hero__logo" />
-              ) : (
-                <h1 className="hero__title">{featured.title}</h1>
-              )}
+                {/* Content fades in when this slide becomes active */}
+                <div className={`hero__content${i === current ? ' hero__content--active' : ''}`}>
+                  {movie.logo ? (
+                    <img src={movie.logo} alt={movie.title} className="hero__logo" />
+                  ) : (
+                    <h1 className="hero__title">{movie.title}</h1>
+                  )}
 
-              <div className="hero__meta">
-                <span className="hero__rating">★ {featured.rating}</span>
-                <span className="hero__year">{featured.year}</span>
-                <span className="hero__badge">{featured.ageRating}</span>
+                  <div className="hero__meta">
+                    <span className="hero__rating">★ {movie.rating}</span>
+                    <span className="hero__year">{movie.year}</span>
+                    <span className="hero__badge">{movie.ageRating}</span>
+                  </div>
+
+                  <p className="hero__desc">{movie.description}</p>
+
+                  <div className="hero__actions">
+                    <button className="hero__btn hero__btn--play">
+                      <Play size={15} fill="white" /> Play
+                    </button>
+                    <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}>
+                      <Info size={15} /> More Info
+                    </button>
+                    <button className="hero__btn hero__btn--secondary">
+                      <Bookmark size={15} /> Save
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <p className="hero__desc">{featured.description}</p>
-
-              <div className="hero__actions">
-                <button className="hero__btn hero__btn--play">
-                  <Play size={15} fill="white" /> Play
-                </button>
-                <button className="hero__btn hero__btn--secondary" onClick={handleMoreInfo}>
-                  <Info size={15} /> More Info
-                </button>
-                <button className="hero__btn hero__btn--secondary">
-                  <Bookmark size={15} /> Save
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -143,7 +142,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <button
             key={i}
             className={`hero__dot${i === current ? ' hero__dot--on' : ''}`}
-            onClick={() => goTo(i, i > current ? 'right' : 'left')}
+            onClick={() => goTo(i)}
           />
         ))}
       </div>
