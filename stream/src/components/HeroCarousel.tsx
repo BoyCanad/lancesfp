@@ -77,7 +77,8 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     isMobile && movie.mobileBanner ? movie.mobileBanner : movie.banner;
 
   const handleMoreInfo = (movie: Movie) => {
-    if (movie.id === 'f1' || movie.title === 'Ang Huling El Bimbo') navigate('/el-bimbo');
+    if (movie.id === 'f1' || movie.title.includes('Ang Huling El Bimbo')) navigate('/ang-huling-el-bimbo-play');
+    else if (movie.id === 'f2' || movie.title === 'Minsan') navigate('/minsan');
   };
 
   // Touch swipe (mobile)

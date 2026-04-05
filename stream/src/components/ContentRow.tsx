@@ -61,8 +61,14 @@ export default function ContentRow({
               key={movie.id}
               className={`card ${movie.desktopOnly ? 'card--desktop-only' : ''}`}
               onClick={() => {
-                if (movie.id === 'f1' || movie.id === 'eb1' || movie.title === 'Ang Huling El Bimbo') {
-                  navigate('/el-bimbo');
+                if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
+                  navigate('/ang-huling-el-bimbo-play');
+                } else if (movie.id === 'f2' || movie.title === 'Minsan') {
+                  navigate('/minsan');
+                } else if (movie.id === 'f4' || movie.title === 'Tindahan ni Aling Nena') {
+                  navigate('/tindahan');
+                } else if (movie.id === 'f5' || movie.title === 'Alapaap/Overdrive') {
+                  navigate('/alapaap');
                 }
               }}
               onMouseEnter={(e) => {
@@ -106,7 +112,7 @@ export default function ContentRow({
 
                 {/* Expanded State Layer (lives inside scaling thumb) */}
                 <div className="card__expanded-layer">
-                  <img src={movie.banner} alt="" className="card__expanded-banner" />
+                  <img src={movie.cardBanner || movie.banner} alt="" className="card__expanded-banner" />
                   <div className="card__expanded-gradient" />
                   <div className="card__expanded-content">
                     <div className="card__tooltip-quality">{movie.quality || 'HD'}</div>

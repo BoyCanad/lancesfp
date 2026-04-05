@@ -18,11 +18,11 @@ export default function Home() {
         />
         <ContentRow
           title="G11 Archives"
-          movies={trendingMovies}
+          movies={[trendingMovies[0], elBimboFeatured, ...trendingMovies.slice(1)]}
         />
         <ContentRow
           title="Ang Huling El Bimbo Collections"
-          movies={[elBimboFeatured, ...[...trendingMovies].reverse()]}
+          movies={[elBimboFeatured, featuredMovies[1], featuredMovies[3], featuredMovies[4], featuredMovies[5], featuredMovies[6], featuredMovies[7], featuredMovies[8], ...[...trendingMovies].reverse().slice(7)]}
         />
       </div>
     </main>
