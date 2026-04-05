@@ -250,19 +250,79 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  transition: all 0.3s ease;
+  transition: width 0.3s ease, border-radius 0.3s ease, background 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Active dot — expands into a progress pill */
 .hero__dot--on {
-  width: 24px;
+  width: 28px;
   border-radius: 4px;
+  background: rgba(255,255,255,0.22);
+}
+
+/* White fill sweeps left → right over 6 s */
+.hero__dot--on::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: #fff;
+  border-radius: inherit;
+  transform-origin: left center;
+  animation: dot-progress 6s linear forwards;
+}
+
+@keyframes dot-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 960px) {
   .hero__peek { width: 120px; height: 280px; }
   .hero__card-viewport  { height: 360px; width: calc(100vw - 280px); }
+}
+
+/* ── Mobile: crossfade + zoom animation ─────────────────────── */
+/* (JS disables the inline translateX at <640px)                  */
+@media (max-width: 640px) {
+  /* Track becomes a stacking context — no more horizontal flex */
+  .hero__track {
+    position: relative;
+    transition: none; /* translateX not used on mobile */
+  }
+
+  /* All cards are stacked absolutely inside the viewport */
+  .hero__card {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* Default: invisible + slightly zoomed in */
+    opacity: 0;
+    transform: scale(1.06);
+    transition:
+      opacity  0.58s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.58s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, transform;
+    pointer-events: none;
+    /* Ensure z-index stacking works */
+    z-index: 0;
+  }
+
+  /* Active slide: fade in and zoom to natural size */
+  .hero__card--active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+    z-index: 2;
+  }
+
+  /* Previous slide stays below while fading out */
+  .hero__card:not(.hero__card--active) {
+    z-index: 1;
+  }
 }
 
 @media (max-width: 768px) {

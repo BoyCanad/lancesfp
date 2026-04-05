@@ -13,6 +13,8 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
   const navigate = useNavigate();
 
   // Filter movies based on screen width
@@ -32,7 +34,6 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     }, 6000);
   }, [movies.length]);
 
-  // Start auto-advance
   useEffect(() => {
     resetAutoTimer();
     return () => { if (autoTimer.current) clearInterval(autoTimer.current); };
@@ -43,20 +44,14 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     setIsTransitioning(true);
     setCurrent(index);
     resetAutoTimer();
-    // Unlock after transition completes (matches CSS transition duration)
-    setTimeout(() => setIsTransitioning(false), 520);
+    setTimeout(() => setIsTransitioning(false), 580);
   }, [current, isTransitioning, resetAutoTimer]);
 
   const goPrev = () => goTo((current - 1 + movies.length) % movies.length);
   const goNext = () => goTo((current + 1) % movies.length);
 
-  const peekLeft  = movies[(current - 1 + movies.length) % movies.length];
-  const peekRight = movies[(current + 1) % movies.length];
-
-  // Helper to determine the correct background image source based on screen size
-  const getBannerSource = (movie: Movie) => {
-    return isMobile && movie.mobileBanner ? movie.mobileBanner : movie.banner;
-  };
+  const getBannerSource = (movie: Movie) =>
+    isMobile && movie.mobileBanner ? movie.mobileBanner : movie.banner;
 
   const handleMoreInfo = (movie: Movie) => {
     if (movie.id === 'f1' || movie.title === 'Ang Huling El Bimbo') {
@@ -64,11 +59,28 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     }
   };
 
+  // ── Touch / swipe handling (mobile only) ─────────────────────
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    // Only trigger if horizontal swipe dominates (avoids fighting vertical scroll)
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    if (dx < 0) goNext(); else goPrev();
+  };
+
+  const peekLeft  = movies[(current - 1 + movies.length) % movies.length];
+  const peekRight = movies[(current + 1) % movies.length];
+
   return (
     <section className="hero">
       <div className="hero__stage">
 
-        {/* Left peek */}
+        {/* Left peek — desktop only */}
         <div
           className="hero__peek hero__peek--left"
           onClick={goPrev}
@@ -77,22 +89,32 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <div className="hero__peek-veil" />
         </div>
 
-        {/* Sliding track viewport */}
-        <div className="hero__card-viewport">
-          {/* Track: all slides rendered side-by-side, translateX drives the switch */}
+        {/* Viewport */}
+        <div
+          className="hero__card-viewport"
+          onTouchStart={isMobile ? handleTouchStart : undefined}
+          onTouchEnd={isMobile ? handleTouchEnd : undefined}
+        >
+          {/*
+            Desktop: .hero__track slides horizontally via translateX.
+            Mobile:  translateX is removed; CSS stacks cards and crossfades them.
+          */}
           <div
             className="hero__track"
-            style={{ transform: `translateX(-${current * 100}%)` }}
+            style={isMobile ? undefined : { transform: `translateX(-${current * 100}%)` }}
           >
             {movies.map((movie, i) => (
               <div
                 key={movie.id}
-                className={`hero__card${movie.id === 'f1' ? ' hero__card--el-bimbo' : ''}`}
+                className={[
+                  'hero__card',
+                  movie.id === 'f1' ? 'hero__card--el-bimbo' : '',
+                  isMobile && i === current ? 'hero__card--active' : '',
+                ].filter(Boolean).join(' ')}
                 style={{ backgroundImage: `url(${getBannerSource(movie)})` }}
               >
                 <div className="hero__gradient" />
 
-                {/* Content fades in when this slide becomes active */}
                 <div className={`hero__content${i === current ? ' hero__content--active' : ''}`}>
                   {movie.logo ? (
                     <img src={movie.logo} alt={movie.title} className="hero__logo" />
@@ -125,7 +147,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           </div>
         </div>
 
-        {/* Right peek */}
+        {/* Right peek — desktop only */}
         <div
           className="hero__peek hero__peek--right"
           onClick={goNext}
@@ -136,11 +158,11 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
 
       </div>
 
-      {/* Dots (Pagination) */}
+      {/* Dots */}
       <div className="hero__dots">
         {movies.map((_, i) => (
           <button
-            key={i}
+            key={i === current ? `dot-active-${current}` : i}
             className={`hero__dot${i === current ? ' hero__dot--on' : ''}`}
             onClick={() => goTo(i)}
           />
