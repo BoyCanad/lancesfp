@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Bookmark } from 'lucide-react';
 import type { Movie } from '../data/movies';
@@ -11,6 +11,10 @@ interface HeroCarouselProps {
 export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
+  const [contentKey, setContentKey] = useState(0);
+  const animTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
 
   // Filter movies based on screen width
@@ -23,21 +27,30 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const goTo = useCallback((index: number) => {
-    if (index === current) return;
-    setCurrent(index);
-  }, [current]);
+  const goTo = useCallback((index: number, dir: 'left' | 'right' = 'right') => {
+    if (index === current || isAnimating) return;
+    setDirection(dir);
+    setIsAnimating(true);
+    if (animTimeout.current) clearTimeout(animTimeout.current);
+    animTimeout.current = setTimeout(() => {
+      setCurrent(index);
+      setContentKey(k => k + 1);
+      setIsAnimating(false);
+      setDirection(null);
+    }, 420); // matches CSS transition duration
+  }, [current, isAnimating]);
 
   // Auto-advance every 6s
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrent(c => (c + 1) % movies.length);
+      const next = (current + 1) % movies.length;
+      goTo(next, 'right');
     }, 6000);
     return () => clearInterval(timer);
-  }, [movies.length]);
+  }, [movies.length, current, goTo]);
 
-  const goPrev = () => goTo((current - 1 + movies.length) % movies.length);
-  const goNext = () => goTo((current + 1) % movies.length);
+  const goPrev = () => goTo((current - 1 + movies.length) % movies.length, 'left');
+  const goNext = () => goTo((current + 1) % movies.length, 'right');
 
   const peekLeft  = movies[(current - 1 + movies.length) % movies.length];
   const peekRight = movies[(current + 1) % movies.length];
@@ -54,6 +67,13 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     }
   };
 
+  // Determine slide class based on animation state
+  const cardSlideClass = isAnimating
+    ? direction === 'right'
+      ? 'hero__card--slide-out-left'
+      : 'hero__card--slide-out-right'
+    : '';
+
   return (
     <section className="hero">
       <div className="hero__stage">
@@ -67,40 +87,41 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <div className="hero__peek-veil" />
         </div>
 
-        {/* Main card */}
-        <div
-          key={featured.id}
-          className={`hero__card${featured.id === 'f1' ? ' hero__card--el-bimbo' : ''}`}
-          style={{ backgroundImage: `url(${getBannerSource(featured)})` }}
-        >
-          <div className="hero__gradient" />
+        {/* Main card — slide wrapper */}
+        <div className="hero__card-viewport">
+          <div
+            className={`hero__card${featured.id === 'f1' ? ' hero__card--el-bimbo' : ''} ${cardSlideClass}`}
+            style={{ backgroundImage: `url(${getBannerSource(featured)})` }}
+          >
+            <div className="hero__gradient" />
 
-          {/* Info */}
-          <div className="hero__content">
-            {featured.logo ? (
-              <img src={featured.logo} alt={featured.title} className="hero__logo" />
-            ) : (
-              <h1 className="hero__title">{featured.title}</h1>
-            )}
+            {/* Info — fades in fresh on each slide */}
+            <div key={contentKey} className="hero__content hero__content--fade">
+              {featured.logo ? (
+                <img src={featured.logo} alt={featured.title} className="hero__logo" />
+              ) : (
+                <h1 className="hero__title">{featured.title}</h1>
+              )}
 
-            <div className="hero__meta">
-              <span className="hero__rating">★ {featured.rating}</span>
-              <span className="hero__year">{featured.year}</span>
-              <span className="hero__badge">{featured.ageRating}</span>
-            </div>
+              <div className="hero__meta">
+                <span className="hero__rating">★ {featured.rating}</span>
+                <span className="hero__year">{featured.year}</span>
+                <span className="hero__badge">{featured.ageRating}</span>
+              </div>
 
-            <p className="hero__desc">{featured.description}</p>
+              <p className="hero__desc">{featured.description}</p>
 
-            <div className="hero__actions">
-              <button className="hero__btn hero__btn--play">
-                <Play size={15} fill="white" /> Play
-              </button>
-              <button className="hero__btn hero__btn--secondary" onClick={handleMoreInfo}>
-                <Info size={15} /> More Info
-              </button>
-              <button className="hero__btn hero__btn--secondary">
-                <Bookmark size={15} /> Save
-              </button>
+              <div className="hero__actions">
+                <button className="hero__btn hero__btn--play">
+                  <Play size={15} fill="white" /> Play
+                </button>
+                <button className="hero__btn hero__btn--secondary" onClick={handleMoreInfo}>
+                  <Info size={15} /> More Info
+                </button>
+                <button className="hero__btn hero__btn--secondary">
+                  <Bookmark size={15} /> Save
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -122,7 +143,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <button
             key={i}
             className={`hero__dot${i === current ? ' hero__dot--on' : ''}`}
-            onClick={() => goTo(i)}
+            onClick={() => goTo(i, i > current ? 'right' : 'left')}
           />
         ))}
       </div>
