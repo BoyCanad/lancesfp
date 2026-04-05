@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <main className="app__main">
       {/* Hero Carousel */}
-      <HeroCarousel movies={featuredMovies} />
+      <HeroCarousel movies={featuredMovies.slice(0, 3)} />
 
       {/* Content Rows */}
       <div className="app__rows">

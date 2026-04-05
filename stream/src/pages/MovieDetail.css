@@ -185,7 +185,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     bottom: auto;
-    height: 56.25vw; /* Perfectly captures the 1920x1080 16:9 aspect ratio */
+    height: 110vw; /* Enlarged from 56.25vw for a more cinematic mobile look */
     background-position: top center;
     z-index: 1;
   }
@@ -197,13 +197,13 @@
   .mdetail-gradient-bottom {
     top: 0;
     bottom: auto;
-    height: 58vw; /* Ensure smooth fade out to container bg just below the poster */
-    background: linear-gradient(to top, #110d17 2%, transparent 90%);
+    height: 112vw; /* Matches the enlarged banner height for a smooth transition */
+    background: linear-gradient(to top, #110d17 5%, transparent 85%);
     z-index: 2;
   }
 
   .mdetail-content {
-    margin-top: 35vw; /* Pulled upwards tightly against the poster */
+    margin-top: 85vw; /* Adjusted to fit the larger portrait banner */
     padding: 0 20px 100px; /* Space for bottom mobile nav */
     align-items: flex-start;
     text-align: left;
