@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────
-   Hero Carousel  –  matches xprime reference design
+   Hero Carousel  –  cinematic dissolve (desktop) + zoom (mobile)
    ───────────────────────────────────────────────────────────── */
 
 .hero {
@@ -12,12 +12,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 0 24px; /* 80px = navbar height + visual breathing room */
-  overflow: hidden; /* Prevent side scroll when peeks bleed out */
+  padding: 80px 0 24px;
+  overflow: hidden;
   width: 100%;
 }
 
-/* ── Peek cards (Flexible wide cut-offs) ────────────────────── */
+/* ── Peek cards ─────────────────────────────────────────────── */
 .hero__peek {
   flex: 1;
   min-width: 0;
@@ -29,36 +29,21 @@
   cursor: pointer;
   overflow: hidden;
   transition: transform 0.3s ease, filter 0.3s ease;
-  margin: 0 -40px; /* Tuck under the main card */
+  margin: 0 -40px;
   z-index: 1;
 }
-
 .hero__peek:hover { filter: brightness(1.2); }
 
-.hero__peek-veil {
-  position: absolute;
-  inset: 0;
-}
+.hero__peek-veil { position: absolute; inset: 0; }
 
 .hero__peek--left .hero__peek-veil {
-  background: linear-gradient(
-    to right,
-    rgba(13,13,20,0.98) 0%,
-    rgba(13,13,20,0.6)  100%
-  );
+  background: linear-gradient(to right, rgba(13,13,20,0.98) 0%, rgba(13,13,20,0.6) 100%);
 }
-
 .hero__peek--right .hero__peek-veil {
-  background: linear-gradient(
-    to left,
-    rgba(13,13,20,0.98) 0%,
-    rgba(13,13,20,0.6)  100%
-  );
+  background: linear-gradient(to left,  rgba(13,13,20,0.98) 0%, rgba(13,13,20,0.6) 100%);
 }
 
-/* ── Main card ──────────────────────────────────────────────── */
-
-/* Clips the scrolling track — nothing bleeds outside */
+/* ── Viewport ───────────────────────────────────────────────── */
 .hero__card-viewport {
   flex-shrink: 0;
   width: min(1050px, calc(100vw - 200px));
@@ -67,32 +52,30 @@
   border-radius: 18px;
   position: relative;
   z-index: 10;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.15),
+    0 0 60px rgba(255,255,255,0.08),
+    0 30px 80px rgba(0,0,0,0.9);
 }
 
-/* Horizontal strip holding all slides side-by-side */
-.hero__track {
-  display: flex;
+/* ── Desktop cinematic dissolve container ───────────────────── */
+.hero__cinema {
+  position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.52s cubic-bezier(0.45, 0.05, 0.15, 1);
-  will-change: transform;
 }
 
-/* Each slide occupies exactly the viewport width */
+/* ── Card base (shared desktop + mobile) ───────────────────── */
 .hero__card {
-  flex-shrink: 0;
   width: 100%;
   height: 100%;
   border-radius: 18px;
   background-size: cover;
   background-position: center top;
   background-color: #1a1a30;
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.15),
-    0 0 60px rgba(255,255,255,0.1),
-    0 30px 80px rgba(0,0,0,0.9);
 }
 
 .hero__gradient {
@@ -103,7 +86,59 @@
     linear-gradient(to top,   rgba(13,13,20,0.8) 0%, transparent 55%);
 }
 
-/* ── Content ────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   DESKTOP — Cinematic directional dissolve
+   Each card pair (exit + enter) gets its own animation driven
+   by the direction class. Only opacity + transform — GPU only.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Entering cards ────────────────── */
+.hero__card--enter-right {
+  animation: desktop-enter-right 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+  z-index: 2;
+}
+.hero__card--enter-left {
+  animation: desktop-enter-left 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+  z-index: 2;
+}
+
+/* ── Exiting cards ─────────────────── */
+.hero__card--exit-right {
+  animation: desktop-exit-right 0.65s cubic-bezier(0.4, 0, 1, 1) both;
+  z-index: 1;
+}
+.hero__card--exit-left {
+  animation: desktop-exit-left 0.65s cubic-bezier(0.4, 0, 1, 1) both;
+  z-index: 1;
+}
+
+/* Enter: slide in from slight right offset, bloom up from scale */
+@keyframes desktop-enter-right {
+  0%   { opacity: 0; transform: translateX(5%) scale(1.04); filter: brightness(1.15); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateX(0)  scale(1);    filter: brightness(1); }
+}
+
+/* Enter: slide in from slight left offset */
+@keyframes desktop-enter-left {
+  0%   { opacity: 0; transform: translateX(-5%) scale(1.04); filter: brightness(1.15); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateX(0)   scale(1);    filter: brightness(1); }
+}
+
+/* Exit: recede left while fading */
+@keyframes desktop-exit-left {
+  0%   { opacity: 1; transform: translateX(0)   scale(1);    filter: brightness(1); }
+  100% { opacity: 0; transform: translateX(-3%) scale(0.96); filter: brightness(0.8); }
+}
+
+/* Exit: recede right while fading */
+@keyframes desktop-exit-right {
+  0%   { opacity: 1; transform: translateX(0)  scale(1);    filter: brightness(1); }
+  100% { opacity: 0; transform: translateX(3%) scale(0.96); filter: brightness(0.8); }
+}
+
+/* ── Content — staggered entrance ──────────────────────────── */
 .hero__content {
   position: absolute;
   inset: 0;
@@ -112,20 +147,45 @@
   justify-content: flex-end;
   padding: 32px 36px;
   gap: 10px;
-  /* Inactive slides: content hidden */
+  /* Mobile default: transitions driven by --active class */
   opacity: 0;
   transform: translateY(14px);
   transition: opacity 0.38s ease 0.3s, transform 0.38s ease 0.3s;
   pointer-events: none;
 }
 
-/* Active slide: content fades up after the slide settles */
+/* Mobile active state */
 .hero__content--active {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
+/* Desktop stagger — every direct child animates in independently */
+.hero__content--stagger {
+  opacity: 1;
+  transform: none;
+  transition: none;
+  pointer-events: auto;
+}
+
+.hero__content--stagger > * {
+  opacity: 0;
+  animation: content-stagger-up 0.55s cubic-bezier(0.2, 0, 0.2, 1) both;
+}
+
+/* Each child gets a slightly longer delay */
+.hero__content--stagger > *:nth-child(1) { animation-delay: 0.18s; }
+.hero__content--stagger > *:nth-child(2) { animation-delay: 0.26s; }
+.hero__content--stagger > *:nth-child(3) { animation-delay: 0.34s; }
+.hero__content--stagger > *:nth-child(4) { animation-delay: 0.43s; }
+
+@keyframes content-stagger-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Typography & UI ────────────────────────────────────────── */
 .hero__title {
   font-size: clamp(28px, 4vw, 42px);
   font-weight: 800;
@@ -139,8 +199,8 @@
   max-width: 320px;
   height: auto;
   position: relative;
-  top: 28px; /* Move it further down */
-  margin-bottom: -10px; /* Pull the next items up to overlap even more */
+  top: 28px;
+  margin-bottom: -10px;
   filter: drop-shadow(0 4px 15px rgba(0,0,0,0.4));
   z-index: 5;
 }
@@ -255,14 +315,12 @@
   overflow: hidden;
 }
 
-/* Active dot — expands into a progress pill */
 .hero__dot--on {
   width: 28px;
   border-radius: 4px;
   background: rgba(255,255,255,0.22);
 }
 
-/* White fill sweeps left → right over 6 s */
 .hero__dot--on::after {
   content: '';
   position: absolute;
@@ -278,28 +336,27 @@
   to   { transform: scaleX(1); }
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
 @media (max-width: 960px) {
   .hero__peek { width: 120px; height: 280px; }
-  .hero__card-viewport  { height: 360px; width: calc(100vw - 280px); }
+  .hero__card-viewport { height: 360px; width: calc(100vw - 280px); }
 }
 
-/* ── Mobile: crossfade + zoom animation ─────────────────────── */
-/* (JS disables the inline translateX at <640px)                  */
+/* ── Mobile: crossfade + zoom ───────────────────────────────── */
 @media (max-width: 640px) {
-  /* Track becomes a stacking context — no more horizontal flex */
+  /* Track is a stacking context; no translateX */
   .hero__track {
+    display: block;
     position: relative;
-    transition: none; /* translateX not used on mobile */
-  }
-
-  /* All cards are stacked absolutely inside the viewport */
-  .hero__card {
-    position: absolute;
-    inset: 0;
     width: 100%;
     height: 100%;
-    /* Default: invisible + slightly zoomed in */
+  }
+
+  /* All cards absolutely stacked */
+  .hero__card {
     opacity: 0;
     transform: scale(1.06);
     transition:
@@ -307,11 +364,9 @@
       transform 0.58s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: opacity, transform;
     pointer-events: none;
-    /* Ensure z-index stacking works */
     z-index: 0;
   }
 
-  /* Active slide: fade in and zoom to natural size */
   .hero__card--active {
     opacity: 1;
     transform: scale(1);
@@ -319,15 +374,13 @@
     z-index: 2;
   }
 
-  /* Previous slide stays below while fading out */
-  .hero__card:not(.hero__card--active) {
-    z-index: 1;
-  }
+  .hero__card:not(.hero__card--active) { z-index: 1; }
 }
 
+/* ── Mobile layout adjustments ──────────────────────────────── */
 @media (max-width: 768px) {
   .hero {
-    position: relative; /* important for dots */
+    position: relative;
   }
   .hero__stage {
     padding: 0;
@@ -372,7 +425,6 @@
     overflow: hidden;
     margin-bottom: 2px;
   }
-  /* Move dots to top */
   .hero__dots {
     position: absolute;
     top: 90px;
@@ -382,7 +434,6 @@
   .hero__dot {
     background: rgba(255,255,255,0.4);
   }
-  /* Buttons layout */
   .hero__actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
