@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play, Plus, Info } from 'lucide-react';
 import type { Movie } from '../data/movies';
@@ -10,6 +10,104 @@ interface ContentRowProps {
   showProgress?: boolean;
   variant?: 'default' | 'wide';
 }
+
+const MovieCard = memo(({ 
+  movie, 
+  showProgress, 
+  onClick 
+}: { 
+  movie: Movie; 
+  showProgress?: boolean; 
+  onClick: (movie: Movie) => void;
+}) => {
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const edgeThreshold = 120;
+    let origin = 'center calc(50% + 5px)';
+
+    if (rect.left < edgeThreshold) {
+      origin = 'left calc(50% + 5px)';
+    } else if (window.innerWidth - rect.right < edgeThreshold) {
+      origin = 'right calc(50% + 5px)';
+    }
+    
+    e.currentTarget.style.setProperty('--origin', origin);
+  };
+
+  return (
+    <div
+      className={`card ${movie.desktopOnly ? 'card--desktop-only' : ''}`}
+      onClick={() => onClick(movie)}
+      onMouseEnter={handleMouseEnter}
+    >
+      {/* Thumbnail */}
+      <div className="card__thumb">
+        <picture>
+          {movie.mobileThumbnail && (
+            <source media="(max-width: 768px)" srcSet={movie.mobileThumbnail} />
+          )}
+          <img
+            src={movie.thumbnail}
+            alt={movie.title}
+            className="card__img"
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
+        
+        {/* Normal State Info */}
+        <div className="card__rating-badge card__default-item">
+          {movie.rating}
+        </div>
+        
+        {showProgress && movie.progress !== undefined && (
+          <div className="card__progress-bar card__default-item">
+            <div
+              className="card__progress-fill"
+              style={{ width: `${movie.progress}%` }}
+            />
+          </div>
+        )}
+
+        {/* Expanded State Layer */}
+        <div className="card__expanded-layer">
+          <img 
+            src={movie.cardBanner || movie.banner} 
+            alt="" 
+            className="card__expanded-banner" 
+            loading="lazy" 
+          />
+          <div className="card__expanded-gradient" />
+          <div className="card__expanded-content">
+            <div className="card__tooltip-quality">{movie.quality || 'HD'}</div>
+            <div className="card__tooltip-controls">
+              <button><Plus size={16} strokeWidth={2.5} color="white" /></button>
+              <button><Info size={16} strokeWidth={2.5} color="white" /></button>
+            </div>
+            <div className="card__tooltip-play-center">
+              <Play size={24} fill="white" color="white" />
+            </div>
+            <div className="card__tooltip-genres-bottom">
+              {movie.genre.join(' · ')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Card info below thumbnail */}
+      <div className="card__info">
+        <p className="card__title">{movie.title}</p>
+        <div className="card__meta">
+          <span className="card__year">{movie.year}</span>
+          <span className="card__dot">·</span>
+          <span className="card__genre">{movie.genre[0]}</span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+MovieCard.displayName = 'MovieCard';
 
 export default function ContentRow({
   title,
@@ -36,6 +134,18 @@ export default function ContentRow({
     setTimeout(updateScrollBtns, 400);
   };
 
+  const handleMovieClick = (movie: Movie) => {
+    if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
+      navigate('/ang-huling-el-bimbo-play');
+    } else if (movie.id === 'f2' || movie.title === 'Minsan') {
+      navigate('/minsan');
+    } else if (movie.id === 'f4' || movie.title === 'Tindahan ni Aling Nena') {
+      navigate('/tindahan');
+    } else if (movie.id === 'f5' || movie.title === 'Alapaap/Overdrive') {
+      navigate('/alapaap');
+    }
+  };
+
   return (
     <section className="row">
       <div className="row__header">
@@ -57,89 +167,12 @@ export default function ContentRow({
           onScroll={updateScrollBtns}
         >
           {movies.map(movie => (
-            <div
-              key={movie.id}
-              className={`card ${movie.desktopOnly ? 'card--desktop-only' : ''}`}
-              onClick={() => {
-                if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
-                  navigate('/ang-huling-el-bimbo-play');
-                } else if (movie.id === 'f2' || movie.title === 'Minsan') {
-                  navigate('/minsan');
-                } else if (movie.id === 'f4' || movie.title === 'Tindahan ni Aling Nena') {
-                  navigate('/tindahan');
-                } else if (movie.id === 'f5' || movie.title === 'Alapaap/Overdrive') {
-                  navigate('/alapaap');
-                }
-              }}
-              onMouseEnter={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const edgeThreshold = 100;
-                if (rect.left < edgeThreshold) {
-                  e.currentTarget.style.setProperty('--origin', 'left calc(50% + 5px)');
-                } else if (window.innerWidth - rect.right < edgeThreshold) {
-                  e.currentTarget.style.setProperty('--origin', 'right calc(50% + 5px)');
-                } else {
-                  e.currentTarget.style.setProperty('--origin', 'center calc(50% + 5px)');
-                }
-              }}
-            >
-              {/* Thumbnail */}
-              <div className="card__thumb">
-                <picture>
-                  {movie.mobileThumbnail && (
-                    <source media="(max-width: 768px)" srcSet={movie.mobileThumbnail} />
-                  )}
-                  <img
-                    src={movie.thumbnail}
-                    alt={movie.title}
-                    className="card__img"
-                    loading="lazy"
-                  />
-                </picture>
-                {/* Normal State Info */}
-                <div className="card__rating-badge card__default-item">
-                  {movie.rating}
-                </div>
-                
-                {showProgress && movie.progress !== undefined && (
-                  <div className="card__progress-bar card__default-item">
-                    <div
-                      className="card__progress-fill"
-                      style={{ width: `${movie.progress}%` }}
-                    />
-                  </div>
-                )}
-
-                {/* Expanded State Layer (lives inside scaling thumb) */}
-                <div className="card__expanded-layer">
-                  <img src={movie.cardBanner || movie.banner} alt="" className="card__expanded-banner" />
-                  <div className="card__expanded-gradient" />
-                  <div className="card__expanded-content">
-                    <div className="card__tooltip-quality">{movie.quality || 'HD'}</div>
-                    <div className="card__tooltip-controls">
-                      <button><Plus size={16} strokeWidth={2.5} color="white" /></button>
-                      <button><Info size={16} strokeWidth={2.5} color="white" /></button>
-                    </div>
-                    <button className="card__tooltip-play-center">
-                      <Play size={24} fill="white" color="white" />
-                    </button>
-                    <div className="card__tooltip-genres-bottom">
-                      {movie.genre.join(' · ')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card info below thumbnail */}
-              <div className="card__info">
-                <p className="card__title">{movie.title}</p>
-                <div className="card__meta">
-                  <span className="card__year">{movie.year}</span>
-                  <span className="card__dot">·</span>
-                  <span className="card__genre">{movie.genre[0]}</span>
-                </div>
-              </div>
-            </div>
+            <MovieCard 
+              key={movie.id} 
+              movie={movie} 
+              showProgress={showProgress} 
+              onClick={handleMovieClick}
+            />
           ))}
         </div>
 
