@@ -91,13 +91,21 @@ export default function VideoPlayer() {
     if (!videoRef.current) return;
 
     if (videoSrc.includes('.m3u8')) {
-      if (Hls.isSupported()) {
+      const isApple = /iPad|iPhone|iPod|Mac/.test(navigator.userAgent) && !("MSStream" in window);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const preferNativeHLS = videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '' && (isApple || isSafari);
+
+      if (preferNativeHLS) {
+        // Native HLS support (Safari / iOS) - Always preferred on Apple devices to avoid MSE audio-only bugs
+        hlsManagedRef.current = false;
+        videoRef.current.src = videoSrc;
+      } else if (Hls.isSupported()) {
         hlsManagedRef.current = true;
         setVideoError(null);
 
         hls = new Hls({
           enableWorker: false,
-          autoStartLoad: true,  // load segments immediately so buffer is ready
+          autoStartLoad: true,  
           lowLatencyMode: false,
           maxBufferLength: 30,
         });
@@ -114,26 +122,6 @@ export default function VideoPlayer() {
           setIsLoading(false);
         });
 
-        // Fires when a segment is written to the SourceBuffer.
-        hls.on(Hls.Events.FRAG_BUFFERED, (_event, _data) => {
-          console.log('[HLS] FRAG_BUFFERED fired, playPending:', playPendingRef.current,
-            'readyState:', videoRef.current?.readyState,
-            'error:', videoRef.current?.error?.code);
-          if (playPendingRef.current && videoRef.current) {
-            playPendingRef.current = false;
-            videoRef.current.play()
-              .then(() => setIsPlaying(true))
-              .catch((err) => {
-                console.error('[HLS] Deferred play (FRAG_BUFFERED) failed:', err.name,
-                  'readyState:', videoRef.current?.readyState,
-                  'networkState:', videoRef.current?.networkState,
-                  'errorCode:', videoRef.current?.error?.code);
-                // hls.js MSE failed entirely — try native video as last resort
-                tryNativeFallback();
-              });
-          }
-        });
-
         hls.on(Hls.Events.ERROR, (_event, data) => {
           console.error('HLS error:', data.type, data.details);
           if (data.fatal) {
@@ -142,9 +130,6 @@ export default function VideoPlayer() {
                 hls?.startLoad();
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
-                // BUFFER_STALLED_ERROR means hls.js has data but play() was never called.
-                // DO NOT call recoverMediaError() — it destroys the SourceBuffer and
-                // permanently breaks play(). Just restart loading instead.
                 if (data.details === 'bufferStalledError') {
                   hls?.startLoad();
                 } else {
@@ -160,7 +145,7 @@ export default function VideoPlayer() {
           }
         });
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '') {
-        // Native HLS support (Safari / iOS)
+        // Native fallback for other browsers (that are not Safari but support HLS)
         hlsManagedRef.current = false;
         videoRef.current.src = videoSrc;
       } else {
@@ -239,9 +224,14 @@ export default function VideoPlayer() {
             src: (videoRef.current?.src || '').substring(0, 80),
           });
           if (hlsManagedRef.current) {
-            // Queue for FRAG_BUFFERED retry first
-            playPendingRef.current = true;
-            setIsLoading(true);
+            if (error.name === 'NotSupportedError') {
+              // Decoder cannot handle the video stream via MSE, fallback to native avplayer
+              tryNativeFallback();
+            } else {
+              // Wait for buffer to fill up
+              playPendingRef.current = true;
+              setIsLoading(true);
+            }
           } else {
             setVideoError('The video format is not supported or the source link is invalid.');
             setIsPlaying(false);
@@ -368,7 +358,7 @@ export default function VideoPlayer() {
       <video
         ref={videoRef}
         playsInline
-        crossOrigin={Hls.isSupported() ? "anonymous" : undefined}
+        crossOrigin="anonymous"
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
