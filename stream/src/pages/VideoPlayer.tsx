@@ -41,8 +41,14 @@ export default function VideoPlayer() {
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hlsManagedRef = useRef<boolean>(false);
-  const hlsRef = useRef<Hls | null>(null); // exposed so togglePlay can call startLoad()
+  const hlsRef = useRef<Hls | null>(null);
   const playPendingRef = useRef<boolean>(false);
+
+  // Detect Apple/Safari — these use native HLS and must NOT have crossOrigin set,
+  // otherwise iOS blocks video frame rendering (audio-only bug)
+  const isAppleOrSafari =
+    (/iPad|iPhone|iPod|Mac/.test(navigator.userAgent) && !("MSStream" in window)) ||
+    /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   // Mock Data fallback
   const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
@@ -358,7 +364,7 @@ export default function VideoPlayer() {
       <video
         ref={videoRef}
         playsInline
-        crossOrigin="anonymous"
+        crossOrigin={isAppleOrSafari ? undefined : "anonymous"}
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
