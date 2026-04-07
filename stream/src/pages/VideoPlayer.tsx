@@ -53,7 +53,7 @@ export default function VideoPlayer() {
   const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
   
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
-  const videoSrc = movie?.videoUrl || "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+  const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
   useEffect(() => {
     const handleMouseMove = () => {
@@ -111,7 +111,7 @@ export default function VideoPlayer() {
               }
             }
           });
-        } else {
+        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
           // Native support for Safari (iOS)
           videoRef.current.src = videoSrc;
         }
@@ -146,7 +146,7 @@ export default function VideoPlayer() {
           setVideoError(null);
         }).catch((error) => {
           console.error("Video play failed:", error);
-          setVideoError("Unable to play video perfectly. If this is a Google Drive link, the file may be too large to stream directly without a virus scan prompt.");
+          setVideoError("The video format is not supported or the source link is invalid.");
           setIsPlaying(false);
         });
       }
@@ -257,7 +257,8 @@ export default function VideoPlayer() {
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
       <video
         ref={videoRef}
-        crossOrigin="anonymous"
+        playsInline
+        crossOrigin={Hls.isSupported() ? "anonymous" : undefined}
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
