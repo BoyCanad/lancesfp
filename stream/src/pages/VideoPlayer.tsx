@@ -124,24 +124,9 @@ export default function VideoPlayer() {
     if (!videoRef.current) return;
 
     if (videoSrc.includes('.m3u8')) {
-      // Detect mobile — Android Chrome 65+ and iOS Safari both support HLS natively
-      // via video.src without needing hls.js MSE. hls.js MSE on mobile causes
-      // hardware codec failures (audio plays, video black). Native is more reliable.
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        // Native HLS on mobile — no crossOrigin, no MSE, no codec issues
-        // MUST imperatively remove crossorigin before setting src. If present,
-        // the browser sends CORS preflight for every .ts segment; when Supabase
-        // does not echo Access-Control-Allow-Origin the browser blocks video
-        // frame rendering (tainted canvas) while audio continues = black screen.
-        hlsManagedRef.current = false;
-        videoRef.current.removeAttribute('crossorigin');
-        videoRef.current.removeAttribute('src');
-        videoRef.current.load();
-        videoRef.current.src = videoSrc;
-        videoRef.current.load();
-      } else if (Hls.isSupported()) {
+      // First, try MSE (hls.js). This works beautifully on Android Chrome and Desktop Safari/Chrome.
+      // We must not force Android to native HLS, because Android native HLS often drops video layers (black screen).
+      if (Hls.isSupported()) {
         hlsManagedRef.current = true;
         setVideoError(null);
         let mediaErrorRecoveries = 0;
@@ -209,9 +194,13 @@ export default function VideoPlayer() {
           }
         });
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '') {
-        // Native fallback for non-hls.js desktop browsers (e.g., Safari)
+        // Native fallback for iOS Safari and missing MSE browsers
         hlsManagedRef.current = false;
+        videoRef.current.removeAttribute('crossorigin');
+        videoRef.current.removeAttribute('src');
+        videoRef.current.load();
         videoRef.current.src = videoSrc;
+        videoRef.current.load();
       } else {
         setVideoError("Your browser does not support HLS video streaming.");
         setIsLoading(false);
