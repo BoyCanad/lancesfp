@@ -44,10 +44,10 @@ export default function VideoPlayer() {
   const hlsRef = useRef<Hls | null>(null);
   const playPendingRef = useRef<boolean>(false);
 
-  // Detect Apple/Safari — these use native HLS and must NOT have crossOrigin set,
-  // otherwise iOS blocks video frame rendering (audio-only bug)
-  const isAppleOrSafari =
-    (/iPad|iPhone|iPod|Mac/.test(navigator.userAgent) && !("MSStream" in window)) ||
+  // Detect mobile/Safari — these use native HLS (no hls.js MSE) and must NOT have
+  // crossOrigin set, otherwise CORS preflight blocks video frame rendering (audio-only bug)
+  const isMobileOrSafari =
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   // Mock Data fallback
@@ -97,12 +97,13 @@ export default function VideoPlayer() {
     if (!videoRef.current) return;
 
     if (videoSrc.includes('.m3u8')) {
-      const isApple = /iPad|iPhone|iPod|Mac/.test(navigator.userAgent) && !("MSStream" in window);
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      const preferNativeHLS = videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '' && (isApple || isSafari);
+      // Detect mobile — Android Chrome 65+ and iOS Safari both support HLS natively
+      // via video.src without needing hls.js MSE. hls.js MSE on mobile causes
+      // hardware codec failures (audio plays, video black). Native is more reliable.
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      if (preferNativeHLS) {
-        // Native HLS support (Safari / iOS) - Always preferred on Apple devices to avoid MSE audio-only bugs
+      if (isMobile) {
+        // Native HLS on mobile — no crossOrigin, no MSE, no codec issues
         hlsManagedRef.current = false;
         videoRef.current.src = videoSrc;
       } else if (Hls.isSupported()) {
@@ -140,7 +141,7 @@ export default function VideoPlayer() {
               data.details === 'bufferAppendingError'
             )
           ) {
-            console.warn('[HLS] Fatal buffer append error — codec not supported via MSE, trying native');
+            console.warn('[HLS] Fatal buffer append error — trying native');
             tryNativeFallback();
             return;
           }
@@ -161,7 +162,6 @@ export default function VideoPlayer() {
                   hls?.swapAudioCodec();
                   hls?.recoverMediaError();
                 } else {
-                  // hls.js exhausted — try native
                   tryNativeFallback();
                 }
                 break;
@@ -174,7 +174,7 @@ export default function VideoPlayer() {
           }
         });
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '') {
-        // Native fallback for other browsers (that are not Safari but support HLS)
+        // Native fallback for non-hls.js desktop browsers (e.g., Safari)
         hlsManagedRef.current = false;
         videoRef.current.src = videoSrc;
       } else {
@@ -392,7 +392,7 @@ export default function VideoPlayer() {
       <video
         ref={videoRef}
         playsInline
-        crossOrigin={isAppleOrSafari ? undefined : "anonymous"}
+        crossOrigin={isMobileOrSafari ? undefined : "anonymous"}
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
