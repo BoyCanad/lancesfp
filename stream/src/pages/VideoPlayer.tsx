@@ -41,7 +41,7 @@ export default function VideoPlayer() {
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hlsManagedRef = useRef<boolean>(false);
-  // Queue a play() intent if the user taps before hls.js has buffered any data
+  const hlsRef = useRef<Hls | null>(null); // exposed so togglePlay can call startLoad()
   const playPendingRef = useRef<boolean>(false);
 
   // Mock Data fallback
@@ -85,6 +85,7 @@ export default function VideoPlayer() {
   useEffect(() => {
     let hls: Hls | null = null;
     hlsManagedRef.current = false;
+    hlsRef.current = null;
     playPendingRef.current = false;
 
     if (!videoRef.current) return;
@@ -96,25 +97,40 @@ export default function VideoPlayer() {
 
         hls = new Hls({
           enableWorker: false,
+          // Don't auto-load segments — wait for user tap so the stall
+          // detector never fires before play() is called.
+          autoStartLoad: false,
           lowLatencyMode: false,
-          backBufferLength: 90,
           maxBufferLength: 30,
         });
 
+        hlsRef.current = hls;
         hls.attachMedia(videoRef.current);
 
         hls.on(Hls.Events.MEDIA_ATTACHED, () => {
           hls?.loadSource(videoSrc);
+          // Manifest is fetched but segment loading waits for startLoad()
         });
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setVideoError(null);
           setIsLoading(false);
+          // If user tapped before manifest finished, start loading + play now
+          if (playPendingRef.current && videoRef.current) {
+            playPendingRef.current = false;
+            hls?.startLoad(-1);
+            videoRef.current.play()
+              .then(() => setIsPlaying(true))
+              .catch((err) => {
+                console.warn('Deferred play (MANIFEST_PARSED) failed:', err.name);
+                // Re-queue for FRAG_BUFFERED
+                playPendingRef.current = true;
+              });
+          }
         });
 
-        // FRAG_BUFFERED fires when actual video data is written to the SourceBuffer.
-        // On mobile Chrome, readyState may stay at HAVE_METADATA until play() is called,
-        // so canplay never fires. FRAG_BUFFERED is the reliable alternative.
+        // FRAG_BUFFERED fires when the first segment is written to the SourceBuffer.
+        // At this point play() will reliably succeed on all mobile browsers.
         hls.on(Hls.Events.FRAG_BUFFERED, (_event, data) => {
           if (data.frag.sn === 0 && playPendingRef.current && videoRef.current) {
             playPendingRef.current = false;
@@ -125,7 +141,7 @@ export default function VideoPlayer() {
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
-          console.error('HLS error:', data);
+          console.error('HLS error:', data.type, data.details);
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
@@ -161,6 +177,7 @@ export default function VideoPlayer() {
         hls.destroy();
       }
       hlsManagedRef.current = false;
+      hlsRef.current = null;
       playPendingRef.current = false;
     };
   }, [videoSrc]);
@@ -179,27 +196,35 @@ export default function VideoPlayer() {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      // Always attempt play() — the user gesture is required on mobile to
-      // unblock MSE decoding. If hls.js hasn't buffered yet it will reject;
-      // we catch that and queue the intent for FRAG_BUFFERED / canplay.
-      videoRef.current.play()
-        .then(() => {
-          setIsPlaying(true);
-          setVideoError(null);
-        })
-        .catch((error) => {
-          console.warn("play() not ready yet, queuing:", error.name);
-          if (hlsManagedRef.current) {
-            // Queue for FRAG_BUFFERED or canplay to re-trigger
+      if (hlsManagedRef.current) {
+        if (!hlsRef.current) return;
+        // Start loading segments (requires user gesture context for MSE on mobile)
+        hlsRef.current.startLoad(-1);
+        setIsLoading(true);
+        videoRef.current.play()
+          .then(() => {
+            setIsPlaying(true);
+            setVideoError(null);
+            setIsLoading(false);
+          })
+          .catch((error) => {
+            // play() failed — first fragment not buffered yet.
+            // FRAG_BUFFERED will retry automatically.
+            console.warn('play() before first frag, waiting for buffer:', error.name);
             playPendingRef.current = true;
-            setIsLoading(true);
-          } else {
+          });
+      } else {
+        // MP4 / native HLS (iOS)
+        videoRef.current.play()
+          .then(() => { setIsPlaying(true); setVideoError(null); })
+          .catch(() => {
             setVideoError("The video format is not supported or the source link is invalid.");
             setIsPlaying(false);
-          }
-        });
+          });
+      }
     }
   };
+
 
   const handleVideoError = () => {
     // Suppress native error events when hls.js is in control —
