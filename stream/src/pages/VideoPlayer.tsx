@@ -86,12 +86,17 @@ export default function VideoPlayer() {
       if (videoSrc.includes('.m3u8')) {
         if (Hls.isSupported()) {
           hls = new Hls();
-          hls.loadSource(videoSrc);
           hls.attachMedia(videoRef.current);
+          
+          hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+            hls?.loadSource(videoSrc);
+          });
+
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             // Ready to play
             setVideoError(null);
           });
+          
           hls.on(Hls.Events.ERROR, (_event, data) => {
             if (data.fatal) {
               switch (data.type) {
@@ -107,8 +112,8 @@ export default function VideoPlayer() {
               }
             }
           });
-        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-          // Native support for Safari
+        } else {
+          // Native support for Safari (iOS)
           videoRef.current.src = videoSrc;
         }
       } else {
