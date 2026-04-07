@@ -20,5 +20,5 @@ main-args = [
     "--root=/opt/static_app",
     "--log-level=info",
     "--port=8080",
-    "--page-fallback=/opt/static_app/index.html"
+    "--page404=/opt/static_app/index.html"
 ]
