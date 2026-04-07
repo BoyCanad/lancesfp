@@ -214,6 +214,11 @@ export default function VideoPlayer() {
     }
     hlsManagedRef.current = false;
     playPendingRef.current = false;
+    // MUST remove crossorigin before setting native src —
+    // if left on, the browser makes CORS preflight requests for .ts segments.
+    // If Supabase doesn't echo back Access-Control-Allow-Origin, the browser
+    // blocks video frame rendering (tainted canvas) while audio continues.
+    videoRef.current.removeAttribute('crossorigin');
     videoRef.current.removeAttribute('src');
     videoRef.current.load();
     videoRef.current.src = videoSrc;
