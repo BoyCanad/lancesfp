@@ -2,15 +2,22 @@
 .row {
   padding: 0 32px 8px;
   animation: fadeIn 0.5s ease-out;
+  position: relative;
+  z-index: 1;
+}
+
+.row:hover {
+  z-index: 10;
 }
 
 .row__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   position: relative;
-  z-index: 20;
+  /* Keep title below expanded elements */
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -24,6 +31,10 @@
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 12px;
 }
 
 .row__see-all {
@@ -32,6 +43,8 @@
   font-weight: 500;
   color: var(--text-muted);
   transition: color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .row__see-all:hover {
@@ -44,18 +57,20 @@
 
 .row__track {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding-top: 40px;
-  margin-top: -40px;
-  padding-bottom: 40px;
-  margin-bottom: -28px;
-  /* Performance optimizations */
+  /* Optimized padding + margins to fit expand scale (1.22)
+     without overlapping too much with adjacent components 
+     150px height * 0.22 / 2 = ~17px needed top/bottom buffer */
+  padding: 40px 0;
+  margin: -40px 0;
+  
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  contain: content;
+  position: relative;
+  z-index: 1;
 }
 .row__track::-webkit-scrollbar { display: none; }
 
@@ -94,14 +109,15 @@
   scroll-snap-align: start;
   cursor: pointer;
   position: relative;
-  transition: transform 0.35s cubic-bezier(0.2, 0, 0.2, 1);
-  /* Optimization: ensure isolated rendering layer */
-  isolation: isolate;
-  contain: paint;
+  transition: transform 0.3s ease;
+  z-index: 1;
+  will-change: z-index;
 }
 
 .card:hover {
-  z-index: 50;
+  /* Ultra-high z-index and force elevation */
+  z-index: 1000;
+  transform: translateZ(0); 
 }
 
 .card__thumb {
@@ -111,10 +127,10 @@
   border-radius: 10px;
   overflow: hidden;
   background: var(--bg-card);
-  transition: transform 0.35s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+  /* Faster transition */
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   border: 2px solid transparent;
   transform-origin: var(--origin, center calc(50% + 5px));
-  will-change: transform;
 }
 
 .card:hover .card__thumb {
@@ -129,6 +145,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top;
 }
 
 .card__default-item {
@@ -321,6 +338,7 @@
 
 @media (max-width: 768px) {
   .row { padding: 0 16px 8px; }
+
   .row__title { font-size: 20px; }
   .card { width: 140px; }
   .card__thumb { aspect-ratio: 2 / 3; }

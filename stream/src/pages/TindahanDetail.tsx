@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Play, Bookmark, Download } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import './MovieDetail.css';
@@ -20,8 +21,8 @@ export default function TindahanDetail() {
   }
 
   const backgroundImage = isMobile
-    ? '/images/tindahan-detail-mobile.png'
-    : '/images/tindahan-detail.png';
+    ? '/images/tindahan-detail-mobile.webp'
+    : '/images/tindahan-detail.webp';
 
   return (
     <div className="mdetail-container">
@@ -66,9 +67,9 @@ export default function TindahanDetail() {
 
         {/* Action Buttons */}
         <div className="mdetail-actions">
-          <button className="mdetail-btn mdetail-btn-play">
+          <Link to={`/watch/tindahan`} className="mdetail-btn mdetail-btn-play" style={{ textDecoration: 'none' }}>
             <Play size={18} fill="black" strokeWidth={0} /> Play
-          </button>
+          </Link>
 
           <div className="mdetail-actions-row">
             <button className="mdetail-btn mdetail-btn-secondary">

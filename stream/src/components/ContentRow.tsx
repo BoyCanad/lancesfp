@@ -1,4 +1,4 @@
-import { useRef, useState, memo } from 'react';
+import { useRef, useState, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play, Plus, Info } from 'lucide-react';
 import type { Movie } from '../data/movies';
@@ -20,7 +20,10 @@ const MovieCard = memo(({
   showProgress?: boolean; 
   onClick: (movie: Movie) => void;
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsHovered(true);
     const rect = e.currentTarget.getBoundingClientRect();
     const edgeThreshold = 120;
     let origin = 'center calc(50% + 5px)';
@@ -34,11 +37,16 @@ const MovieCard = memo(({
     e.currentTarget.style.setProperty('--origin', origin);
   };
 
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   return (
     <div
       className={`card ${movie.desktopOnly ? 'card--desktop-only' : ''}`}
       onClick={() => onClick(movie)}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Thumbnail */}
       <div className="card__thumb">
@@ -69,29 +77,31 @@ const MovieCard = memo(({
           </div>
         )}
 
-        {/* Expanded State Layer */}
-        <div className="card__expanded-layer">
-          <img 
-            src={movie.cardBanner || movie.banner} 
-            alt="" 
-            className="card__expanded-banner" 
-            loading="lazy" 
-          />
-          <div className="card__expanded-gradient" />
-          <div className="card__expanded-content">
-            <div className="card__tooltip-quality">{movie.quality || 'HD'}</div>
-            <div className="card__tooltip-controls">
-              <button><Plus size={16} strokeWidth={2.5} color="white" /></button>
-              <button><Info size={16} strokeWidth={2.5} color="white" /></button>
-            </div>
-            <div className="card__tooltip-play-center">
-              <Play size={24} fill="white" color="white" />
-            </div>
-            <div className="card__tooltip-genres-bottom">
-              {movie.genre.join(' · ')}
+        {/* Expanded State Layer - Only rendered when hovered to save resources */}
+        {isHovered && (
+          <div className="card__expanded-layer">
+            <img 
+              src={movie.cardBanner || movie.banner} 
+              alt="" 
+              className="card__expanded-banner" 
+              loading="lazy"
+            />
+            <div className="card__expanded-gradient" />
+            <div className="card__expanded-content">
+              <div className="card__tooltip-quality">{movie.quality || 'HD'}</div>
+              <div className="card__tooltip-controls">
+                <button><Plus size={16} strokeWidth={2.5} color="white" /></button>
+                <button><Info size={16} strokeWidth={2.5} color="white" /></button>
+              </div>
+              <div className="card__tooltip-play-center">
+                <Play size={24} fill="white" color="white" />
+              </div>
+              <div className="card__tooltip-genres-bottom">
+                {movie.genre.join(' · ')}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Card info below thumbnail */}
@@ -134,7 +144,7 @@ export default function ContentRow({
     setTimeout(updateScrollBtns, 400);
   };
 
-  const handleMovieClick = (movie: Movie) => {
+  const handleMovieClick = useCallback((movie: Movie) => {
     if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
       navigate('/ang-huling-el-bimbo-play');
     } else if (movie.id === 'f2' || movie.title === 'Minsan') {
@@ -144,7 +154,7 @@ export default function ContentRow({
     } else if (movie.id === 'f5' || movie.title === 'Alapaap/Overdrive') {
       navigate('/alapaap');
     }
-  };
+  }, [navigate]);
 
   return (
     <section className="row">

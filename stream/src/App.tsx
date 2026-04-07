@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import Home from './pages/Home.tsx';
@@ -6,12 +6,16 @@ import MovieDetail from './pages/MovieDetail.tsx';
 import MinsanDetail from './pages/MinsanDetail.tsx';
 import TindahanDetail from './pages/TindahanDetail.tsx';
 import AlapaapDetail from './pages/AlapaapDetail.tsx';
+import VideoPlayer from './pages/VideoPlayer.tsx';
 import './App.css';
 
 function App() {
+  const location = useLocation();
+  const isVideoPlayer = location.pathname.startsWith('/watch');
+
   return (
     <div className="app">
-      <Navbar />
+      {!isVideoPlayer && <Navbar />}
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -19,18 +23,23 @@ function App() {
         <Route path="/minsan" element={<MinsanDetail />} />
         <Route path="/tindahan" element={<TindahanDetail />} />
         <Route path="/alapaap" element={<AlapaapDetail />} />
+        <Route path="/watch/:id" element={<VideoPlayer />} />
       </Routes>
 
-      <footer className="app__footer">
-        <div className="app__footer-logo">
-          LSFPlus
-        </div>
-        <p className="app__footer-text">
-          © 2025 LSFPlus, Inc. All rights reserved.
-        </p>
-      </footer>
-      {/* Bottom Navigation for Mobile */}
-      <MobileNav />
+      {!isVideoPlayer && (
+        <>
+          <footer className="app__footer">
+            <div className="app__footer-logo">
+              LSFPlus
+            </div>
+            <p className="app__footer-text">
+              © 2025 LSFPlus, Inc. All rights reserved.
+            </p>
+          </footer>
+          {/* Bottom Navigation for Mobile */}
+          <MobileNav />
+        </>
+      )}
     </div>
   );
 }

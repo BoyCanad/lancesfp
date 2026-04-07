@@ -17,13 +17,19 @@ export interface Movie {
   mobileBanner?: string;
   cardBanner?: string;
   logo?: string;
+  videoUrl?: string;
+  subtitles?: {
+    label: string;
+    srclang: string;
+    url: string;
+  }[];
 }
 
 export const featuredMovies: Movie[] = [
   {
     id: "f1",
     title: "Ang Huling El Bimbo Play",
-    logo: "/images/el-bimbo-logo.png",
+    logo: "/images/el-bimbo-logo.webp",
     thumbnail: "/images/el-bimbo-banner.jpg",
     banner: "/images/el-bimbo-banner.jpg",
     mobileBanner: "/images/el-bimbo-mobile-carousel.jpg",
@@ -34,15 +40,28 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     isOriginal: true,
+    videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
+    subtitles: [
+      {
+        label: "Filipino",
+        srclang: "fil",
+        url: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/Ang%20Huling%20El%20Bimbo%20Play.vtt"
+      },
+      {
+        label: "English",
+        srclang: "en",
+        url: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/Ang%20Huling%20El%20Bimbo%20Play%20English.vtt"
+      }
+    ]
   },
   {
     id: "f2",
     title: "Minsan",
-    logo: "/images/minsan-logo.png",
-    thumbnail: "/images/minsan.png",
-    banner: "/images/minsan-banner.png",
-    mobileBanner: "/images/minsan-mobile-carousel.png",
-    cardBanner: "/images/minsan.png",
+    logo: "/images/minsan-logo.webp",
+    thumbnail: "/images/minsan.webp",
+    banner: "/images/minsan-banner.webp",
+    mobileBanner: "/images/minsan-mobile-carousel.webp",
+    cardBanner: "/images/minsan.webp",
     description: "“Minsan” is a heartfelt reflection on friendship, nostalgia, and the bittersweet passage of time. It tells the story of people who once shared deep connections and carefree moments, only to drift apart as life moves forward.",
     rating: "9.5",
     year: "2026",
@@ -53,10 +72,10 @@ export const featuredMovies: Movie[] = [
   {
     id: "f3",
     title: "11 STEM A SY 2025-2026",
-    logo: "/images/stem-a-logo.png",
-    thumbnail: "/images/stem-a-archive-banner.png",
-    banner: "/images/stem-a-archive-banner.png",
-    mobileBanner: "/images/stem-a-mobile-carousel.png",
+    logo: "/images/stem-a-logo.webp",
+    thumbnail: "/images/stem-a-archive-banner.webp",
+    banner: "/images/stem-a-archive-banner.webp",
+    mobileBanner: "/images/stem-a-mobile-carousel.webp",
     description: "A digital archive documenting the journey, memories, and milestones of 11-STEM A for the School Year 2025-2026.",
     rating: "9.9",
     year: "2026",
@@ -68,9 +87,9 @@ export const featuredMovies: Movie[] = [
   {
     id: "f4",
     title: "Tindahan ni Aling Nena",
-    logo: "/images/tindahan-logo.png",
-    thumbnail: "/images/tindahan.png",
-    banner: "/images/tindahan.png",
+    logo: "/images/tindahan-logo.webp",
+    thumbnail: "/images/tindahan.webp",
+    banner: "/images/tindahan.webp",
     description: "A lively and colorful performance of “Tindahan ni Aling Nena” from Ang Huling El Bimbo, this scene brings energy and humor while subtly reflecting the group’s youthful bond and everyday life.",
     rating: "9.7",
     year: "2026",
@@ -81,9 +100,9 @@ export const featuredMovies: Movie[] = [
   {
     id: "f5",
     title: "Alapaap/Overdrive",
-    logo: "/images/alapaap-logo.png",
-    thumbnail: "/images/alapaap.png",
-    banner: "/images/alapaap.png",
+    logo: "/images/alapaap-logo.webp",
+    thumbnail: "/images/alapaap.webp",
+    banner: "/images/alapaap.webp",
     description: "An electrifying performance of “Alapaap / Overdrive” from Ang Huling El Bimbo, this scene captures the characters’ youthful rebellion and desire for freedom. Fueled by high energy and raw emotion, it reflects their escape from reality and the thrill of living in the moment—while hinting at the impulsive choices and inner conflicts that will shape their journey as the story unfolds.",
     rating: "9.8",
     year: "2026",
@@ -94,8 +113,8 @@ export const featuredMovies: Movie[] = [
   {
     id: "f6",
     title: "Spoliarium/Graduation",
-    thumbnail: "/images/spoliarium.png",
-    banner: "/images/spoliarium.png",
+    thumbnail: "/images/spoliarium.webp",
+    banner: "/images/spoliarium.webp",
     description: "A powerful and emotionally charged performance of “Spoliarium / Graduation” from Ang Huling El Bimbo, this scene marks a turning point in the story. As the characters transition from youth to adulthood, the performance contrasts celebration with underlying tension—unveiling hidden struggles, fractured friendships, and the harsh realities that begin to surface. It captures the loss of innocence and the weight of choices that will shape their futures.",
     rating: "9.9",
     year: "2026",
@@ -106,8 +125,8 @@ export const featuredMovies: Movie[] = [
   {
     id: "f7",
     title: "Pare Ko",
-    thumbnail: "/images/pare-ko.png",
-    banner: "/images/pare-ko.png",
+    thumbnail: "/images/pare-ko.webp",
+    banner: "/images/pare-ko.webp",
     description: "A raw and emotionally intense performance of “Pare Ko” from Ang Huling El Bimbo, this scene delves into heartbreak and vulnerability. Through candid expression and gritty energy, it reveals the characters’ inner struggles with love, rejection, and confusion—marking a shift from carefree youth to more complicated, painful realities that begin to strain their friendships.",
     rating: "9.6",
     year: "2026",
@@ -118,9 +137,9 @@ export const featuredMovies: Movie[] = [
   {
     id: "f8",
     title: "Tama Ka/Ligaya",
-    thumbnail: "/images/tama-ka.png",
-    mobileThumbnail: "/images/tama-ka-mobile.png",
-    banner: "/images/tama-ka.png",
+    thumbnail: "/images/tama-ka.webp",
+    mobileThumbnail: "/images/tama-ka-mobile.webp",
+    banner: "/images/tama-ka.webp",
     description: "A tender yet emotionally layered performance of “Tama Ka / Ligaya” from Ang Huling El Bimbo, this scene explores love, longing, and unspoken feelings among the characters. Blending playful charm with quiet vulnerability, it captures the sweetness of young romance while hinting at misunderstandings and choices that will eventually test their relationships.",
     rating: "9.8",
     year: "2026",
@@ -131,9 +150,9 @@ export const featuredMovies: Movie[] = [
   {
     id: "f9",
     title: "Ang Huling El Bimbo",
-    thumbnail: "/images/huling-el-bimbo.png",
-    mobileThumbnail: "/images/huling-el-bimbo-mobile.png",
-    banner: "/images/huling-el-bimbo.png",
+    thumbnail: "/images/huling-el-bimbo.webp",
+    mobileThumbnail: "/images/huling-el-bimbo-mobile.webp",
+    banner: "/images/huling-el-bimbo.webp",
     description: "A deeply emotional performance of “Ang Huling El Bimbo” from Ang Huling El Bimbo, this scene serves as the heart of the story. It brings together memories, regret, and longing as the characters confront their past—especially their connection to Joy. Through poignant storytelling and moving choreography, it captures the pain of lost time, unspoken apologies, and the enduring impact of a friendship they can never fully reclaim.",
     rating: "9.9",
     year: "2026",
@@ -215,9 +234,9 @@ export const trendingMovies: Movie[] = [
   {
     id: "t1",
     title: "11 STEM A SY 2025-2026",
-    thumbnail: "/images/stem-a-archive.png",
-    banner: "/images/stem-a-archive.png",
-    mobileThumbnail: "/images/stem-a-archive-mobile.png",
+    thumbnail: "/images/stem-a-archive.webp",
+    banner: "/images/stem-a-archive.webp",
+    mobileThumbnail: "/images/stem-a-archive-mobile.webp",
     description: "A digital archive documenting the journey, memories, and milestones of 11-STEM A for the School Year 2025-2026.",
     rating: "9.9", year: "2026", duration: "Archive",
     genre: ["Classroom", "Documentary", "Memories"], ageRating: "G",
@@ -263,8 +282,8 @@ export const trendingMovies: Movie[] = [
 export const elBimboFeatured: Movie = {
   id: "eb1",
   title: "Ang Huling El Bimbo Play",
-  thumbnail: "/images/el-bimbo.png",
-  banner: "/images/el-bimbo.png",
+  thumbnail: "/images/el-bimbo.webp",
+  banner: "/images/el-bimbo.webp",
   description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
   rating: "9.8",
   year: "2026",
@@ -272,5 +291,6 @@ export const elBimboFeatured: Movie = {
   genre: ["Musical", "Drama", "Nostalgia"],
   ageRating: "PG-13",
   quality: "HD",
-  mobileThumbnail: "/images/el-bimbo-mobile.png",
+  mobileThumbnail: "/images/el-bimbo-mobile.webp",
+  videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
 };

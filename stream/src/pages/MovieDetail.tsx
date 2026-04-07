@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Play, Bookmark, Download } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import './MovieDetail.css';
@@ -19,15 +20,15 @@ export default function MovieDetail() {
     return <div className="movie-detail-not-found">Movie not found</div>;
   }
 
-  const backgroundImage = isMobile 
-    ? '/images/el-bimbo-detail-mobile.png' 
-    : '/images/el-bimbo-detail.png';
+  const backgroundImage = isMobile
+    ? '/images/el-bimbo-detail-mobile.webp'
+    : '/images/el-bimbo-detail.webp';
 
   return (
     <div className="mdetail-container">
       {/* Background Image layer */}
-      <div 
-        className="mdetail-bg" 
+      <div
+        className="mdetail-bg"
         style={{ backgroundImage: `url(${backgroundImage})` }}
       ></div>
 
@@ -37,7 +38,7 @@ export default function MovieDetail() {
 
       {/* Content wrapper */}
       <div className="mdetail-content">
-        
+
         {/* Logo */}
         {movie.logo ? (
           <img src={movie.logo} alt={movie.title} className="mdetail-logo" />
@@ -66,10 +67,10 @@ export default function MovieDetail() {
 
         {/* Action Buttons */}
         <div className="mdetail-actions">
-          <button className="mdetail-btn mdetail-btn-play">
+          <Link to={`/watch/${movie.id}`} className="mdetail-btn mdetail-btn-play" style={{ textDecoration: 'none' }}>
             <Play size={18} fill="black" strokeWidth={0} /> Play
-          </button>
-          
+          </Link>
+
           <div className="mdetail-actions-row">
             <button className="mdetail-btn mdetail-btn-secondary">
               <Bookmark size={18} /> Save to Vault
