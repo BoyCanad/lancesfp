@@ -132,13 +132,15 @@ export default function VideoPlayer() {
         hls.on(Hls.Events.ERROR, (_event, data) => {
           console.error('HLS error:', data.type, data.details);
 
-          // bufferAppendError / bufferAppendingError = codec incompatible with MSE SourceBuffer.
-          // recoverMediaError() loops forever here — go straight to native fallback.
+          // bufferAppendingError is usually NON-fatal — hls.js will self-recover.
+          // Only trigger native fallback when it's actually fatal (codec truly incompatible).
           if (
-            data.details === 'bufferAppendError' ||
-            data.details === 'bufferAppendingError'
+            data.fatal && (
+              data.details === 'bufferAppendError' ||
+              data.details === 'bufferAppendingError'
+            )
           ) {
-            console.warn('[HLS] Buffer append error — codec not supported via MSE, trying native');
+            console.warn('[HLS] Fatal buffer append error — codec not supported via MSE, trying native');
             tryNativeFallback();
             return;
           }
