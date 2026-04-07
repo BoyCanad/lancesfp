@@ -115,13 +115,22 @@ export default function VideoPlayer() {
         });
 
         // Fires when a segment is written to the SourceBuffer.
-        // Used to retry a deferred play() after the first tap failed (no data yet).
         hls.on(Hls.Events.FRAG_BUFFERED, (_event, _data) => {
+          console.log('[HLS] FRAG_BUFFERED fired, playPending:', playPendingRef.current,
+            'readyState:', videoRef.current?.readyState,
+            'error:', videoRef.current?.error?.code);
           if (playPendingRef.current && videoRef.current) {
             playPendingRef.current = false;
             videoRef.current.play()
               .then(() => setIsPlaying(true))
-              .catch((err) => console.error('Deferred play (FRAG_BUFFERED) failed:', err.name));
+              .catch((err) => {
+                console.error('[HLS] Deferred play (FRAG_BUFFERED) failed:', err.name,
+                  'readyState:', videoRef.current?.readyState,
+                  'networkState:', videoRef.current?.networkState,
+                  'errorCode:', videoRef.current?.error?.code);
+                // hls.js MSE failed entirely — try native video as last resort
+                tryNativeFallback();
+              });
           }
         });
 
@@ -182,23 +191,55 @@ export default function VideoPlayer() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  // Last-resort fallback: destroy hls.js and try native video.src playback.
+  // Works on iOS Safari (native HLS) and sometimes Android Chrome.
+  const tryNativeFallback = () => {
+    if (!videoRef.current) return;
+    console.warn('[VideoPlayer] Falling back to native src playback');
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    hlsManagedRef.current = false;
+    playPendingRef.current = false;
+    videoRef.current.removeAttribute('src');
+    videoRef.current.load();
+    videoRef.current.src = videoSrc;
+    videoRef.current.load();
+    videoRef.current.play()
+      .then(() => {
+        setIsPlaying(true);
+        setVideoError(null);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error('[VideoPlayer] Native fallback also failed:', err.name);
+        setVideoError('Unable to play this video on your device. The format may not be supported.');
+        setIsPlaying(false);
+        setIsLoading(false);
+      });
+  };
+
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      // Call play() directly within the user gesture context.
-      // If hls.js hasn't buffered data yet, play() may fail — we catch that
-      // and set playPendingRef so FRAG_BUFFERED retries automatically.
       videoRef.current.play()
         .then(() => {
           setIsPlaying(true);
           setVideoError(null);
         })
         .catch((error) => {
-          console.warn('play() not ready, queuing for FRAG_BUFFERED:', error.name);
+          console.warn('[VideoPlayer] play() failed:', error.name, {
+            readyState: videoRef.current?.readyState,
+            networkState: videoRef.current?.networkState,
+            errorCode: videoRef.current?.error?.code,
+            src: (videoRef.current?.src || '').substring(0, 80),
+          });
           if (hlsManagedRef.current) {
+            // Queue for FRAG_BUFFERED retry first
             playPendingRef.current = true;
             setIsLoading(true);
           } else {
@@ -208,7 +249,6 @@ export default function VideoPlayer() {
         });
     }
   };
-
 
   const handleVideoError = () => {
     // Suppress native error events when hls.js is in control —
