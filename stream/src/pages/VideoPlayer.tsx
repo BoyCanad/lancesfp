@@ -41,6 +41,8 @@ export default function VideoPlayer() {
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hlsManagedRef = useRef<boolean>(false);
+  // Queue a play() intent if the user taps before hls.js has buffered any data
+  const playPendingRef = useRef<boolean>(false);
 
   // Mock Data fallback
   const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
@@ -156,29 +158,28 @@ export default function VideoPlayer() {
   }, []);
 
   const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        // If hls.js is managing the source, the video element will have a src by now
-        // If there's truly no source, readyState will be 0
-        if (hlsManagedRef.current && videoRef.current.readyState === 0) {
-          // HLS not ready yet — ignore tap
-          return;
-        }
-        videoRef.current.play().then(() => {
-          setIsPlaying(true);
-          setVideoError(null);
-        }).catch((error) => {
-          console.error("Video play failed:", error);
-          // Only show error if hls.js is not about to recover it
-          if (!hlsManagedRef.current) {
-            setVideoError("The video format is not supported or the source link is invalid.");
-          }
-          setIsPlaying(false);
-        });
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      // If hls.js is in control but video hasn't buffered yet
+      // (readyState 0 = HAVE_NOTHING), queue the play for when canplay fires
+      if (hlsManagedRef.current && videoRef.current.readyState < 3) {
+        playPendingRef.current = true;
+        setIsLoading(true);
+        return;
       }
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+        setVideoError(null);
+      }).catch((error) => {
+        console.error("Video play failed:", error);
+        if (!hlsManagedRef.current) {
+          setVideoError("The video format is not supported or the source link is invalid.");
+        }
+        setIsPlaying(false);
+      });
     }
   };
 
@@ -203,6 +204,16 @@ export default function VideoPlayer() {
 
   const handleCanPlay = () => {
     setIsLoading(false);
+    // Execute any queued play intent (user tapped before hls.js was ready)
+    if (playPendingRef.current && videoRef.current) {
+      playPendingRef.current = false;
+      videoRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.error("Deferred play failed:", err);
+          setIsPlaying(false);
+        });
+    }
   };
 
   const handleLoadedMetadata = () => {
