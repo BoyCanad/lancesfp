@@ -82,16 +82,37 @@ export default function VideoPlayer() {
   // HLS logic for .m3u8 streaming
   useEffect(() => {
     let hls: Hls | null = null;
-    if (videoRef.current && videoSrc.includes('.m3u8')) {
-      if (Hls.isSupported()) {
-        hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(videoRef.current);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          // Ready to play
-        });
-      } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native support for Safari
+    if (videoRef.current) {
+      if (videoSrc.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          hls = new Hls();
+          hls.loadSource(videoSrc);
+          hls.attachMedia(videoRef.current);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            // Ready to play
+            setVideoError(null);
+          });
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            if (data.fatal) {
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  hls?.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  hls?.recoverMediaError();
+                  break;
+                default:
+                  setVideoError("The video format is not supported or the source link is invalid.");
+                  break;
+              }
+            }
+          });
+        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+          // Native support for Safari
+          videoRef.current.src = videoSrc;
+        }
+      } else {
+        // Regular mp4 or other formats
         videoRef.current.src = videoSrc;
       }
     }
@@ -142,6 +163,7 @@ export default function VideoPlayer() {
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
+      setVideoError(null); // Clear any early errors if metadata successfully loaded
     }
   };
 
@@ -221,7 +243,6 @@ export default function VideoPlayer() {
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
       <video
         ref={videoRef}
-        src={videoSrc}
         crossOrigin="anonymous"
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
