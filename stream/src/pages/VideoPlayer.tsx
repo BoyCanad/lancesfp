@@ -85,6 +85,7 @@ export default function VideoPlayer() {
   useEffect(() => {
     let hls: Hls | null = null;
     hlsManagedRef.current = false;
+    playPendingRef.current = false;
 
     if (!videoRef.current) return;
 
@@ -94,9 +95,10 @@ export default function VideoPlayer() {
         setVideoError(null);
 
         hls = new Hls({
-          enableWorker: false, // workers can silently fail on mobile
+          enableWorker: false,
           lowLatencyMode: false,
           backBufferLength: 90,
+          maxBufferLength: 30,
         });
 
         hls.attachMedia(videoRef.current);
@@ -108,6 +110,18 @@ export default function VideoPlayer() {
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setVideoError(null);
           setIsLoading(false);
+        });
+
+        // FRAG_BUFFERED fires when actual video data is written to the SourceBuffer.
+        // On mobile Chrome, readyState may stay at HAVE_METADATA until play() is called,
+        // so canplay never fires. FRAG_BUFFERED is the reliable alternative.
+        hls.on(Hls.Events.FRAG_BUFFERED, (_event, data) => {
+          if (data.frag.sn === 0 && playPendingRef.current && videoRef.current) {
+            playPendingRef.current = false;
+            videoRef.current.play()
+              .then(() => setIsPlaying(true))
+              .catch((err) => console.error('Deferred play (FRAG_BUFFERED) failed:', err));
+          }
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -123,6 +137,7 @@ export default function VideoPlayer() {
               default:
                 setVideoError("Unable to load the video stream. Please try again.");
                 setIsLoading(false);
+                playPendingRef.current = false;
                 break;
             }
           }
@@ -146,6 +161,7 @@ export default function VideoPlayer() {
         hls.destroy();
       }
       hlsManagedRef.current = false;
+      playPendingRef.current = false;
     };
   }, [videoSrc]);
 
@@ -163,23 +179,25 @@ export default function VideoPlayer() {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      // If hls.js is in control but video hasn't buffered yet
-      // (readyState 0 = HAVE_NOTHING), queue the play for when canplay fires
-      if (hlsManagedRef.current && videoRef.current.readyState < 3) {
-        playPendingRef.current = true;
-        setIsLoading(true);
-        return;
-      }
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        setVideoError(null);
-      }).catch((error) => {
-        console.error("Video play failed:", error);
-        if (!hlsManagedRef.current) {
-          setVideoError("The video format is not supported or the source link is invalid.");
-        }
-        setIsPlaying(false);
-      });
+      // Always attempt play() — the user gesture is required on mobile to
+      // unblock MSE decoding. If hls.js hasn't buffered yet it will reject;
+      // we catch that and queue the intent for FRAG_BUFFERED / canplay.
+      videoRef.current.play()
+        .then(() => {
+          setIsPlaying(true);
+          setVideoError(null);
+        })
+        .catch((error) => {
+          console.warn("play() not ready yet, queuing:", error.name);
+          if (hlsManagedRef.current) {
+            // Queue for FRAG_BUFFERED or canplay to re-trigger
+            playPendingRef.current = true;
+            setIsLoading(true);
+          } else {
+            setVideoError("The video format is not supported or the source link is invalid.");
+            setIsPlaying(false);
+          }
+        });
     }
   };
 
