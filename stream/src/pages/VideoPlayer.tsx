@@ -104,8 +104,16 @@ export default function VideoPlayer() {
 
       if (isMobile) {
         // Native HLS on mobile — no crossOrigin, no MSE, no codec issues
+        // MUST imperatively remove crossorigin before setting src. If present,
+        // the browser sends CORS preflight for every .ts segment; when Supabase
+        // does not echo Access-Control-Allow-Origin the browser blocks video
+        // frame rendering (tainted canvas) while audio continues = black screen.
         hlsManagedRef.current = false;
+        videoRef.current.removeAttribute('crossorigin');
+        videoRef.current.removeAttribute('src');
+        videoRef.current.load();
         videoRef.current.src = videoSrc;
+        videoRef.current.load();
       } else if (Hls.isSupported()) {
         hlsManagedRef.current = true;
         setVideoError(null);
@@ -392,7 +400,7 @@ export default function VideoPlayer() {
       <video
         ref={videoRef}
         playsInline
-        crossOrigin={isMobileOrSafari ? undefined : "anonymous"}
+        {...(!isMobileOrSafari ? { crossOrigin: 'anonymous' } : {})}
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
