@@ -40,6 +40,7 @@ export default function VideoPlayer() {
   const [isLoading, setIsLoading] = useState(true);
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
+  const hlsManagedRef = useRef<boolean>(false);
 
   // Mock Data fallback
   const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
@@ -81,49 +82,68 @@ export default function VideoPlayer() {
   // HLS logic for .m3u8 streaming
   useEffect(() => {
     let hls: Hls | null = null;
-    if (videoRef.current) {
-      if (videoSrc.includes('.m3u8')) {
-        if (Hls.isSupported()) {
-          hls = new Hls();
-          hls.attachMedia(videoRef.current);
-          
-          hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-            hls?.loadSource(videoSrc);
-          });
+    hlsManagedRef.current = false;
 
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            // Ready to play
-            setVideoError(null);
-          });
-          
-          hls.on(Hls.Events.ERROR, (_event, data) => {
-            if (data.fatal) {
-              switch (data.type) {
-                case Hls.ErrorTypes.NETWORK_ERROR:
-                  hls?.startLoad();
-                  break;
-                case Hls.ErrorTypes.MEDIA_ERROR:
-                  hls?.recoverMediaError();
-                  break;
-                default:
-                  setVideoError("The video format is not supported or the source link is invalid.");
-                  break;
-              }
+    if (!videoRef.current) return;
+
+    if (videoSrc.includes('.m3u8')) {
+      if (Hls.isSupported()) {
+        hlsManagedRef.current = true;
+        setVideoError(null);
+
+        hls = new Hls({
+          enableWorker: false, // workers can silently fail on mobile
+          lowLatencyMode: false,
+          backBufferLength: 90,
+        });
+
+        hls.attachMedia(videoRef.current);
+
+        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+          hls?.loadSource(videoSrc);
+        });
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setVideoError(null);
+          setIsLoading(false);
+        });
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          console.error('HLS error:', data);
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                hls?.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                hls?.recoverMediaError();
+                break;
+              default:
+                setVideoError("Unable to load the video stream. Please try again.");
+                setIsLoading(false);
+                break;
             }
-          });
-        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-          // Native support for Safari (iOS)
-          videoRef.current.src = videoSrc;
-        }
-      } else {
-        // Regular mp4 or other formats
+          }
+        });
+      } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '') {
+        // Native HLS support (Safari / iOS)
+        hlsManagedRef.current = false;
         videoRef.current.src = videoSrc;
+      } else {
+        setVideoError("Your browser does not support HLS video streaming.");
+        setIsLoading(false);
       }
+    } else {
+      // Regular mp4 or other formats
+      hlsManagedRef.current = false;
+      videoRef.current.src = videoSrc;
     }
+
     return () => {
       if (hls) {
         hls.destroy();
       }
+      hlsManagedRef.current = false;
     };
   }, [videoSrc]);
 
@@ -141,12 +161,21 @@ export default function VideoPlayer() {
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
+        // If hls.js is managing the source, the video element will have a src by now
+        // If there's truly no source, readyState will be 0
+        if (hlsManagedRef.current && videoRef.current.readyState === 0) {
+          // HLS not ready yet — ignore tap
+          return;
+        }
         videoRef.current.play().then(() => {
           setIsPlaying(true);
           setVideoError(null);
         }).catch((error) => {
           console.error("Video play failed:", error);
-          setVideoError("The video format is not supported or the source link is invalid.");
+          // Only show error if hls.js is not about to recover it
+          if (!hlsManagedRef.current) {
+            setVideoError("The video format is not supported or the source link is invalid.");
+          }
           setIsPlaying(false);
         });
       }
@@ -154,7 +183,10 @@ export default function VideoPlayer() {
   };
 
   const handleVideoError = () => {
-    setVideoError("The video format is not supported or the source link is invalid/restricted.");
+    // Suppress native error events when hls.js is in control —
+    // the video element has no src initially, so browsers fire a spurious error.
+    if (hlsManagedRef.current) return;
+    setVideoError("The video format is not supported or the source link is invalid.");
     setIsPlaying(false);
     setIsLoading(false);
   };
