@@ -36,9 +36,8 @@ export default function VideoPlayer() {
   const [showControls, setShowControls] = useState(true);
   const [showSubtitlesMenu, setShowSubtitlesMenu] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
-  
-  // -1 means Off. 0 means the first subtitle track.
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
 
@@ -155,8 +154,9 @@ export default function VideoPlayer() {
   };
 
   const handleVideoError = () => {
-    setVideoError("The video format is not supported or the source link is invalid/restricted (like a large Google Drive file).");
+    setVideoError("The video format is not supported or the source link is invalid/restricted.");
     setIsPlaying(false);
+    setIsLoading(false);
   };
 
   const handleTimeUpdate = () => {
@@ -165,10 +165,19 @@ export default function VideoPlayer() {
     }
   };
 
+  const handleWaiting = () => {
+    setIsLoading(true);
+  };
+
+  const handleCanPlay = () => {
+    setIsLoading(false);
+  };
+
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
       setVideoError(null); // Clear any early errors if metadata successfully loaded
+      setIsLoading(false);
     }
   };
 
@@ -252,6 +261,8 @@ export default function VideoPlayer() {
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onWaiting={handleWaiting}
+        onCanPlay={handleCanPlay}
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
         onError={handleVideoError}
@@ -267,6 +278,12 @@ export default function VideoPlayer() {
           />
         ))}
       </video>
+      
+      {isLoading && !videoError && (
+        <div className="player-loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
       
       {videoError && (
         <div className="video-error-overlay">
