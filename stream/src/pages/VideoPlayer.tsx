@@ -108,10 +108,11 @@ export default function VideoPlayer() {
       } else if (Hls.isSupported()) {
         hlsManagedRef.current = true;
         setVideoError(null);
+        let mediaErrorRecoveries = 0;
 
         hls = new Hls({
           enableWorker: false,
-          autoStartLoad: true,  
+          autoStartLoad: true,
           lowLatencyMode: false,
           maxBufferLength: 30,
         });
@@ -130,6 +131,18 @@ export default function VideoPlayer() {
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
           console.error('HLS error:', data.type, data.details);
+
+          // bufferAppendError / bufferAppendingError = codec incompatible with MSE SourceBuffer.
+          // recoverMediaError() loops forever here — go straight to native fallback.
+          if (
+            data.details === 'bufferAppendError' ||
+            data.details === 'bufferAppendingError'
+          ) {
+            console.warn('[HLS] Buffer append error — codec not supported via MSE, trying native');
+            tryNativeFallback();
+            return;
+          }
+
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
@@ -138,8 +151,16 @@ export default function VideoPlayer() {
               case Hls.ErrorTypes.MEDIA_ERROR:
                 if (data.details === 'bufferStalledError') {
                   hls?.startLoad();
-                } else {
+                } else if (mediaErrorRecoveries === 0) {
+                  mediaErrorRecoveries++;
                   hls?.recoverMediaError();
+                } else if (mediaErrorRecoveries === 1) {
+                  mediaErrorRecoveries++;
+                  hls?.swapAudioCodec();
+                  hls?.recoverMediaError();
+                } else {
+                  // hls.js exhausted — try native
+                  tryNativeFallback();
                 }
                 break;
               default:
