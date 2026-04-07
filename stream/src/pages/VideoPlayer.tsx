@@ -38,6 +38,7 @@ export default function VideoPlayer() {
   const [videoError, setVideoError] = useState<string | null>(null);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [subtitleBlobs, setSubtitleBlobs] = useState<Record<string, string>>({});
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hlsManagedRef = useRef<boolean>(false);
@@ -86,6 +87,32 @@ export default function VideoPlayer() {
       }
     };
   }, [isPlaying]);
+
+  // Pre-fetch subtitles to bypass CORS constraints on <track> elements when video has no crossorigin attribute
+  useEffect(() => {
+    if (!movie?.subtitles) return;
+    
+    const objectUrls: string[] = [];
+    
+    movie.subtitles.forEach(async (sub) => {
+      try {
+        const response = await fetch(sub.url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        const blob = new Blob([text], { type: 'text/vtt' });
+        const objectUrl = URL.createObjectURL(blob);
+        objectUrls.push(objectUrl);
+        
+        setSubtitleBlobs(prev => ({ ...prev, [sub.url]: objectUrl }));
+      } catch (error) {
+        console.error('Failed to load subtitle:', sub.url, error);
+      }
+    });
+
+    return () => {
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [movie?.subtitles]);
 
   // HLS logic for .m3u8 streaming
   useEffect(() => {
@@ -414,7 +441,7 @@ export default function VideoPlayer() {
           <track
             key={index}
             kind="subtitles"
-            src={sub.url}
+            src={subtitleBlobs[sub.url] || sub.url}
             srcLang={sub.srclang}
             label={sub.label}
             default={index === 0}
