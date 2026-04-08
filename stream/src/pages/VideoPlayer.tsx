@@ -62,28 +62,29 @@ export default function VideoPlayer() {
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
+  const resetControlsTimer = () => {
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+    }
+    hideControlsTimeoutRef.current = window.setTimeout(() => {
+      if (isPlaying) {
+        setShowControls(false);
+        setShowSubtitlesMenu(false);
+      }
+    }, 3000);
+  };
+
   useEffect(() => {
     const handleActivity = () => {
       setShowControls(true);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-      hideControlsTimeoutRef.current = window.setTimeout(() => {
-        if (isPlaying) {
-          setShowControls(false);
-          setShowSubtitlesMenu(false);
-        }
-      }, 3000);
+      resetControlsTimer();
     };
 
     window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('touchstart', handleActivity, { passive: true });
-    window.addEventListener('click', handleActivity);
+    // Explicitly removed global touchstart and click to prevent conflict with native mobile tapping logic
     
     return () => {
       window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      window.removeEventListener('click', handleActivity);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
       }
@@ -302,6 +303,27 @@ export default function VideoPlayer() {
     }
   };
 
+  const handleVideoClick = () => {
+    const isMobile = window.innerWidth <= 896;
+    
+    if (isMobile) {
+      // Mobile behavior: toggle controls visibility
+      if (showControls) {
+        setShowControls(false);
+        setShowSubtitlesMenu(false);
+        if (hideControlsTimeoutRef.current) {
+          clearTimeout(hideControlsTimeoutRef.current);
+        }
+      } else {
+        setShowControls(true);
+        resetControlsTimer();
+      }
+    } else {
+      // Desktop behavior: play/pause
+      togglePlay();
+    }
+  };
+
   const handleVideoError = () => {
     // Suppress native error events when hls.js is in control —
     // the video element has no src initially, so browsers fire a spurious error.
@@ -429,7 +451,7 @@ export default function VideoPlayer() {
         onLoadedMetadata={handleLoadedMetadata}
         onWaiting={handleWaiting}
         onCanPlay={handleCanPlay}
-        onClick={togglePlay}
+        onClick={handleVideoClick}
         onDoubleClick={toggleFullscreen}
         onError={handleVideoError}
       >
