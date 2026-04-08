@@ -429,6 +429,18 @@
   position: relative;
 }
 
+/* Speed Menu Popover overrides */
+.speed-wrapper {
+  position: relative;
+}
+
+.speed-menu {
+  min-width: 160px !important;
+  right: -30px !important;
+  display: block !important;
+  padding: 16px !important;
+}
+
 .subtitles-menu {
   position: absolute;
   bottom: 70px;

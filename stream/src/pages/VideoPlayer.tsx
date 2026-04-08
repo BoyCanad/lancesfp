@@ -15,7 +15,6 @@ import {
   Gauge,
   SkipForward,
   Flag,
-  Lock,
   Scissors
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
@@ -83,6 +82,8 @@ export default function VideoPlayer() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showSubtitlesMenu, setShowSubtitlesMenu] = useState(false);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,6 +119,7 @@ export default function VideoPlayer() {
       if (isPlaying) {
         setShowControls(false);
         setShowSubtitlesMenu(false);
+        setShowSpeedMenu(false);
       }
     }, 3000);
   };
@@ -381,6 +383,7 @@ export default function VideoPlayer() {
       if (showControls) {
         setShowControls(false);
         setShowSubtitlesMenu(false);
+        setShowSpeedMenu(false);
         if (hideControlsTimeoutRef.current) {
           clearTimeout(hideControlsTimeoutRef.current);
         }
@@ -489,6 +492,14 @@ export default function VideoPlayer() {
     }
   };
 
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    }
+    setShowSpeedMenu(false);
+  };
+
   const handleSubtitleChange = (index: number) => {
     setActiveSubtitle(index);
     if (videoRef.current) {
@@ -584,8 +595,8 @@ export default function VideoPlayer() {
             <Flag size={38} />
             <span className="tooltip-text tooltip-bottom">Report an issue</span>
           </button>
-          <button className="flag-button lock-button mobile-only">
-            <Lock size={24} />
+          <button className="flag-button mobile-only" onClick={toggleFullscreen}>
+            {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
           </button>
         </div>
       </div>
@@ -693,7 +704,7 @@ export default function VideoPlayer() {
             )}
             
             <div className="subtitles-wrapper">
-              <button className="control-btn with-label tooltip" onClick={() => setShowSubtitlesMenu(!showSubtitlesMenu)}>
+              <button className="control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
                 <MessageSquareText size={38} />
                 <span className="tooltip-text">Subtitles / Audio</span>
               </button>
@@ -729,9 +740,34 @@ export default function VideoPlayer() {
               )}
             </div>
 
-            <button className="control-btn">
-              <Gauge size={38} />
-            </button>
+            <div className="speed-wrapper" style={{ position: 'relative' }}>
+              <button 
+                className="control-btn tooltip" 
+                onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}
+              >
+                <Gauge size={38} />
+                <span className="tooltip-text">Playback Speed</span>
+              </button>
+              
+              {showSpeedMenu && (
+                <div className="speed-menu subtitles-menu">
+                  <div className="menu-section">
+                    <h4>Speed</h4>
+                    <ul>
+                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                        <li 
+                          key={speed}
+                          className={playbackSpeed === speed ? "active" : ""}
+                          onClick={() => handleSpeedChange(speed)}
+                        >
+                          {speed === 1 ? "Normal (1x)" : `${speed}x`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button className="control-btn" onClick={toggleFullscreen}>
               {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
@@ -744,11 +780,29 @@ export default function VideoPlayer() {
               <Scissors size={20} />
               <span>Clip</span>
             </div>
-            <div className="mobile-bottom-btn">
+            <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}>
               <Gauge size={20} />
-              <span>Speed (1x)</span>
+              <span>Speed ({playbackSpeed}x)</span>
+              {showSpeedMenu && (
+                <div className="speed-menu subtitles-menu mobile-subtitles-menu">
+                  <div className="menu-section">
+                    <h4>Playback Speed</h4>
+                    <ul>
+                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                        <li 
+                          key={speed}
+                          className={playbackSpeed === speed ? "active" : ""}
+                          onClick={() => handleSpeedChange(speed)}
+                        >
+                          {speed === 1 ? "Normal" : `${speed}x`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="mobile-bottom-btn" onClick={() => setShowSubtitlesMenu(!showSubtitlesMenu)}>
+            <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
               <MessageSquareText size={20} />
               <span>Audio & Subtitles</span>
               {showSubtitlesMenu && (
