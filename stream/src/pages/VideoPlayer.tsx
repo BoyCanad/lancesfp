@@ -16,8 +16,7 @@ import {
   SkipForward,
   Flag,
   Lock,
-  Scissors,
-  Sun
+  Scissors
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
@@ -42,6 +41,7 @@ export default function VideoPlayer() {
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isNativePlayer, setIsNativePlayer] = useState(false);
+  const [subtitleBlobs, setSubtitleBlobs] = useState<Record<string, string>>({});
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hlsManagedRef = useRef<boolean>(false);
@@ -63,7 +63,7 @@ export default function VideoPlayer() {
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
   useEffect(() => {
-    const handleMouseMove = () => {
+    const handleActivity = () => {
       setShowControls(true);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
@@ -76,14 +76,45 @@ export default function VideoPlayer() {
       }, 3000);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('touchstart', handleActivity, { passive: true });
+    window.addEventListener('click', handleActivity);
+    
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('click', handleActivity);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
       }
     };
   }, [isPlaying]);
+
+  // Pre-fetch subtitles to bypass CORS constraints on <track> elements when video has crossorigin='anonymous'
+  useEffect(() => {
+    if (!movie?.subtitles) return;
+    
+    const objectUrls: string[] = [];
+    
+    movie.subtitles.forEach(async (sub) => {
+      try {
+        const response = await fetch(sub.url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        const blob = new Blob([text], { type: 'text/vtt' });
+        const objectUrl = URL.createObjectURL(blob);
+        objectUrls.push(objectUrl);
+        
+        setSubtitleBlobs(prev => ({ ...prev, [sub.url]: objectUrl }));
+      } catch (error) {
+        console.error('Failed to load subtitle:', sub.url, error);
+      }
+    });
+
+    return () => {
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [movie?.subtitles]);
 
   // HLS logic for .m3u8 streaming
   useEffect(() => {
@@ -382,7 +413,9 @@ export default function VideoPlayer() {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  const showSkipIntro = currentTime < 30; // Show skip intro for first 30 seconds
+  const skipTime = movie?.id === 'f1' || movie?.id === 'eb1' ? 10 : 30;
+  const skipLabel = movie?.id === 'f1' || movie?.id === 'eb1' ? "Skip Logo" : "Skip Intro";
+  const showSkipIntro = currentTime < skipTime; 
 
   return (
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
@@ -404,7 +437,7 @@ export default function VideoPlayer() {
           <track
             key={index}
             kind="subtitles"
-            src={sub.url}
+            src={subtitleBlobs[sub.url] || sub.url}
             srcLang={sub.srclang}
             label={sub.label}
             default={index === 0}
@@ -427,7 +460,7 @@ export default function VideoPlayer() {
       {/* Top Bar Navigation */}
       <div className="player-top-bar">
         <button className="back-button" onClick={() => navigate(-1)}>
-          <ArrowLeft size={28} />
+          <ArrowLeft size={42} />
         </button>
         
         {/* Mobile Title */}
@@ -437,7 +470,7 @@ export default function VideoPlayer() {
         
         <div className="top-right-controls">
           <button className="flag-button lock-button desktop-only tooltip">
-            <Flag size={24} />
+            <Flag size={38} />
             <span className="tooltip-text tooltip-bottom">Report an issue</span>
           </button>
           <button className="flag-button lock-button mobile-only">
@@ -446,41 +479,33 @@ export default function VideoPlayer() {
         </div>
       </div>
 
-      {/* Skip Intro Button */}
+      {/* Skip Intro/Logo Button */}
       {showSkipIntro && (
-        <button className="skip-intro-btn" onClick={() => { if(videoRef.current) videoRef.current.currentTime = 30; }}>
-          Skip Intro
+        <button className="skip-intro-btn" onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}>
+          {skipLabel}
         </button>
       )}
+
+      {/* Center Mobile Controls (Hidden on Desktop) */}
+      <div className={`center-mobile-controls mobile-only ${showControls ? 'show' : ''}`}>
+        <button className="control-btn center-action-btn" onClick={skipBackward}>
+          <RotateCcw size={36} />
+          <span className="skip-text-inside">10</span>
+        </button>
+        
+        <button className="control-btn center-play-btn" onClick={togglePlay}>
+          {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
+        </button>
+        
+        <button className="control-btn center-action-btn" onClick={skipForward}>
+          <RotateCw size={36} />
+          <span className="skip-text-inside">10</span>
+        </button>
+      </div>
 
       {/* Controls Overlay */}
       <div className="player-controls-overlay">
         
-        {/* Center Mobile Controls (Hidden on Desktop) */}
-        <div className="center-mobile-controls mobile-only">
-          <button className="control-btn center-action-btn" onClick={skipBackward}>
-            <RotateCcw size={36} />
-            <span className="skip-text-inside">10</span>
-          </button>
-          
-          <button className="control-btn center-play-btn" onClick={togglePlay}>
-            {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
-          </button>
-          
-          <button className="control-btn center-action-btn" onClick={skipForward}>
-            <RotateCw size={36} />
-            <span className="skip-text-inside">10</span>
-          </button>
-        </div>
-
-        {/* Mobile Left Overlay - Brightness */}
-        <div className="mobile-left-controls mobile-only">
-          <Sun size={20} color="white" />
-          <div className="brightness-slider-wrapper">
-            <input type="range" min="0" max="100" defaultValue="50" className="brightness-vertical" />
-          </div>
-        </div>
-
         {/* Timeline */}
         <div className="timeline-container">
           <input
@@ -502,20 +527,20 @@ export default function VideoPlayer() {
         <div className="bottom-controls">
           <div className="controls-left desktop-only">
             <button className="control-btn" onClick={togglePlay}>
-              {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
+              {isPlaying ? <Pause size={42} fill="currentColor" /> : <Play size={42} fill="currentColor" />}
             </button>
             <button className="control-btn" onClick={skipBackward}>
-              <RotateCcw size={24} />
+              <RotateCcw size={38} />
               <span className="skip-text-inside">10</span>
             </button>
             <button className="control-btn" onClick={skipForward}>
-              <RotateCw size={24} />
+              <RotateCw size={38} />
               <span className="skip-text-inside">10</span>
             </button>
             
             <div className="volume-container">
               <button className="control-btn" onClick={toggleMute}>
-                {isMuted || volume === 0 ? <VolumeX size={28} /> : <Volume2 size={28} />}
+                {isMuted || volume === 0 ? <VolumeX size={42} /> : <Volume2 size={42} />}
               </button>
               <input
                 type="range"
@@ -543,21 +568,21 @@ export default function VideoPlayer() {
           <div className="controls-right desktop-only">
             {!isMovie && (
               <button className="control-btn with-label tooltip">
-                <SkipForward size={24} />
+                <SkipForward size={38} />
                 <span className="tooltip-text">Next Episode</span>
               </button>
             )}
 
             {!isMovie && (
               <button className="control-btn with-label tooltip">
-                <Copy size={24} />
+                <Copy size={38} />
                 <span className="tooltip-text">Episodes</span>
               </button>
             )}
             
             <div className="subtitles-wrapper">
               <button className="control-btn with-label tooltip" onClick={() => setShowSubtitlesMenu(!showSubtitlesMenu)}>
-                <MessageSquareText size={24} />
+                <MessageSquareText size={38} />
                 <span className="tooltip-text">Subtitles / Audio</span>
               </button>
               {showSubtitlesMenu && (
@@ -593,11 +618,11 @@ export default function VideoPlayer() {
             </div>
 
             <button className="control-btn">
-              <Gauge size={24} />
+              <Gauge size={38} />
             </button>
 
             <button className="control-btn" onClick={toggleFullscreen}>
-              {isFullscreen ? <Minimize size={28} /> : <Maximize size={28} />}
+              {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
             </button>
           </div>
 
