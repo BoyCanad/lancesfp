@@ -38,18 +38,12 @@ export default function VideoPlayer() {
   const [videoError, setVideoError] = useState<string | null>(null);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [subtitleBlobs, setSubtitleBlobs] = useState<Record<string, string>>({});
+  const [isNativePlayer, setIsNativePlayer] = useState(false);
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hlsManagedRef = useRef<boolean>(false);
   const hlsRef = useRef<Hls | null>(null);
   const playPendingRef = useRef<boolean>(false);
-
-  // Detect mobile/Safari — these use native HLS (no hls.js MSE) and must NOT have
-  // crossOrigin set, otherwise CORS preflight blocks video frame rendering (audio-only bug)
-  const isMobileOrSafari =
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   // Mock Data fallback
   const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
@@ -87,32 +81,6 @@ export default function VideoPlayer() {
       }
     };
   }, [isPlaying]);
-
-  // Pre-fetch subtitles to bypass CORS constraints on <track> elements when video has no crossorigin attribute
-  useEffect(() => {
-    if (!movie?.subtitles) return;
-    
-    const objectUrls: string[] = [];
-    
-    movie.subtitles.forEach(async (sub) => {
-      try {
-        const response = await fetch(sub.url);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const text = await response.text();
-        const blob = new Blob([text], { type: 'text/vtt' });
-        const objectUrl = URL.createObjectURL(blob);
-        objectUrls.push(objectUrl);
-        
-        setSubtitleBlobs(prev => ({ ...prev, [sub.url]: objectUrl }));
-      } catch (error) {
-        console.error('Failed to load subtitle:', sub.url, error);
-      }
-    });
-
-    return () => {
-      objectUrls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [movie?.subtitles]);
 
   // HLS logic for .m3u8 streaming
   useEffect(() => {
@@ -196,6 +164,7 @@ export default function VideoPlayer() {
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl') !== '') {
         // Native fallback for iOS Safari and missing MSE browsers
         hlsManagedRef.current = false;
+        setIsNativePlayer(true);
         videoRef.current.removeAttribute('crossorigin');
         videoRef.current.removeAttribute('src');
         videoRef.current.load();
@@ -240,6 +209,7 @@ export default function VideoPlayer() {
     }
     hlsManagedRef.current = false;
     playPendingRef.current = false;
+    setIsNativePlayer(true);
     // MUST remove crossorigin before setting native src —
     // if left on, the browser makes CORS preflight requests for .ts segments.
     // If Supabase doesn't echo back Access-Control-Allow-Origin, the browser
@@ -416,7 +386,8 @@ export default function VideoPlayer() {
       <video
         ref={videoRef}
         playsInline
-        {...(!isMobileOrSafari ? { crossOrigin: 'anonymous' } : {})}
+        webkit-playsinline="true"
+        {...(!isNativePlayer ? { crossOrigin: 'anonymous' } : {})}
         className="video-element"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
@@ -426,11 +397,11 @@ export default function VideoPlayer() {
         onDoubleClick={toggleFullscreen}
         onError={handleVideoError}
       >
-        {movie?.subtitles?.map((sub, index) => (
+        {!isNativePlayer && movie?.subtitles?.map((sub, index) => (
           <track
             key={index}
             kind="subtitles"
-            src={subtitleBlobs[sub.url] || sub.url}
+            src={sub.url}
             srcLang={sub.srclang}
             label={sub.label}
             default={index === 0}

@@ -40,7 +40,7 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     isOriginal: true,
-    videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
+    videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/new_index.m3u8",
     subtitles: [
       {
         label: "Filipino",
