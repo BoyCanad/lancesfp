@@ -22,6 +22,52 @@ import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
 import './VideoPlayer.css';
 
+interface ParsedCue {
+  start: number;
+  end: number;
+  text: string;
+}
+
+const parseVTT = (vttData: string): ParsedCue[] => {
+  const cues: ParsedCue[] = [];
+  const lines = vttData.split(/\r?\n/);
+  let i = 0;
+  
+  const timeToSeconds = (timeStr: string) => {
+    const parts = timeStr.split(':');
+    let secs = 0;
+    if (parts.length === 3) {
+      secs = parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+    } else if (parts.length === 2) {
+      secs = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+    } else {
+      secs = parseFloat(timeStr);
+    }
+    return isNaN(secs) ? 0 : secs;
+  };
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line.includes('-->')) {
+      const parts = line.split('-->');
+      const start = timeToSeconds(parts[0].trim());
+      const end = timeToSeconds(parts[1].trim());
+      
+      i++;
+      let text = '';
+      while (i < lines.length && lines[i].trim() !== '') {
+        const textLine = lines[i].trim().replace(/<[^>]+>/g, '');
+        text += (text ? '\n' : '') + textLine;
+        i++;
+      }
+      cues.push({ start, end, text });
+    } else {
+      i++;
+    }
+  }
+  return cues;
+};
+
 export default function VideoPlayer() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -41,9 +87,11 @@ export default function VideoPlayer() {
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isNativePlayer, setIsNativePlayer] = useState(false);
-  const [subtitleBlobs, setSubtitleBlobs] = useState<Record<string, string>>({});
+  const [parsedSubtitles, setParsedSubtitles] = useState<Record<string, ParsedCue[]>>({});
+  const [showRating, setShowRating] = useState(false);
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
+  const hasShownRatingRef = useRef<boolean>(false);
   const hlsManagedRef = useRef<boolean>(false);
   const hlsRef = useRef<Hls | null>(null);
   const playPendingRef = useRef<boolean>(false);
@@ -91,31 +139,53 @@ export default function VideoPlayer() {
     };
   }, [isPlaying]);
 
-  // Pre-fetch subtitles to bypass CORS constraints on <track> elements when video has crossorigin='anonymous'
+  // Show Age Rating once when playback starts
+  useEffect(() => {
+    if (isPlaying && !hasShownRatingRef.current) {
+      hasShownRatingRef.current = true;
+      setShowRating(true);
+      
+      const timer = setTimeout(() => {
+        setShowRating(false);
+      }, 7000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPlaying]);
+
+  // Pre-fetch subtitles and parse them to bypass native OS caption styling
   useEffect(() => {
     if (!movie?.subtitles) return;
-    
-    const objectUrls: string[] = [];
     
     movie.subtitles.forEach(async (sub) => {
       try {
         const response = await fetch(sub.url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const text = await response.text();
-        const blob = new Blob([text], { type: 'text/vtt' });
-        const objectUrl = URL.createObjectURL(blob);
-        objectUrls.push(objectUrl);
+        const parsed = parseVTT(text);
         
-        setSubtitleBlobs(prev => ({ ...prev, [sub.url]: objectUrl }));
+        setParsedSubtitles(prev => ({ ...prev, [sub.url]: parsed }));
       } catch (error) {
         console.error('Failed to load subtitle:', sub.url, error);
       }
     });
-
-    return () => {
-      objectUrls.forEach(url => URL.revokeObjectURL(url));
-    };
   }, [movie?.subtitles]);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    const hideTracks = () => {
+      const tracks = videoRef.current?.textTracks;
+      if (!tracks) return;
+      for (let i = 0; i < tracks.length; i++) {
+        if (tracks[i].mode !== 'hidden') {
+          tracks[i].mode = 'hidden';
+        }
+      }
+    };
+    hideTracks();
+    const interval = setInterval(hideTracks, 500);
+    return () => clearInterval(interval);
+  }, [activeSubtitle]);
 
   // HLS logic for .m3u8 streaming
   useEffect(() => {
@@ -424,7 +494,7 @@ export default function VideoPlayer() {
     if (videoRef.current) {
       const tracks = videoRef.current.textTracks;
       for (let i = 0; i < tracks.length; i++) {
-        tracks[i].mode = i === index ? 'showing' : 'hidden';
+        tracks[i].mode = 'hidden';
       }
     }
   };
@@ -437,7 +507,6 @@ export default function VideoPlayer() {
 
   const skipTime = movie?.id === 'f1' || movie?.id === 'eb1' ? 10 : 30;
   const skipLabel = movie?.id === 'f1' || movie?.id === 'eb1' ? "Skip Logo" : "Skip Intro";
-  const showSkipIntro = currentTime < skipTime; 
 
   return (
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
@@ -455,17 +524,25 @@ export default function VideoPlayer() {
         onDoubleClick={toggleFullscreen}
         onError={handleVideoError}
       >
-        {!isNativePlayer && movie?.subtitles?.map((sub, index) => (
-          <track
-            key={index}
-            kind="subtitles"
-            src={subtitleBlobs[sub.url] || sub.url}
-            srcLang={sub.srclang}
-            label={sub.label}
-            default={index === 0}
-          />
-        ))}
+        {/* Subtitles handled by custom overlay */}
       </video>
+      {/* Custom Subtitle Overlay */}
+      {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
+        <div className="custom-subtitle-overlay-container">
+          {parsedSubtitles[movie.subtitles[activeSubtitle].url]
+            .filter(cue => currentTime >= cue.start && currentTime <= cue.end)
+            .map((cue, idx) => (
+              <div key={idx} className="custom-subtitle-text">
+                {cue.text.split('\n').map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    <br />
+                  </span>
+                ))}
+              </div>
+            ))}
+        </div>
+      )}
       
       {isLoading && !videoError && (
         <div className="player-loading-overlay">
@@ -478,6 +555,18 @@ export default function VideoPlayer() {
           <p>{videoError}</p>
         </div>
       )}
+
+      {/* Age Rating Overlay - Netflix Style */}
+      <div className={`age-rating-overlay ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
+        <div className="age-rating-content">
+          <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
+          {movie.contentWarnings && movie.contentWarnings.length > 0 && (
+            <p className="age-rating-warnings">
+              {movie.contentWarnings.join(', ')}
+            </p>
+          )}
+        </div>
+      </div>
       
       {/* Top Bar Navigation */}
       <div className="player-top-bar">
@@ -502,11 +591,12 @@ export default function VideoPlayer() {
       </div>
 
       {/* Skip Intro/Logo Button */}
-      {showSkipIntro && (
-        <button className="skip-intro-btn" onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}>
-          {skipLabel}
-        </button>
-      )}
+      <button 
+        className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
+        onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
+      >
+        {skipLabel}
+      </button>
 
       {/* Center Mobile Controls (Hidden on Desktop) */}
       <div className={`center-mobile-controls mobile-only ${showControls ? 'show' : ''}`}>

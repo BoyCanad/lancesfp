@@ -81,6 +81,10 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     else if (movie.id === 'f2' || movie.title === 'Minsan') navigate('/minsan');
   };
 
+  const handlePlay = (movie: Movie) => {
+    navigate(`/watch/${movie.id}`);
+  };
+
   // Touch swipe (mobile)
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -123,7 +127,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           </div>
           <p className="hero__desc">{movie.description}</p>
           <div className="hero__actions">
-            <button className="hero__btn hero__btn--play"><Play size={15} fill="white" /> Play</button>
+            <button className="hero__btn hero__btn--play" onClick={() => handlePlay(movie)}><Play size={15} fill="white" /> Play</button>
             <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
             <button className="hero__btn hero__btn--secondary"><Bookmark size={15} /> Save</button>
           </div>
@@ -176,7 +180,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                     </div>
                     <p className="hero__desc">{movie.description}</p>
                     <div className="hero__actions">
-                      <button className="hero__btn hero__btn--play"><Play size={15} fill="white" /> Play</button>
+                      <button className="hero__btn hero__btn--play" onClick={() => handlePlay(movie)}><Play size={15} fill="white" /> Play</button>
                       <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
                       <button className="hero__btn hero__btn--secondary"><Bookmark size={15} /> Save</button>
                     </div>

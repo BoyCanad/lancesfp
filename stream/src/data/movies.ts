@@ -9,6 +9,7 @@ export interface Movie {
   duration: string;
   genre: string[];
   ageRating: string;
+  contentWarnings?: string[];
   isOriginal?: boolean;
   progress?: number; // for "continue watching", 0-100
   desktopOnly?: boolean;
@@ -39,6 +40,7 @@ export const featuredMovies: Movie[] = [
     duration: "49m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
     isOriginal: true,
     videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/new_index.m3u8",
     subtitles: [
@@ -290,6 +292,7 @@ export const elBimboFeatured: Movie = {
   duration: "3h 15m",
   genre: ["Musical", "Drama", "Nostalgia"],
   ageRating: "PG-13",
+  contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
   quality: "HD",
   mobileThumbnail: "/images/el-bimbo-mobile.webp",
   videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
