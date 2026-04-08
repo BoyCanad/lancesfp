@@ -516,8 +516,9 @@ export default function VideoPlayer() {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  const skipTime = movie?.id === 'f1' || movie?.id === 'eb1' ? 10 : 30;
-  const skipLabel = movie?.id === 'f1' || movie?.id === 'eb1' ? "Skip Logo" : "Skip Intro";
+  const skipIds = ['f1', 'eb1', 'f4', 'f5'];
+  const skipTime = skipIds.includes(movie?.id) ? 10 : 30;
+  const skipLabel = skipIds.includes(movie?.id) ? "Skip Logo" : "Skip Intro";
 
   return (
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
@@ -602,12 +603,14 @@ export default function VideoPlayer() {
       </div>
 
       {/* Skip Intro/Logo Button */}
-      <button 
-        className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
-        onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
-      >
-        {skipLabel}
-      </button>
+      {movie?.id !== 'f2' && (
+        <button 
+          className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
+          onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
+        >
+          {skipLabel}
+        </button>
+      )}
 
       {/* Center Mobile Controls (Hidden on Desktop) */}
       <div className={`center-mobile-controls mobile-only ${showControls ? 'show' : ''}`}>

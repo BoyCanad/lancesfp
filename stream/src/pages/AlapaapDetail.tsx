@@ -1,8 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Bookmark, Download } from 'lucide-react';
-import { featuredMovies } from '../data/movies';
+import { Play, Bookmark, Download, Library } from 'lucide-react';
+import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
+import ContentRow from '../components/ContentRow';
 import './MovieDetail.css';
+
+const elBimboCollections = [
+  elBimboFeatured,
+  featuredMovies[1],
+  featuredMovies[3],
+  featuredMovies[4],
+  featuredMovies[5],
+  featuredMovies[6],
+  featuredMovies[7],
+  featuredMovies[8],
+  ...[...trendingMovies].reverse().slice(7)
+];
 
 export default function AlapaapDetail() {
   const movie = featuredMovies.find((m) => m.id === 'f5');
@@ -25,7 +38,8 @@ export default function AlapaapDetail() {
     : '/images/alapaap-detail.webp';
 
   return (
-    <div className="mdetail-container">
+    <div className="mdetail-page-wrapper">
+      <div className="mdetail-container">
       {/* Background Image layer */}
       <div
         className="mdetail-bg"
@@ -81,6 +95,18 @@ export default function AlapaapDetail() {
           </div>
         </div>
 
+      </div>
+      </div>
+      
+      <div className="mdetail-collections-wrapper">
+        <ContentRow
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Library size={24} color="#e50914" /> Ang Huling El Bimbo Collections
+            </div>
+          }
+          movies={elBimboCollections.filter(m => m.title !== movie?.title)}
+        />
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 import { useRef, useState, memo, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play, Plus, Info } from 'lucide-react';
 import type { Movie } from '../data/movies';
 import './ContentRow.css';
 
 interface ContentRowProps {
-  title: string;
+  title: ReactNode;
   movies: Movie[];
   showProgress?: boolean;
   variant?: 'default' | 'wide';
@@ -153,7 +154,12 @@ export default function ContentRow({
       navigate('/tindahan');
     } else if (movie.id === 'f5' || movie.title === 'Alapaap/Overdrive') {
       navigate('/alapaap');
+    } else if (movie.id === 'f6' || movie.title === 'Spoliarium/Graduation') {
+      navigate('/spoliarium');
+    } else if (movie.id === 'f7' || movie.title === 'Pare Ko') {
+      navigate('/pare-ko');
     }
+
   }, [navigate]);
 
   return (

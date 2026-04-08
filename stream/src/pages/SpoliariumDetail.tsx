@@ -17,8 +17,8 @@ const elBimboCollections = [
   ...[...trendingMovies].reverse().slice(7)
 ];
 
-export default function MinsanDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f2');
+export default function SpoliariumDetail() {
+  const movie = featuredMovies.find((m) => m.id === 'f6');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -34,8 +34,8 @@ export default function MinsanDetail() {
   }
 
   const backgroundImage = isMobile
-    ? '/images/minsan-detail-mobile.webp'
-    : '/images/minsan-detail.webp';
+    ? '/images/spoliarium-detail-mobile.webp'
+    : '/images/spoliarium-detail.webp';
 
   return (
     <div className="mdetail-page-wrapper">
@@ -53,7 +53,7 @@ export default function MinsanDetail() {
       {/* Content wrapper */}
       <div className="mdetail-content">
 
-        {/* Logo */}
+        {/* Logo or Title */}
         {movie.logo ? (
           <img src={movie.logo} alt={movie.title} className="mdetail-logo" />
         ) : (
@@ -81,7 +81,7 @@ export default function MinsanDetail() {
 
         {/* Action Buttons */}
         <div className="mdetail-actions">
-          <Link to={`/watch/minsan`} className="mdetail-btn mdetail-btn-play" style={{ textDecoration: 'none' }}>
+          <Link to={`/watch/spoliarium`} className="mdetail-btn mdetail-btn-play" style={{ textDecoration: 'none' }}>
             <Play size={18} fill="black" strokeWidth={0} /> Play
           </Link>
 
@@ -97,7 +97,7 @@ export default function MinsanDetail() {
 
       </div>
       </div>
-      
+
       <div className="mdetail-collections-wrapper">
         <ContentRow
           title={

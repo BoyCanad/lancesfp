@@ -1,5 +1,16 @@
 /* MovieDetail.css */
 
+.mdetail-page-wrapper {
+  background-color: #0b0b12;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.mdetail-collections-wrapper {
+  padding: 0 0 60px 0;
+  background-color: transparent;
+}
+
 .mdetail-container {
   position: relative;
   width: 100%;
@@ -9,7 +20,7 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  background-color: #0b0b12;
+  background-color: transparent;
 }
 
 .mdetail-bg {

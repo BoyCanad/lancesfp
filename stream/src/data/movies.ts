@@ -67,9 +67,10 @@ export const featuredMovies: Movie[] = [
     description: "“Minsan” is a heartfelt reflection on friendship, nostalgia, and the bittersweet passage of time. It tells the story of people who once shared deep connections and carefree moments, only to drift apart as life moves forward.",
     rating: "9.5",
     year: "2026",
-    duration: "5m",
+    duration: "1h 35m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/index.m3u8",
   },
   {
     id: "f3",
@@ -115,9 +116,10 @@ export const featuredMovies: Movie[] = [
   {
     id: "f6",
     title: "Spoliarium/Graduation",
+    logo: "/images/spoliarium-logo.webp",
     thumbnail: "/images/spoliarium.webp",
     banner: "/images/spoliarium.webp",
-    description: "A powerful and emotionally charged performance of “Spoliarium / Graduation” from Ang Huling El Bimbo, this scene marks a turning point in the story. As the characters transition from youth to adulthood, the performance contrasts celebration with underlying tension—unveiling hidden struggles, fractured friendships, and the harsh realities that begin to surface. It captures the loss of innocence and the weight of choices that will shape their futures.",
+    description: "The Spoliarium/Graduation sequence is a haunting shift from trauma to irony. It begins with the visceral \u201cSpoliarium\u201d tableau, symbolizing Joy\u2019s violation and the death of her innocence, before cutting to the bittersweet Graduation ceremony. Amidst the celebration, Marko finally confesses his love to Joy, a heartbreaking declaration of a future already shattered by the darkness that preceded it.",
     rating: "9.9",
     year: "2026",
     duration: "25m",
@@ -127,10 +129,14 @@ export const featuredMovies: Movie[] = [
   {
     id: "f7",
     title: "Pare Ko",
+    logo: "/images/pare-ko-logo.webp",
     thumbnail: "/images/pare-ko.webp",
-    banner: "/images/pare-ko.webp",
-    description: "A raw and emotionally intense performance of “Pare Ko” from Ang Huling El Bimbo, this scene delves into heartbreak and vulnerability. Through candid expression and gritty energy, it reveals the characters’ inner struggles with love, rejection, and confusion—marking a shift from carefree youth to more complicated, painful realities that begin to strain their friendships.",
+    banner: "/images/pare-ko-detail.webp",
+    mobileBanner: "/images/pare-ko-detail-mobile.webp",
+    cardBanner: "/images/pare-ko.webp",
+    description: "The \"Pare Ko\" performance is a high-energy, fan-favorite sequence that captures the chaotic brotherhood of ROTC training. Set to the Eraserheads' iconic anthem of heartbreak and camaraderie, the scene features the boys—Marco, Edrian, Xian—navigating the rigors of military drills while lamenting a \"friendzone\" romance. The choreography is sharp and rhythmic, using wooden rifles and marching formations to turn military discipline into a vibrant musical spectacle. It perfectly balances comedic relief with the raw, relatable angst of young love, solidifying the deep bond between the three lead characters.",
     rating: "9.6",
+
     year: "2026",
     duration: "18m",
     genre: ["Musical", "Drama", "Nostalgia"],
@@ -297,3 +303,4 @@ export const elBimboFeatured: Movie = {
   mobileThumbnail: "/images/el-bimbo-mobile.webp",
   videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
 };
+

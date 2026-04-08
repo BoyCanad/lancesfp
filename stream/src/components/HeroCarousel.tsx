@@ -79,10 +79,16 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const handleMoreInfo = (movie: Movie) => {
     if (movie.id === 'f1' || movie.title.includes('Ang Huling El Bimbo')) navigate('/ang-huling-el-bimbo-play');
     else if (movie.id === 'f2' || movie.title === 'Minsan') navigate('/minsan');
+    else if (movie.id === 'f7' || movie.title === 'Pare Ko') navigate('/pare-ko');
+
   };
 
   const handlePlay = (movie: Movie) => {
-    navigate(`/watch/${movie.id}`);
+    if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
+      navigate('/watch/ang-huling-el-bimbo-play');
+    } else {
+      navigate(`/watch/${movie.id}`);
+    }
   };
 
   // Touch swipe (mobile)

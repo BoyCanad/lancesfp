@@ -6,6 +6,9 @@ import MovieDetail from './pages/MovieDetail.tsx';
 import MinsanDetail from './pages/MinsanDetail.tsx';
 import TindahanDetail from './pages/TindahanDetail.tsx';
 import AlapaapDetail from './pages/AlapaapDetail.tsx';
+import SpoliariumDetail from './pages/SpoliariumDetail.tsx';
+import PareKoDetail from './pages/PareKoDetail.tsx';
+
 import VideoPlayer from './pages/VideoPlayer.tsx';
 import './App.css';
 
@@ -23,6 +26,9 @@ function App() {
         <Route path="/minsan" element={<MinsanDetail />} />
         <Route path="/tindahan" element={<TindahanDetail />} />
         <Route path="/alapaap" element={<AlapaapDetail />} />
+        <Route path="/spoliarium" element={<SpoliariumDetail />} />
+        <Route path="/pare-ko" element={<PareKoDetail />} />
+
         <Route path="/watch/:id" element={<VideoPlayer />} />
       </Routes>
 
