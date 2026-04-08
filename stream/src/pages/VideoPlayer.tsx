@@ -14,7 +14,10 @@ import {
   Copy,
   Gauge,
   SkipForward,
-  Flag
+  Flag,
+  Lock,
+  Scissors,
+  Sun
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
@@ -424,13 +427,23 @@ export default function VideoPlayer() {
       {/* Top Bar Navigation */}
       <div className="player-top-bar">
         <button className="back-button" onClick={() => navigate(-1)}>
-          <ArrowLeft size={32} />
+          <ArrowLeft size={28} />
         </button>
         
-        <button className="flag-button tooltip">
-          <Flag size={28} />
-          <span className="tooltip-text tooltip-bottom">Report an issue</span>
-        </button>
+        {/* Mobile Title */}
+        <div className="mobile-top-title mobile-only">
+          {title}
+        </div>
+        
+        <div className="top-right-controls">
+          <button className="flag-button lock-button desktop-only tooltip">
+            <Flag size={24} />
+            <span className="tooltip-text tooltip-bottom">Report an issue</span>
+          </button>
+          <button className="flag-button lock-button mobile-only">
+            <Lock size={24} />
+          </button>
+        </div>
       </div>
 
       {/* Skip Intro Button */}
@@ -443,6 +456,31 @@ export default function VideoPlayer() {
       {/* Controls Overlay */}
       <div className="player-controls-overlay">
         
+        {/* Center Mobile Controls (Hidden on Desktop) */}
+        <div className="center-mobile-controls mobile-only">
+          <button className="control-btn center-action-btn" onClick={skipBackward}>
+            <RotateCcw size={36} />
+            <span className="skip-text-inside">10</span>
+          </button>
+          
+          <button className="control-btn center-play-btn" onClick={togglePlay}>
+            {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
+          </button>
+          
+          <button className="control-btn center-action-btn" onClick={skipForward}>
+            <RotateCw size={36} />
+            <span className="skip-text-inside">10</span>
+          </button>
+        </div>
+
+        {/* Mobile Left Overlay - Brightness */}
+        <div className="mobile-left-controls mobile-only">
+          <Sun size={20} color="white" />
+          <div className="brightness-slider-wrapper">
+            <input type="range" min="0" max="100" defaultValue="50" className="brightness-vertical" />
+          </div>
+        </div>
+
         {/* Timeline */}
         <div className="timeline-container">
           <input
@@ -457,12 +495,12 @@ export default function VideoPlayer() {
               marginRight: '15px'
             }}
           />
-          <span className="time-text">-{formatTime(duration - currentTime)}</span>
+          <span className="time-text">{formatTime(duration - currentTime)}</span>
         </div>
 
         {/* Bottom Control Bar */}
         <div className="bottom-controls">
-          <div className="controls-left">
+          <div className="controls-left desktop-only">
             <button className="control-btn" onClick={togglePlay}>
               {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
             </button>
@@ -494,15 +532,15 @@ export default function VideoPlayer() {
             </div>
           </div>
 
-          {/* Title & Episode info */}
-          <div className="title-info">
+          {/* Title & Episode info (Desktop) */}
+          <div className="title-info desktop-only">
             <span className="title-main">{title}</span>
             {!isMovie && (
               <span className="title-episode">{seasonAndEpisode} {episodeTitle}</span>
             )}
           </div>
 
-          <div className="controls-right">
+          <div className="controls-right desktop-only">
             {!isMovie && (
               <button className="control-btn with-label tooltip">
                 <SkipForward size={24} />
@@ -561,6 +599,52 @@ export default function VideoPlayer() {
             <button className="control-btn" onClick={toggleFullscreen}>
               {isFullscreen ? <Minimize size={28} /> : <Maximize size={28} />}
             </button>
+          </div>
+
+          {/* Mobile Bottom Fixed Row */}
+          <div className="mobile-bottom-row mobile-only">
+            <div className="mobile-bottom-btn">
+              <Scissors size={20} />
+              <span>Clip</span>
+            </div>
+            <div className="mobile-bottom-btn">
+              <Gauge size={20} />
+              <span>Speed (1x)</span>
+            </div>
+            <div className="mobile-bottom-btn" onClick={() => setShowSubtitlesMenu(!showSubtitlesMenu)}>
+              <MessageSquareText size={20} />
+              <span>Audio & Subtitles</span>
+              {showSubtitlesMenu && (
+                <div className="subtitles-menu mobile-subtitles-menu">
+                  <div className="menu-section">
+                    <h4>Audio</h4>
+                    <ul>
+                      <li className="active">Filipino</li>
+                    </ul>
+                  </div>
+                  <div className="menu-section">
+                    <h4>Subtitles</h4>
+                    <ul>
+                      <li 
+                        className={activeSubtitle === -1 ? "active" : ""}
+                        onClick={() => handleSubtitleChange(-1)}
+                      >
+                        Off
+                      </li>
+                      {movie.subtitles?.map((sub, idx) => (
+                        <li 
+                          key={idx}
+                          className={activeSubtitle === idx ? "active" : ""}
+                          onClick={() => handleSubtitleChange(idx)}
+                        >
+                          {sub.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

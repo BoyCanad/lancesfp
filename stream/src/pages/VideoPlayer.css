@@ -406,27 +406,158 @@
   font-weight: bold;
 }
 
-/* Mobile Adjustments */
-@media (max-width: 768px) {
+/* Base Desktop/Mobile visibility */
+.mobile-only {
+  display: none !important;
+}
+.desktop-only {
+  display: flex;
+}
+
+/* Mobile Adjustments (Landscape & Portrait) */
+@media (max-width: 896px) {
+  .mobile-only {
+    display: flex !important;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+  
   .player-top-bar,
   .player-controls-overlay {
-    padding: 15px 20px;
+    padding: 20px 40px; /* Safe area padding */
   }
   
-  .title-info {
-    display: none;
+  /* Top Bar */
+  .mobile-top-title {
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
   
-  .controls-left gap {
-    gap: 10px;
+  .top-right-controls {
+    margin-left: auto;
   }
   
-  .control-btn {
-    padding: 2px;
+  /* Center Playback Controls */
+  .center-mobile-controls {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    z-index: 20;
   }
   
-  .volume-container {
-    display: none; /* Hide volume slider on mobile for simplicity, or change trigger */
+  .center-play-btn {
+    transform: scale(1.6);
+  }
+  
+  /* Mobile Left Overlay - Brightness */
+  .mobile-left-controls {
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 20;
+  }
+  
+  .brightness-slider-wrapper {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .brightness-vertical {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 120px;
+    height: 6px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    outline: none;
+  }
+  
+  .brightness-vertical::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+  }
+
+  /* Timeline */
+  .timeline-container {
+    padding-bottom: 25px; /* Room for bottom row */
+  }
+  
+  .timeline-slider {
+    height: 6px;
+  }
+  
+  .timeline-slider::-webkit-slider-thumb {
+    height: 20px;
+    width: 20px;
+    opacity: 1; /* Always show thumb on mobile */
+  }
+  
+  .time-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-left: 15px;
+  }
+  
+  /* Bottom Controls (Clip, Speed, Audio/Subtitles) */
+  .bottom-controls {
+    flex-direction: column;
+  }
+
+  .mobile-bottom-row {
+    display: flex !important;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 100%;
+    padding: 0 10px;
+    margin-top: -5px;
+  }
+  
+  .mobile-bottom-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.85;
+    cursor: pointer;
+    position: relative;
+    transition: opacity 0.2s ease;
+  }
+  
+  .mobile-bottom-btn:hover,
+  .mobile-bottom-btn:active {
+    opacity: 1;
+  }
+  
+  .mobile-subtitles-menu {
+    bottom: 40px;
+    right: 0;
+    left: auto;
+    width: max-content;
   }
 }
 
