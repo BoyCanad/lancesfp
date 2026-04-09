@@ -263,13 +263,90 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   position: relative;
+  overflow: hidden;
 }
 
-.card__expanded-banner {
+.card__expanded-banner-pic,
+.card__video-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.card__expanded-banner,
+.card__expanded-trailer {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top;
+}
+
+.card__expanded-banner-pic {
+  opacity: 1;
+  transition: opacity 1s ease-in-out;
+  z-index: 1;
+}
+
+.card__expanded-video--playing .card__expanded-banner-pic {
+  opacity: 0; /* Fade banner out */
+}
+
+.card__video-wrapper {
+  opacity: 0;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+  background: black;
+}
+
+.card__expanded-video--playing .card__video-wrapper {
+  opacity: 1; /* Fade video in */
+}
+
+.card__expanded-trailer {
+  background: black;
+}
+
+.card__video-wrapper {
+  /* Position and size already handled above */
+  display: block;
+}
+
+.card__vol-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.card__vol-btn:hover {
+  background: rgba(0,0,0,0.8);
+  border-color: white;
+  transform: scale(1.1);
+}
+
+.card__video-logo {
+  position: absolute;
+  bottom: 4px;
+  left: 12px;
+  max-width: 180px;
+  max-height: 90px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  z-index: 10;
+  animation: fadeInCard 0.8s ease-out forwards;
 }
 
 .card__expanded-details {
@@ -386,3 +463,35 @@
   .card__thumb { aspect-ratio: 2 / 3; }
   .card__tooltip { display: none; }
 }
+ 
+
+/* Card Thumbnail Logo Overlay */
+.card__logo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 40%);
+}
+
+.card__thumb-logo {
+  max-width: 80%;
+  max-height: 45%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.card:hover .card__thumb-logo {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+@keyframes fadeInCard { from { opacity: 0; } to { opacity: 1; } }

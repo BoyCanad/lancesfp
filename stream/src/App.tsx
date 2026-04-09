@@ -13,11 +13,12 @@ import TamaKaDetail from './pages/TamaKaDetail.tsx';
 import ElBimboDetail from './pages/ElBimboDetail.tsx';
 
 import VideoPlayer from './pages/VideoPlayer.tsx';
+import TrailerPlayer from './pages/TrailerPlayer.tsx';
 import './App.css';
 
 function App() {
   const { pathname } = useLocation();
-  const isVideoPlayer = pathname.startsWith('/watch');
+  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -39,6 +40,7 @@ function App() {
         <Route path="/el-bimbo" element={<ElBimboDetail />} />
 
         <Route path="/watch/:id" element={<VideoPlayer />} />
+        <Route path="/trailer/:id" element={<TrailerPlayer />} />
       </Routes>
 
       {!isVideoPlayer && (

@@ -25,6 +25,8 @@ export interface Movie {
     srclang: string;
     url: string;
   }[];
+  trailerUrl?: string;
+  trailerVttUrl?: string;
 }
 
 export const featuredMovies: Movie[] = [
@@ -44,6 +46,7 @@ export const featuredMovies: Movie[] = [
     contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
     isOriginal: true,
     videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/new_index.m3u8",
+    trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/trailer.mp4",
     subtitles: [
       {
         label: "Filipino",
@@ -72,6 +75,8 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/index.m3u8",
+    trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.mp4",
+    trailerVttUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.vtt",
   },
   {
     id: "f3",
@@ -299,6 +304,7 @@ export const trendingMovies: Movie[] = [
 export const elBimboFeatured: Movie = {
   id: "eb1",
   title: "Ang Huling El Bimbo Play",
+  logo: "/images/el-bimbo-logo.webp",
   thumbnail: "/images/el-bimbo.webp",
   banner: "/images/el-bimbo.webp",
   description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
@@ -311,5 +317,6 @@ export const elBimboFeatured: Movie = {
   quality: "HD",
   mobileThumbnail: "/images/el-bimbo-mobile.webp",
   videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
+  trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/trailer.mp4",
 };
 

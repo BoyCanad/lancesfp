@@ -1,0 +1,162 @@
+.trailer-player-container {
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.trailer-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trailer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Make only interactive elements clickable */
+.trailer-top-left, .trailer-action-buttons button {
+  pointer-events: auto;
+}
+
+.trailer-top-left {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity 0.2s;
+}
+
+.trailer-top-left:hover {
+  opacity: 0.8;
+}
+
+.trailer-back-btn {
+  background-color: transparent;
+  border: 1.5px solid white;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trailer-back-text {
+  color: white;
+  font-size: 20px;
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.trailer-bottom-right {
+  position: absolute;
+  bottom: 50px;
+  right: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 20px;
+  z-index: 10;
+  max-width: 40vw;
+}
+
+.trailer-movie-logo {
+  max-width: 350px;
+  max-height: 150px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.trailer-movie-title {
+  color: white;
+  font-size: 3rem;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  margin: 0;
+  text-align: right;
+}
+
+.trailer-action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.trailer-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trailer-btn-play {
+  background-color: rgba(140, 140, 140, 0.4);
+  color: white;
+  backdrop-filter: blur(4px);
+}
+
+.trailer-btn-play:hover {
+  background-color: rgba(160, 160, 160, 0.6);
+}
+
+.trailer-btn-info {
+  background-color: rgba(140, 140, 140, 0.4);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.trailer-btn-info:hover {
+  background-color: rgba(180, 180, 180, 0.6);
+}
+
+@media (max-width: 768px) {
+  .trailer-top-left {
+    top: 20px;
+    left: 20px;
+  }
+  .trailer-back-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .trailer-back-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .trailer-back-text {
+    font-size: 16px;
+  }
+  .trailer-bottom-right {
+    bottom: 30px;
+    right: 20px;
+    width: auto;
+    align-items: flex-end;
+  }
+  .trailer-movie-logo {
+    max-width: 200px;
+  }
+  .trailer-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}

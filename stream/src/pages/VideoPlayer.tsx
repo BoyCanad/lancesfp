@@ -10,13 +10,16 @@ import {
   VolumeX, 
   Maximize, 
   Minimize, 
+  Info,
   MessageSquareText,
   Copy,
   Gauge,
   SkipForward,
   Flag,
   Scissors,
-  ThumbsUp
+  ThumbsUp,
+  Plus,
+  X
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
@@ -95,9 +98,31 @@ export default function VideoPlayer() {
   const [ambientColor, setAmbientColor] = useState('rgba(0,0,0,0.9)');
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [dismissedRecommendation, setDismissedRecommendation] = useState(false);
+  const [isExpandingTrailer, setIsExpandingTrailer] = useState(false);
   const [nextCountdown, setNextCountdown] = useState(10);
+  const [trailerCues, setTrailerCues] = useState<ParsedCue[]>([]);
+  const [currentTrailerSubtitle, setCurrentTrailerSubtitle] = useState<string>('');
+  const [mobileTrailerReady, setMobileTrailerReady] = useState(false);
+  const [isMobileWindow, setIsMobileWindow] = useState(window.innerWidth <= 896);
 
-  
+  useEffect(() => {
+    const handleResize = () => setIsMobileWindow(window.innerWidth <= 896);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isExpandingTrailer) {
+      if (isMobileWindow) {
+        const timer = setTimeout(() => setMobileTrailerReady(true), 2000);
+        return () => clearTimeout(timer);
+      } else {
+        setMobileTrailerReady(true);
+      }
+    } else {
+      setMobileTrailerReady(false);
+    }
+  }, [isExpandingTrailer, isMobileWindow]);
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hasShownRatingRef = useRef<boolean>(false);
   const hlsManagedRef = useRef<boolean>(false);
@@ -105,6 +130,7 @@ export default function VideoPlayer() {
   const playPendingRef = useRef<boolean>(false);
   const indicatorTimerRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const trailerVideoRef = useRef<HTMLVideoElement>(null);
 
   const triggerIndicator = (type: 'play' | 'pause' | 'forward' | 'backward') => {
     if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
@@ -124,6 +150,20 @@ export default function VideoPlayer() {
       return featuredMovies[currentIndex + 1];
     }
     return featuredMovies[0]; // loop back or fallback
+  }, [movie]);
+
+  const nextThreeMovies = useMemo(() => {
+    const currentIndex = featuredMovies.findIndex(m => m.id === movie?.id);
+    let list = [];
+    if (currentIndex !== -1) {
+      for (let i = 1; i <= 3; i++) {
+        let nextIndex = (currentIndex + i) % featuredMovies.length;
+        list.push(featuredMovies[nextIndex]);
+      }
+    } else {
+      list = [featuredMovies[0], featuredMovies[1], featuredMovies[2]];
+    }
+    return list;
   }, [movie]);
 
   
@@ -198,19 +238,60 @@ export default function VideoPlayer() {
   // Next Up Recommendation Timer
   useEffect(() => {
     let timer: number;
-    if (showRecommendation && isPlaying && nextCountdown > 0) {
+    if (showRecommendation && isPlaying && nextCountdown > 0 && !isExpandingTrailer) {
       timer = window.setInterval(() => {
         setNextCountdown(prev => {
           if (prev <= 1) {
-            navigate(`/watch/${nextMovie.id}`);
-            return 10;
+            setIsExpandingTrailer(true);
+            return 0; // stop counting
           }
           return prev - 1;
         });
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [showRecommendation, isPlaying, nextCountdown, nextMovie, navigate]);
+  }, [showRecommendation, isPlaying, nextCountdown, isExpandingTrailer]);
+
+  // Fade audio then pause main video when inline trailer takes over
+  useEffect(() => {
+    if (isExpandingTrailer && nextMovie?.id) {
+      const video = videoRef.current;
+      if (!video) return;
+
+      // Reset trailer subtitle state
+      setTrailerCues([]);
+      setCurrentTrailerSubtitle('');
+
+      // Fetch trailer subtitles if available
+      if (nextMovie.trailerVttUrl) {
+        fetch(nextMovie.trailerVttUrl)
+          .then(res => res.text())
+          .then(data => {
+            const parsed = parseVTT(data);
+            setTrailerCues(parsed);
+          })
+          .catch(err => console.error('Failed to load trailer subtitles:', err));
+      }
+
+      const startVolume = video.volume;
+      const steps = 25;
+      const decrement = startVolume / steps;
+      let tick = 0;
+      const fadeInterval = window.setInterval(() => {
+        tick++;
+        const next = Math.max(0, video.volume - decrement);
+        video.volume = next;
+        if (tick >= steps || next === 0) {
+          video.volume = 0;
+          video.pause();
+          clearInterval(fadeInterval);
+        }
+      }, 800 / steps); // 800 ms total fade
+      return () => {
+        clearInterval(fadeInterval);
+      };
+    }
+  }, [isExpandingTrailer, nextMovie]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -410,6 +491,7 @@ export default function VideoPlayer() {
       // Reset recommendations on new video
       setDismissedRecommendation(false);
       setShowRecommendation(false);
+      setIsExpandingTrailer(false);
       setNextCountdown(10);
     };
   }, [videoSrc]);
@@ -514,6 +596,14 @@ export default function VideoPlayer() {
           }
         });
     }
+  };
+
+  // Handle trailer time update for subtitles
+  const handleTrailerTimeUpdate = () => {
+    if (!trailerVideoRef.current) return;
+    const time = trailerVideoRef.current.currentTime;
+    const activeCue = trailerCues.find(cue => time >= cue.start && time <= cue.end);
+    setCurrentTrailerSubtitle(activeCue ? activeCue.text : '');
   };
 
   const handleVideoClick = () => {
@@ -706,45 +796,182 @@ export default function VideoPlayer() {
       {/* Hidden canvas for color sampling */}
       <canvas ref={canvasRef} width="1" height="1" style={{ display: 'none' }} />
       
-      {/* Next Up Recommendation Overlay */}
+      {/* ── Old "Next Up" Recommendation Overlays (shows during countdown) ── */}
       {showRecommendation && nextMovie && (
-        <div className="next-up-overlay">
-          <img src={nextMovie.banner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
-          <div className="next-up-gradient"></div>
-          <div className="next-up-content">
-            {nextMovie.logo ? (
-              <img src={nextMovie.logo} className="next-up-logo" alt={nextMovie.title} />
-            ) : (
-              <h2 className="next-up-title-text">{nextMovie.title}</h2>
-            )}
-            <p className="next-up-desc">{nextMovie.description}</p>
-            <div className="next-up-buttons">
-              <button 
-                className="next-play-btn" 
-                onClick={() => navigate(`/watch/${nextMovie.id}`)}
-              >
-                <Play size={20} fill="black" /> Play
-              </button>
-              <button 
-                className="next-trailer-btn"
-                onClick={() => navigate(`/watch/${nextMovie.id}`)}
-              >
-                <Play size={20} fill="white" /> Trailer in {nextCountdown}
-              </button>
+        <>
+          {/* Desktop Layout */}
+          <div className={`next-up-overlay desktop-recommendation-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
+            <img src={nextMovie.banner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
+            <div className="next-up-gradient"></div>
+            <div className="next-up-content">
+              {nextMovie.logo ? (
+                <img src={nextMovie.logo} className="next-up-logo" alt={nextMovie.title} />
+              ) : (
+                <h2 className="next-up-title-text">{nextMovie.title}</h2>
+              )}
+              <p className="next-up-desc">{nextMovie.description}</p>
+              <div className="next-up-buttons">
+                <button
+                  className="next-play-btn"
+                  onClick={() => navigate(`/watch/${nextMovie.id}`)}
+                >
+                  <Play size={20} fill="black" /> Play
+                </button>
+                <button
+                  className="next-trailer-btn"
+                  onClick={() => setIsExpandingTrailer(true)}
+                >
+                  <Play size={20} fill="white" /> Trailer in {nextCountdown}
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Mobile Thumbnail Layout */}
+          <div className={`mobile-recommendations-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
+            <div className="mobile-recommendations-header-area">
+              <button className="mobile-recommendations-back" onClick={() => {
+                setDismissedRecommendation(true);
+                setShowRecommendation(false);
+                setIsExpandingTrailer(false);
+                setNextCountdown(10);
+              }}>
+                <ArrowLeft size={24} color="white" />
+              </button>
+            </div>
+            <div className="mobile-recommendations-content">
+              <h3 className="mobile-recommendations-title">Check out these recommendations</h3>
+              <p className="mobile-recommendations-subtitle">
+                Preview in {nextCountdown} seconds
+              </p>
+              <div className="mobile-recommendations-grid">
+                {nextThreeMovies.map((m, idx) => (
+                  <div
+                    key={m.id}
+                    className="mobile-recommendation-card"
+                    onClick={() => navigate(`/watch/${m.id}`)}
+                  >
+                    <img src={m.cardBanner || m.thumbnail} alt={m.title} loading="lazy" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Inline Trailer Overlay (TrailerPlayer look) — shows when countdown hits 0 ── */}
+      {isExpandingTrailer && nextMovie && (
+        <div className="inline-trailer-overlay inline-trailer-overlay--visible">
+          {(!mobileTrailerReady && isMobileWindow) ? (
+            <img 
+              src={nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail} 
+              className="mobile-expanding-banner" 
+              alt="" 
+            />
+          ) : (
+            nextMovie.trailerUrl && (
+              <video
+                ref={trailerVideoRef}
+                className="inline-trailer-video"
+                src={nextMovie.trailerUrl}
+                autoPlay
+                playsInline
+                loop
+                muted={false}
+                onTimeUpdate={handleTrailerTimeUpdate}
+              />
+            )
+          )}
+
+          {/* Trailer Subtitle Overlay */}
+          {currentTrailerSubtitle && mobileTrailerReady && (
+            <div className="inline-trailer-subtitle-overlay">
+              <div className="inline-trailer-subtitle-text">
+                {currentTrailerSubtitle.split('\n').map((line, idx) => (
+                  <span key={idx}>{line}<br /></span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Top: Back to Browse (Desktop) or X Close (Mobile) */}
+          <div
+            className={`inline-trailer-back ${isMobileWindow ? 'mobile-close-btn' : ''}`}
+            onClick={() => {
+              if (isMobileWindow) {
+                 setDismissedRecommendation(true);
+                 setShowRecommendation(false);
+                 setIsExpandingTrailer(false);
+                 setNextCountdown(10);
+                 if (videoRef.current) {
+                   videoRef.current.volume = 1;
+                   videoRef.current.play().catch(() => {});
+                 }
+              } else {
+                 navigate('/');
+              }
+            }}
+          >
+            {isMobileWindow ? (
+              <div className="inline-trailer-close-circle">
+                <X size={24} color="black" strokeWidth={2.5} />
+              </div>
+            ) : (
+              <>
+                <div className="inline-trailer-back-circle">
+                  <ArrowLeft size={22} color="white" strokeWidth={2.5} />
+                </div>
+                <span className="inline-trailer-back-label">Back to Browse</span>
+              </>
+            )}
+          </div>
+
+          {/* Bottom Branding (Desktop Right, Mobile Left) */}
+          {mobileTrailerReady && (
+            <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} fade-in-actions`}>
+              {nextMovie.logo ? (
+                <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
+              ) : (
+                <h2 className="inline-trailer-title">{nextMovie.title}</h2>
+              )}
+              <div className="inline-trailer-actions">
+                <button
+                  className="inline-trailer-btn inline-trailer-btn--play"
+                  onClick={() => navigate(`/watch/${nextMovie.id}`)}
+                >
+                  <Play size={17} fill={isMobileWindow ? "black" : "white"} color={isMobileWindow ? "black" : "white"} strokeWidth={0} /> Play
+                </button>
+                {isMobileWindow ? (
+                  <button className="inline-trailer-btn inline-trailer-btn--mylist">
+                    <Plus size={18} color="white" strokeWidth={2.5} /> My List
+                  </button>
+                ) : (
+                  <button
+                    className="inline-trailer-btn inline-trailer-btn--info"
+                    onClick={() => {
+                      if (nextMovie.id === 'f2') navigate('/minsan');
+                      else if (nextMovie.id === 'f1' || nextMovie.id === 'eb1') navigate('/ang-huling-el-bimbo-play');
+                      else navigate('/');
+                    }}
+                  >
+                    <Info size={17} /> More Info
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''}`}>
-        {/* If shrinking, show Rate overlay inside the frame too */}
-        {showRecommendation && (
+      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
+        {/* Rate overlay inside the shrunken frame */}
+        {showRecommendation && !isExpandingTrailer && (
           <div className="rate-shrunken-video">
             <span className="rate-text">Rate:</span>
             <button className="rate-btn"><ThumbsUp size={16} color="white" /></button>
           </div>
         )}
-
         <video
           ref={videoRef}
           playsInline
