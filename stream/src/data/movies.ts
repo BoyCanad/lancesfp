@@ -17,6 +17,7 @@ export interface Movie {
   mobileThumbnail?: string;
   mobileBanner?: string;
   cardBanner?: string;
+  mobileCardBanner?: string;
   logo?: string;
   videoUrl?: string;
   subtitles?: {
@@ -145,10 +146,14 @@ export const featuredMovies: Movie[] = [
   {
     id: "f8",
     title: "Tama Ka/Ligaya",
+    logo: "/images/tama-ka-logo.webp",
     thumbnail: "/images/tama-ka.webp",
     mobileThumbnail: "/images/tama-ka-mobile.webp",
-    banner: "/images/tama-ka.webp",
-    description: "A tender yet emotionally layered performance of “Tama Ka / Ligaya” from Ang Huling El Bimbo, this scene explores love, longing, and unspoken feelings among the characters. Blending playful charm with quiet vulnerability, it captures the sweetness of young romance while hinting at misunderstandings and choices that will eventually test their relationships.",
+    banner: "/images/tama-ka-detail.webp",
+    mobileBanner: "/images/tama-ka-detail-mobile.webp",
+    cardBanner: "/images/tama-ka.webp",
+    mobileCardBanner: "/images/tama-ka-mobile.webp",
+    description: "The \"Tama Ka / Ligaya\" mashup masterfully contrasts the cold finality of a breakup with the haunting warmth of happier memories. By weaving the somber acceptance of \"Tama Ka\" into the upbeat nostalgia of \"Ligaya,\" the performance captures the bittersweet irony of finding oneself at the end of a relationship while still clinging to the \"happiness\" that used to be.",
     rating: "9.8",
     year: "2026",
     duration: "22m",
@@ -158,10 +163,14 @@ export const featuredMovies: Movie[] = [
   {
     id: "f9",
     title: "Ang Huling El Bimbo",
+    logo: "/images/huling-el-bimbo-logo.webp",
     thumbnail: "/images/huling-el-bimbo.webp",
     mobileThumbnail: "/images/huling-el-bimbo-mobile.webp",
-    banner: "/images/huling-el-bimbo.webp",
-    description: "A deeply emotional performance of “Ang Huling El Bimbo” from Ang Huling El Bimbo, this scene serves as the heart of the story. It brings together memories, regret, and longing as the characters confront their past—especially their connection to Joy. Through poignant storytelling and moving choreography, it captures the pain of lost time, unspoken apologies, and the enduring impact of a friendship they can never fully reclaim.",
+    banner: "/images/huling-el-bimbo-detail.webp",
+    mobileBanner: "/images/huling-el-bimbo-detail-mobile.webp",
+    cardBanner: "/images/huling-el-bimbo.webp",
+    mobileCardBanner: "/images/huling-el-bimbo-mobile.webp",
+    description: "The \"Ang Huling El Bimbo\" performance is a heart-wrenching finale that mirrors the grace of a lost past against the tragedy of the present. It serves as a nostalgic tribute to Joy, the \"Paraluman\" of their youth, capturing the painful regret of a friendship and a dance that ended too soon. This iconic sequence brings the story full circle, leaving the audience with the haunting beauty of a dream that can never be reclaimed.",
     rating: "9.9",
     year: "2026",
     duration: "30m",

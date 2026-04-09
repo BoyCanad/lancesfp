@@ -1,7 +1,7 @@
 import { useRef, useState, memo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Play, Plus, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Plus, Info, ThumbsUp, ChevronDown } from 'lucide-react';
 import type { Movie } from '../data/movies';
 import './ContentRow.css';
 
@@ -24,6 +24,7 @@ const MovieCard = memo(({
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth <= 768) return;
     setIsHovered(true);
     const rect = e.currentTarget.getBoundingClientRect();
     const edgeThreshold = 120;
@@ -65,10 +66,6 @@ const MovieCard = memo(({
         </picture>
         
         {/* Normal State Info */}
-        <div className="card__rating-badge card__default-item">
-          {movie.rating}
-        </div>
-        
         {showProgress && movie.progress !== undefined && (
           <div className="card__progress-bar card__default-item">
             <div
@@ -78,32 +75,65 @@ const MovieCard = memo(({
           </div>
         )}
 
-        {/* Expanded State Layer - Only rendered when hovered to save resources */}
-        {isHovered && (
-          <div className="card__expanded-layer">
-            <img 
-              src={movie.cardBanner || movie.banner} 
-              alt="" 
-              className="card__expanded-banner" 
-              loading="lazy"
-            />
-            <div className="card__expanded-gradient" />
-            <div className="card__expanded-content">
-              <div className="card__tooltip-quality">{movie.quality || 'HD'}</div>
-              <div className="card__tooltip-controls">
-                <button><Plus size={16} strokeWidth={2.5} color="white" /></button>
-                <button><Info size={16} strokeWidth={2.5} color="white" /></button>
+      </div>
+
+      {/* Expanded State Layer */}
+      {isHovered && (
+        <div className="card__expanded-card">
+          <div className="card__expanded-video">
+            <picture>
+              {(movie.mobileCardBanner || movie.mobileBanner) && (
+                <source 
+                  media="(max-width: 768px)" 
+                  srcSet={movie.mobileCardBanner || movie.mobileBanner} 
+                />
+              )}
+              <img 
+                src={movie.cardBanner || movie.banner || movie.thumbnail} 
+                alt="" 
+                className="card__expanded-banner" 
+                loading="lazy"
+              />
+            </picture>
+          </div>
+          
+          <div className="card__expanded-details">
+            <div className="card__controls">
+              <div className="card__controls-left">
+                <button className="card__btn card__btn--play" onClick={(e) => { e.stopPropagation(); onClick(movie); }}>
+                  <Play size={12} fill="black" color="black" />
+                </button>
+                <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
+                  <Plus size={14} color="white" />
+                </button>
+                <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
+                  <ThumbsUp size={12} color="white" />
+                </button>
               </div>
-              <div className="card__tooltip-play-center">
-                <Play size={24} fill="white" color="white" />
-              </div>
-              <div className="card__tooltip-genres-bottom">
-                {movie.genre.join(' · ')}
+              <div className="card__controls-right">
+                <button className="card__btn card__btn--icon" onClick={(e) => { e.stopPropagation(); onClick(movie); }}>
+                  <ChevronDown size={14} color="white" />
+                </button>
               </div>
             </div>
+            
+            <div className="card__metadata-row">
+              <span className="card__match">98% Match</span>
+              <span className="card__age">{movie.ageRating || '13+'}</span>
+              <span className="card__duration">{movie.duration || '2h 1m'}</span>
+              <span className="card__quality-badge">{movie.quality || 'HD'}</span>
+            </div>
+            
+            <div className="card__genres-row">
+              {movie.genre.slice(0, 3).map((g, i, arr) => (
+                <span key={g}>
+                  {g} {i < arr.length - 1 && <span className="card__genre-dot">•</span>}
+                </span>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Card info below thumbnail */}
       <div className="card__info">
@@ -146,7 +176,7 @@ export default function ContentRow({
   };
 
   const handleMovieClick = useCallback((movie: Movie) => {
-    if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
+    if (movie.id === 'f1' || movie.id === 'eb1' || movie.title === 'Ang Huling El Bimbo Play') {
       navigate('/ang-huling-el-bimbo-play');
     } else if (movie.id === 'f2' || movie.title === 'Minsan') {
       navigate('/minsan');
@@ -158,6 +188,10 @@ export default function ContentRow({
       navigate('/spoliarium');
     } else if (movie.id === 'f7' || movie.title === 'Pare Ko') {
       navigate('/pare-ko');
+    } else if (movie.id === 'f8' || movie.title === 'Tama Ka/Ligaya') {
+      navigate('/tama-ka');
+    } else if (movie.id === 'f9' || movie.title === 'Ang Huling El Bimbo') {
+      navigate('/el-bimbo');
     }
 
   }, [navigate]);

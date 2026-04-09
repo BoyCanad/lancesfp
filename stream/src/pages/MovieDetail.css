@@ -15,12 +15,25 @@
   position: relative;
   width: 100%;
   min-height: 100vh;
-  margin-top: -80px; /* Offset the global navbar */
-  padding-top: 80px; 
+  margin-top: 0; 
+  padding-top: 0; 
   display: flex;
   align-items: center;
   overflow: hidden;
   background-color: transparent;
+}
+
+/* Seamless top gradient for navbar area */
+.mdetail-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 180px; 
+  background: linear-gradient(to bottom, #0b0b12 0%, #0b0b12 40px, transparent 100%);
+  z-index: 5;
+  pointer-events: none;
 }
 
 .mdetail-bg {
@@ -59,8 +72,8 @@
   max-width: 280px;
   height: auto;
   position: relative;
-  top: 24px;
-  margin-bottom: -5px;
+  top: 0; /* Reduced from 24px */
+  margin-bottom: 5px;
   z-index: 5;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
 }
@@ -187,16 +200,23 @@
 @media (max-width: 768px) {
   .mdetail-container {
     display: block; /* Override default centered flex */
-    padding-top: 0; 
-    margin-top: 0; /* Clear offset */
-    background-color: #110d17; /* Sligt purple-dark fade */
+    padding-top: 64px; /* Explicit gap for navbar */
+    margin-top: 0; 
+    background-color: #0b0b12; 
+  }
+
+  /* Smaller gradient for mobile devices, starting after the navbar gap */
+  .mdetail-container::before {
+    height: 140px;
+    background: linear-gradient(to bottom, #0b0b12 0%, #0b0b12 64px, transparent 100%);
+    z-index: 5;
   }
 
   .mdetail-bg {
     position: absolute;
-    top: 0; left: 0; right: 0;
+    top: 64px; left: 0; right: 0;
     bottom: auto;
-    height: 110vw; /* Enlarged from 56.25vw for a more cinematic mobile look */
+    height: 56.25vw; /* Maintain 16:9 ratio (9/16 * 100) */
     background-position: top center;
     z-index: 1;
   }
@@ -206,15 +226,15 @@
   }
 
   .mdetail-gradient-bottom {
-    top: 0;
+    top: 64px;
     bottom: auto;
-    height: 112vw; /* Matches the enlarged banner height for a smooth transition */
-    background: linear-gradient(to top, #110d17 5%, transparent 85%);
+    height: 58vw; /* Matches the banner height area */
+    background: linear-gradient(to top, #0b0b12 5%, transparent 85%);
     z-index: 2;
   }
 
   .mdetail-content {
-    margin-top: 85vw; /* Adjusted to fit the larger portrait banner */
+    margin-top: 28vw; /* Reduced from 42vw to pull logo closer to banner center */
     padding: 0 20px 100px; /* Space for bottom mobile nav */
     align-items: flex-start;
     text-align: left;
@@ -229,8 +249,8 @@
   .mdetail-logo {
     margin: 0 auto;
     position: relative;
-    top: 15px;
-    margin-bottom: -5px;
+    top: 0; /* Reduced from 15px */
+    margin-bottom: 5px;
     display: block;
     max-width: 65%;
     width: 220px;

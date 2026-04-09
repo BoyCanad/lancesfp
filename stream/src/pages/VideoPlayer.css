@@ -13,6 +13,113 @@
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+.video-stage-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 896px) and (orientation: portrait) {
+  .video-stage-wrapper {
+    width: 100vw;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  
+  /* Drastically shrink padding to fit the small 16:9 vertical window */
+  .player-top-bar,
+  .player-controls-overlay {
+    padding: 8px 15px !important;
+  }
+
+  .mobile-top-title {
+    font-size: 0.9rem !important;
+  }
+
+  /* Shrink Center Controls */
+  .center-mobile-controls {
+    gap: 30px !important;
+  }
+
+  .center-play-btn {
+    transform: scale(1) !important;
+  }
+  
+  .center-mobile-controls svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .center-play-btn svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Shrink skip intro text */
+  .skip-text-inside {
+    font-size: 0.65rem !important;
+  }
+
+  .skip-intro-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    bottom: 45px;
+    right: 15px;
+  }
+  
+  .show-controls .skip-intro-btn {
+    bottom: 60px;
+  }
+
+  /* Tighten Timeline */
+  .timeline-container {
+    padding-bottom: 5px !important;
+  }
+
+  .timeline-slider {
+    height: 4px !important;
+  }
+
+  .timeline-slider::-webkit-slider-thumb {
+    height: 12px !important;
+    width: 12px !important;
+  }
+
+  .time-text {
+    font-size: 0.75rem !important;
+    margin-left: 10px !important;
+  }
+
+  /* Adjust Top Nav Buttons */
+  .back-button svg,
+  .flag-button svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .back-button {
+    padding: 5px !important;
+  }
+
+  /* Bottom Row Buttons */
+  .mobile-bottom-row {
+    padding: 0 5px !important;
+  }
+  
+  .mobile-bottom-btn {
+    font-size: 0.75rem !important;
+    gap: 4px !important;
+  }
+  
+  .mobile-bottom-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
 .video-element {
   width: 100%;
   height: 100%;
@@ -52,7 +159,7 @@
 
 @media (min-width: 1024px) {
   .custom-subtitle-overlay-container {
-    bottom: 10%;
+    bottom: 7%;
   }
 
   .custom-subtitle-text {
@@ -519,6 +626,17 @@
   .player-controls-overlay {
     padding: 20px 40px; /* Safe area padding */
   }
+
+  .skip-intro-btn {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    bottom: 80px;
+    right: 20px;
+  }
+  
+  .show-controls .skip-intro-btn {
+    bottom: 110px;
+  }
   
   /* Top Bar */
   .mobile-top-title {
@@ -719,3 +837,87 @@
   }
 }
 
+/* Playback Action Indicators */
+.playback-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playback-indicator--forward {
+  left: 70%;
+}
+
+.playback-indicator--backward {
+  left: 30%;
+}
+
+.indicator-icon-wrapper {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  color: white;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: indicatorPop 0.7s ease-out forwards;
+}
+
+.indicator-text-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes indicatorPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  30% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+@media (max-width: 896px) {
+  .playback-indicator {
+    display: none !important; /* Hide desktop popups on mobile */
+  }
+}
+
+/* Base animation rules for mobile buttons */
+.animate-spin-forward svg {
+  animation: spinForward 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-spin-backward svg {
+  animation: spinBackward 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-pop svg {
+  animation: btnPop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+@keyframes spinForward {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinBackward {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes btnPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}

@@ -90,12 +90,22 @@ export default function VideoPlayer() {
   const [isNativePlayer, setIsNativePlayer] = useState(false);
   const [parsedSubtitles, setParsedSubtitles] = useState<Record<string, ParsedCue[]>>({});
   const [showRating, setShowRating] = useState(false);
+  const [activeIndicator, setActiveIndicator] = useState<{ type: 'play' | 'pause' | 'forward' | 'backward'; key: number } | null>(null);
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hasShownRatingRef = useRef<boolean>(false);
   const hlsManagedRef = useRef<boolean>(false);
   const hlsRef = useRef<Hls | null>(null);
   const playPendingRef = useRef<boolean>(false);
+  const indicatorTimerRef = useRef<number | null>(null);
+
+  const triggerIndicator = (type: 'play' | 'pause' | 'forward' | 'backward') => {
+    if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
+    setActiveIndicator({ type, key: Math.random() });
+    indicatorTimerRef.current = window.setTimeout(() => {
+      setActiveIndicator(null);
+    }, 700);
+  };
 
   // Mock Data fallback
   const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
@@ -131,8 +141,7 @@ export default function VideoPlayer() {
     };
 
     window.addEventListener('mousemove', handleActivity);
-    // Explicitly removed global touchstart and click to prevent conflict with native mobile tapping logic
-    
+
     return () => {
       window.removeEventListener('mousemove', handleActivity);
       if (hideControlsTimeoutRef.current) {
@@ -140,6 +149,39 @@ export default function VideoPlayer() {
       }
     };
   }, [isPlaying]);
+
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input (just in case)
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          skipForward();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          skipBackward();
+          break;
+        case 'KeyF':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying]); // Need isPlaying dependency for togglePlay logic
 
   // Show Age Rating once when playback starts
   useEffect(() => {
@@ -223,6 +265,10 @@ export default function VideoPlayer() {
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setVideoError(null);
           setIsLoading(false);
+          // Auto-play on load
+          videoRef.current?.play()
+            .then(() => setIsPlaying(true))
+            .catch(err => console.warn("Autoplay blocked or failed:", err));
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -277,6 +323,9 @@ export default function VideoPlayer() {
         videoRef.current.load();
         videoRef.current.src = videoSrc;
         videoRef.current.load();
+        videoRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => console.warn("Native autoplay blocked:", err));
       } else {
         setVideoError("Your browser does not support HLS video streaming.");
         setIsLoading(false);
@@ -285,6 +334,9 @@ export default function VideoPlayer() {
       // Regular mp4 or other formats
       hlsManagedRef.current = false;
       videoRef.current.src = videoSrc;
+      videoRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => console.warn("MP4 autoplay blocked:", err));
     }
 
     return () => {
@@ -298,8 +350,30 @@ export default function VideoPlayer() {
   }, [videoSrc]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+    const handleFullscreenChange = async () => {
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      
+      // Auto-lock to landscape on mobile when entering fullscreen
+      if (isFull) {
+        try {
+          if (window.screen.orientation && 'lock' in window.screen.orientation) {
+            // @ts-ignore
+            await window.screen.orientation.lock('landscape');
+          }
+        } catch (e) {
+          console.log('Orientation lock failed:', e);
+        }
+      } else {
+        // Unlock when exiting fullscreen
+        try {
+          if (window.screen.orientation && 'unlock' in window.screen.orientation) {
+            window.screen.orientation.unlock();
+          }
+        } catch (e) {
+          console.log('Orientation unlock failed:', e);
+        }
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -345,11 +419,13 @@ export default function VideoPlayer() {
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
+      triggerIndicator('pause');
     } else {
       videoRef.current.play()
         .then(() => {
           setIsPlaying(true);
           setVideoError(null);
+          triggerIndicator('play');
         })
         .catch((error) => {
           console.warn('[VideoPlayer] play() failed:', error.name, {
@@ -441,12 +517,14 @@ export default function VideoPlayer() {
   const skipForward = () => {
     if (videoRef.current) {
       videoRef.current.currentTime += 10;
+      triggerIndicator('forward');
     }
   };
 
   const skipBackward = () => {
     if (videoRef.current) {
       videoRef.current.currentTime -= 10;
+      triggerIndicator('backward');
     }
   };
   
@@ -522,322 +600,351 @@ export default function VideoPlayer() {
 
   return (
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
-      <video
-        ref={videoRef}
-        playsInline
-        webkit-playsinline="true"
-        {...(!isNativePlayer ? { crossOrigin: 'anonymous' } : {})}
-        className="video-element"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onWaiting={handleWaiting}
-        onCanPlay={handleCanPlay}
-        onClick={handleVideoClick}
-        onDoubleClick={toggleFullscreen}
-        onError={handleVideoError}
-      >
-        {/* Subtitles handled by custom overlay */}
-      </video>
-      {/* Custom Subtitle Overlay */}
-      {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
-        <div className="custom-subtitle-overlay-container">
-          {parsedSubtitles[movie.subtitles[activeSubtitle].url]
-            .filter(cue => currentTime >= cue.start && currentTime <= cue.end)
-            .map((cue, idx) => (
-              <div key={idx} className="custom-subtitle-text">
-                {cue.text.split('\n').map((line, i) => (
-                  <span key={i}>
-                    {line}
-                    <br />
-                  </span>
-                ))}
-              </div>
-            ))}
-        </div>
-      )}
-      
-      {isLoading && !videoError && (
-        <div className="player-loading-overlay">
-          <div className="loading-spinner"></div>
-        </div>
-      )}
-      
-      {videoError && (
-        <div className="video-error-overlay">
-          <p>{videoError}</p>
-        </div>
-      )}
-
-      {/* Age Rating Overlay - Netflix Style */}
-      <div className={`age-rating-overlay ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
-        <div className="age-rating-content">
-          <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
-          {movie.contentWarnings && movie.contentWarnings.length > 0 && (
-            <p className="age-rating-warnings">
-              {movie.contentWarnings.join(', ')}
-            </p>
-          )}
-        </div>
-      </div>
-      
-      {/* Top Bar Navigation */}
-      <div className="player-top-bar">
-        <button className="back-button" onClick={() => navigate(-1)}>
-          <ArrowLeft size={42} />
-        </button>
-        
-        {/* Mobile Title */}
-        <div className="mobile-top-title mobile-only">
-          {title}
-        </div>
-        
-        <div className="top-right-controls">
-          <button className="flag-button lock-button desktop-only tooltip">
-            <Flag size={38} />
-            <span className="tooltip-text tooltip-bottom">Report an issue</span>
-          </button>
-          <button className="flag-button mobile-only" onClick={toggleFullscreen}>
-            {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Skip Intro/Logo Button */}
-      {movie?.id !== 'f2' && (
-        <button 
-          className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
-          onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
+      <div className="video-stage-wrapper">
+        <video
+          ref={videoRef}
+          playsInline
+          webkit-playsinline="true"
+          {...(!isNativePlayer ? { crossOrigin: 'anonymous' } : {})}
+          className="video-element"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onWaiting={handleWaiting}
+          onCanPlay={handleCanPlay}
+          onClick={handleVideoClick}
+          onDoubleClick={toggleFullscreen}
+          onError={handleVideoError}
         >
-          {skipLabel}
-        </button>
-      )}
+          {/* Subtitles handled by custom overlay */}
+        </video>
 
-      {/* Center Mobile Controls (Hidden on Desktop) */}
-      <div className={`center-mobile-controls mobile-only ${showControls ? 'show' : ''}`}>
-        <button className="control-btn center-action-btn" onClick={skipBackward}>
-          <RotateCcw size={36} />
-          <span className="skip-text-inside">10</span>
-        </button>
-        
-        <button className="control-btn center-play-btn" onClick={togglePlay}>
-          {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
-        </button>
-        
-        <button className="control-btn center-action-btn" onClick={skipForward}>
-          <RotateCw size={36} />
-          <span className="skip-text-inside">10</span>
-        </button>
-      </div>
-
-      {/* Controls Overlay */}
-      <div className="player-controls-overlay">
-        
-        {/* Timeline */}
-        <div className="timeline-container">
-          <input
-            type="range"
-            min="0"
-            max={duration || 100}
-            value={currentTime}
-            onChange={handleSeek}
-            className="timeline-slider"
-            style={{
-              backgroundSize: `${(currentTime / Math.max(duration, 1)) * 100}% 100%`,
-              marginRight: '15px'
-            }}
-          />
-          <span className="time-text">{formatTime(duration - currentTime)}</span>
-        </div>
-
-        {/* Bottom Control Bar */}
-        <div className="bottom-controls">
-          <div className="controls-left desktop-only">
-            <button className="control-btn" onClick={togglePlay}>
-              {isPlaying ? <Pause size={42} fill="currentColor" /> : <Play size={42} fill="currentColor" />}
-            </button>
-            <button className="control-btn" onClick={skipBackward}>
-              <RotateCcw size={38} />
-              <span className="skip-text-inside">10</span>
-            </button>
-            <button className="control-btn" onClick={skipForward}>
-              <RotateCw size={38} />
-              <span className="skip-text-inside">10</span>
-            </button>
-            
-            <div className="volume-container">
-              <button className="control-btn" onClick={toggleMute}>
-                {isMuted || volume === 0 ? <VolumeX size={42} /> : <Volume2 size={42} />}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="volume-slider"
-                style={{
-                  backgroundSize: `${(isMuted ? 0 : volume) * 100}% 100%`
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Title & Episode info (Desktop) */}
-          <div className="title-info desktop-only">
-            <span className="title-main">{title}</span>
-            {!isMovie && (
-              <span className="title-episode">{seasonAndEpisode} {episodeTitle}</span>
-            )}
-          </div>
-
-          <div className="controls-right desktop-only">
-            {!isMovie && (
-              <button className="control-btn with-label tooltip">
-                <SkipForward size={38} />
-                <span className="tooltip-text">Next Episode</span>
-              </button>
-            )}
-
-            {!isMovie && (
-              <button className="control-btn with-label tooltip">
-                <Copy size={38} />
-                <span className="tooltip-text">Episodes</span>
-              </button>
-            )}
-            
-            <div className="subtitles-wrapper">
-              <button className="control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
-                <MessageSquareText size={38} />
-                <span className="tooltip-text">Subtitles / Audio</span>
-              </button>
-              {showSubtitlesMenu && (
-                <div className="subtitles-menu">
-                  <div className="menu-section">
-                    <h4>Audio</h4>
-                    <ul>
-                      <li className="active">Filipino</li>
-                    </ul>
-                  </div>
-                  <div className="menu-section">
-                    <h4>Subtitles</h4>
-                    <ul>
-                      <li 
-                        className={activeSubtitle === -1 ? "active" : ""}
-                        onClick={() => handleSubtitleChange(-1)}
-                      >
-                        Off
-                      </li>
-                      {movie.subtitles?.map((sub, idx) => (
-                        <li 
-                          key={idx}
-                          className={activeSubtitle === idx ? "active" : ""}
-                          onClick={() => handleSubtitleChange(idx)}
-                        >
-                          {sub.label}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+        {/* Playback Indicators Overlay */}
+        {activeIndicator && (
+          <div className={`playback-indicator playback-indicator--${activeIndicator.type}`} key={activeIndicator.key}>
+            <div className="indicator-icon-wrapper">
+              {activeIndicator.type === 'play' && <Play size={64} fill="currentColor" />}
+              {activeIndicator.type === 'pause' && <Pause size={64} fill="currentColor" />}
+              {activeIndicator.type === 'forward' && <RotateCw size={64} />}
+              {activeIndicator.type === 'backward' && <RotateCcw size={64} />}
+              {(activeIndicator.type === 'forward' || activeIndicator.type === 'backward') && (
+                <span className="indicator-text-label">10</span>
               )}
             </div>
+          </div>
+        )}
+        {/* Custom Subtitle Overlay */}
+        {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
+          <div className="custom-subtitle-overlay-container">
+            {parsedSubtitles[movie.subtitles[activeSubtitle].url]
+              .filter(cue => currentTime >= cue.start && currentTime <= cue.end)
+              .map((cue, idx) => (
+                <div key={idx} className="custom-subtitle-text">
+                  {cue.text.split('\n').map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
+                </div>
+              ))}
+          </div>
+        )}
+        
+        {isLoading && !videoError && (
+          <div className="player-loading-overlay">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
+        
+        {videoError && (
+          <div className="video-error-overlay">
+            <p>{videoError}</p>
+          </div>
+        )}
 
-            <div className="speed-wrapper" style={{ position: 'relative' }}>
-              <button 
-                className="control-btn tooltip" 
-                onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}
-              >
-                <Gauge size={38} />
-                <span className="tooltip-text">Playback Speed</span>
+        {/* Age Rating Overlay - Netflix Style */}
+        <div className={`age-rating-overlay ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
+          <div className="age-rating-content">
+            <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
+            {movie.contentWarnings && movie.contentWarnings.length > 0 && (
+              <p className="age-rating-warnings">
+                {movie.contentWarnings.join(', ')}
+              </p>
+            )}
+          </div>
+        </div>
+        
+        {/* Top Bar Navigation */}
+        <div className="player-top-bar">
+          <button className="back-button" onClick={() => navigate(-1)}>
+            <ArrowLeft size={42} />
+          </button>
+          
+          {/* Mobile Title */}
+          <div className="mobile-top-title mobile-only">
+            {title}
+          </div>
+          
+          <div className="top-right-controls">
+            <button className="flag-button lock-button desktop-only tooltip">
+              <Flag size={38} />
+              <span className="tooltip-text tooltip-bottom">Report an issue</span>
+            </button>
+            <button className="flag-button mobile-only" onClick={toggleFullscreen}>
+              {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Skip Intro/Logo Button */}
+        {movie?.id !== 'f2' && (
+          <button 
+            className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
+            onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
+          >
+            {skipLabel}
+          </button>
+        )}
+
+        {/* Center Mobile Controls (Hidden on Desktop, Fades out automatically when buffering) */}
+        <div className={`center-mobile-controls mobile-only ${showControls && !isLoading ? 'show' : ''}`}>
+          <button 
+            className={`control-btn center-action-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
+            onClick={skipBackward}
+            key={`back-${activeIndicator?.type === 'backward' ? activeIndicator.key : 'idle'}`}
+          >
+            <RotateCcw size={36} />
+            <span className="skip-text-inside">10</span>
+          </button>
+          
+          <button 
+            className={`control-btn center-play-btn ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
+            onClick={togglePlay}
+            key={`play-${activeIndicator?.type === 'play' || activeIndicator?.type === 'pause' ? activeIndicator.key : 'idle'}`}
+          >
+            {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
+          </button>
+          
+          <button 
+            className={`control-btn center-action-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
+            onClick={skipForward}
+            key={`fwd-${activeIndicator?.type === 'forward' ? activeIndicator.key : 'idle'}`}
+          >
+            <RotateCw size={36} />
+            <span className="skip-text-inside">10</span>
+          </button>
+        </div>
+
+        {/* Controls Overlay */}
+        <div className="player-controls-overlay">
+          
+          {/* Timeline */}
+          <div className="timeline-container">
+            <input
+              type="range"
+              min="0"
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleSeek}
+              className="timeline-slider"
+              style={{
+                backgroundSize: `${(currentTime / Math.max(duration, 1)) * 100}% 100%`,
+                marginRight: '15px'
+              }}
+            />
+            <span className="time-text">{formatTime(duration - currentTime)}</span>
+          </div>
+
+          {/* Bottom Control Bar */}
+          <div className="bottom-controls">
+            <div className="controls-left desktop-only">
+              <button className="control-btn" onClick={togglePlay}>
+                {isPlaying ? <Pause size={42} fill="currentColor" /> : <Play size={42} fill="currentColor" />}
+              </button>
+              <button className="control-btn" onClick={skipBackward}>
+                <RotateCcw size={38} />
+                <span className="skip-text-inside">10</span>
+              </button>
+              <button className="control-btn" onClick={skipForward}>
+                <RotateCw size={38} />
+                <span className="skip-text-inside">10</span>
               </button>
               
-              {showSpeedMenu && (
-                <div className="speed-menu subtitles-menu">
-                  <div className="menu-section">
-                    <h4>Speed</h4>
-                    <ul>
-                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
-                        <li 
-                          key={speed}
-                          className={playbackSpeed === speed ? "active" : ""}
-                          onClick={() => handleSpeedChange(speed)}
-                        >
-                          {speed === 1 ? "Normal (1x)" : `${speed}x`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+              <div className="volume-container">
+                <button className="control-btn" onClick={toggleMute}>
+                  {isMuted || volume === 0 ? <VolumeX size={42} /> : <Volume2 size={42} />}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  className="volume-slider"
+                  style={{
+                    backgroundSize: `${(isMuted ? 0 : volume) * 100}% 100%`
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Title & Episode info (Desktop) */}
+            <div className="title-info desktop-only">
+              <span className="title-main">{title}</span>
+              {!isMovie && (
+                <span className="title-episode">{seasonAndEpisode} {episodeTitle}</span>
               )}
             </div>
 
-            <button className="control-btn" onClick={toggleFullscreen}>
-              {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
-            </button>
-          </div>
+            <div className="controls-right desktop-only">
+              {!isMovie && (
+                <button className="control-btn with-label tooltip">
+                  <SkipForward size={38} />
+                  <span className="tooltip-text">Next Episode</span>
+                </button>
+              )}
 
-          {/* Mobile Bottom Fixed Row */}
-          <div className="mobile-bottom-row mobile-only">
-            <div className="mobile-bottom-btn">
-              <Scissors size={20} />
-              <span>Clip</span>
-            </div>
-            <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}>
-              <Gauge size={20} />
-              <span>Speed ({playbackSpeed}x)</span>
-              {showSpeedMenu && (
-                <div className="speed-menu subtitles-menu mobile-subtitles-menu">
-                  <div className="menu-section">
-                    <h4>Playback Speed</h4>
-                    <ul>
-                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
-                        <li 
-                          key={speed}
-                          className={playbackSpeed === speed ? "active" : ""}
-                          onClick={() => handleSpeedChange(speed)}
-                        >
-                          {speed === 1 ? "Normal" : `${speed}x`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+              {!isMovie && (
+                <button className="control-btn with-label tooltip">
+                  <Copy size={38} />
+                  <span className="tooltip-text">Episodes</span>
+                </button>
               )}
-            </div>
-            <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
-              <MessageSquareText size={20} />
-              <span>Audio & Subtitles</span>
-              {showSubtitlesMenu && (
-                <div className="subtitles-menu mobile-subtitles-menu">
-                  <div className="menu-section">
-                    <h4>Audio</h4>
-                    <ul>
-                      <li className="active">Filipino</li>
-                    </ul>
-                  </div>
-                  <div className="menu-section">
-                    <h4>Subtitles</h4>
-                    <ul>
-                      <li 
-                        className={activeSubtitle === -1 ? "active" : ""}
-                        onClick={() => handleSubtitleChange(-1)}
-                      >
-                        Off
-                      </li>
-                      {movie.subtitles?.map((sub, idx) => (
+              
+              <div className="subtitles-wrapper">
+                <button className="control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
+                  <MessageSquareText size={38} />
+                  <span className="tooltip-text">Subtitles / Audio</span>
+                </button>
+                {showSubtitlesMenu && (
+                  <div className="subtitles-menu">
+                    <div className="menu-section">
+                      <h4>Audio</h4>
+                      <ul>
+                        <li className="active">Filipino</li>
+                      </ul>
+                    </div>
+                    <div className="menu-section">
+                      <h4>Subtitles</h4>
+                      <ul>
                         <li 
-                          key={idx}
-                          className={activeSubtitle === idx ? "active" : ""}
-                          onClick={() => handleSubtitleChange(idx)}
+                          className={activeSubtitle === -1 ? "active" : ""}
+                          onClick={() => handleSubtitleChange(-1)}
                         >
-                          {sub.label}
+                          Off
                         </li>
-                      ))}
-                    </ul>
+                        {movie.subtitles?.map((sub, idx) => (
+                          <li 
+                            key={idx}
+                            className={activeSubtitle === idx ? "active" : ""}
+                            onClick={() => handleSubtitleChange(idx)}
+                          >
+                            {sub.label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              <div className="speed-wrapper" style={{ position: 'relative' }}>
+                <button 
+                  className="control-btn tooltip" 
+                  onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}
+                >
+                  <Gauge size={38} />
+                  <span className="tooltip-text">Playback Speed</span>
+                </button>
+                
+                {showSpeedMenu && (
+                  <div className="speed-menu subtitles-menu">
+                    <div className="menu-section">
+                      <h4>Speed</h4>
+                      <ul>
+                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                          <li 
+                            key={speed}
+                            className={playbackSpeed === speed ? "active" : ""}
+                            onClick={() => handleSpeedChange(speed)}
+                          >
+                            {speed === 1 ? "Normal (1x)" : `${speed}x`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button className="control-btn" onClick={toggleFullscreen}>
+                {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
+              </button>
+            </div>
+
+            {/* Mobile Bottom Fixed Row */}
+            <div className="mobile-bottom-row mobile-only">
+              <div className="mobile-bottom-btn">
+                <Scissors size={20} />
+                <span>Clip</span>
+              </div>
+              <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}>
+                <Gauge size={20} />
+                <span>Speed ({playbackSpeed}x)</span>
+                {showSpeedMenu && (
+                  <div className="speed-menu subtitles-menu mobile-subtitles-menu">
+                    <div className="menu-section">
+                      <h4>Playback Speed</h4>
+                      <ul>
+                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                          <li 
+                            key={speed}
+                            className={playbackSpeed === speed ? "active" : ""}
+                            onClick={() => handleSpeedChange(speed)}
+                          >
+                            {speed === 1 ? "Normal" : `${speed}x`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
+                <MessageSquareText size={20} />
+                <span>Audio & Subtitles</span>
+                {showSubtitlesMenu && (
+                  <div className="subtitles-menu mobile-subtitles-menu">
+                    <div className="menu-section">
+                      <h4>Audio</h4>
+                      <ul>
+                        <li className="active">Filipino</li>
+                      </ul>
+                    </div>
+                    <div className="menu-section">
+                      <h4>Subtitles</h4>
+                      <ul>
+                        <li 
+                          className={activeSubtitle === -1 ? "active" : ""}
+                          onClick={() => handleSubtitleChange(-1)}
+                        >
+                          Off
+                        </li>
+                        {movie.subtitles?.map((sub, idx) => (
+                          <li 
+                            key={idx}
+                            className={activeSubtitle === idx ? "active" : ""}
+                            onClick={() => handleSubtitleChange(idx)}
+                          >
+                            {sub.label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

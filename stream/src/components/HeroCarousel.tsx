@@ -121,15 +121,16 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
       {/* Staggered content only on entering card */}
       {role === 'enter' && (
         <div className="hero__content hero__content--stagger">
-          {movie.logo ? (
-            <img src={movie.logo} alt={movie.title} className="hero__logo" />
-          ) : (
-            <h1 className="hero__title">{movie.title}</h1>
-          )}
-          <div className="hero__meta">
-            <span className="hero__rating">★ {movie.rating}</span>
-            <span className="hero__year">{movie.year}</span>
-            <span className="hero__badge">{movie.ageRating}</span>
+          <div className="hero__branding">
+            {movie.logo ? (
+              <img src={movie.logo} alt={movie.title} className="hero__logo" />
+            ) : (
+              <h1 className="hero__title">{movie.title}</h1>
+            )}
+            <div className="hero__meta">
+              <span className="hero__year">{movie.year}</span>
+              <span className="hero__badge">{movie.ageRating}</span>
+            </div>
           </div>
           <p className="hero__desc">{movie.description}</p>
           <div className="hero__actions">
@@ -176,13 +177,14 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                 >
                   <div className="hero__gradient" />
                   <div className={`hero__content${i === current ? ' hero__content--active' : ''}`}>
-                    {movie.logo
-                      ? <img src={movie.logo} alt={movie.title} className="hero__logo" />
-                      : <h1 className="hero__title">{movie.title}</h1>}
-                    <div className="hero__meta">
-                      <span className="hero__rating">★ {movie.rating}</span>
-                      <span className="hero__year">{movie.year}</span>
-                      <span className="hero__badge">{movie.ageRating}</span>
+                    <div className="hero__branding">
+                      {movie.logo
+                        ? <img src={movie.logo} alt={movie.title} className="hero__logo" />
+                        : <h1 className="hero__title">{movie.title}</h1>}
+                      <div className="hero__meta">
+                        <span className="hero__year">{movie.year}</span>
+                        <span className="hero__badge">{movie.ageRating}</span>
+                      </div>
                     </div>
                     <p className="hero__desc">{movie.description}</p>
                     <div className="hero__actions">

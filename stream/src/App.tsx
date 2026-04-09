@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
@@ -8,13 +9,19 @@ import TindahanDetail from './pages/TindahanDetail.tsx';
 import AlapaapDetail from './pages/AlapaapDetail.tsx';
 import SpoliariumDetail from './pages/SpoliariumDetail.tsx';
 import PareKoDetail from './pages/PareKoDetail.tsx';
+import TamaKaDetail from './pages/TamaKaDetail.tsx';
+import ElBimboDetail from './pages/ElBimboDetail.tsx';
 
 import VideoPlayer from './pages/VideoPlayer.tsx';
 import './App.css';
 
 function App() {
-  const location = useLocation();
-  const isVideoPlayer = location.pathname.startsWith('/watch');
+  const { pathname } = useLocation();
+  const isVideoPlayer = pathname.startsWith('/watch');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
     <div className="app">
@@ -28,6 +35,8 @@ function App() {
         <Route path="/alapaap" element={<AlapaapDetail />} />
         <Route path="/spoliarium" element={<SpoliariumDetail />} />
         <Route path="/pare-ko" element={<PareKoDetail />} />
+        <Route path="/tama-ka" element={<TamaKaDetail />} />
+        <Route path="/el-bimbo" element={<ElBimboDetail />} />
 
         <Route path="/watch/:id" element={<VideoPlayer />} />
       </Routes>

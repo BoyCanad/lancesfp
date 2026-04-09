@@ -7,7 +7,7 @@
 }
 
 .row:hover {
-  z-index: 10;
+  z-index: 500;
 }
 
 .row__header {
@@ -16,8 +16,8 @@
   justify-content: space-between;
   margin-bottom: 12px;
   position: relative;
-  /* Keep title below expanded elements */
-  z-index: 2;
+  /* Lower z-index so expanded cards from THIS row can go over it */
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -60,17 +60,16 @@
   gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  /* Optimized padding + margins to fit expand scale (1.22)
-     without overlapping too much with adjacent components 
-     150px height * 0.22 / 2 = ~17px needed top/bottom buffer */
-  padding: 40px 0;
-  margin: -40px 0;
+  /* Increased padding + margins to fit expand scale without clipping.
+     Netflix uses a large buffer to allow for the detail popup. */
+  padding: 120px 0;
+  margin: -120px 0;
   
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
   position: relative;
-  z-index: 1;
+  z-index: 2; /* ABOVE the header */
 }
 .row__track::-webkit-scrollbar { display: none; }
 
@@ -90,7 +89,14 @@
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(8px);
-  transition: background 0.2s, transform 0.2s;
+  opacity: 0;
+  pointer-events: none;
+  transition: background 0.2s, transform 0.2s, opacity 0.3s ease;
+}
+
+.row:hover .row__arrow {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .row__arrow:hover {
@@ -134,11 +140,20 @@
 }
 
 .card:hover .card__thumb {
-  transform: scale(1.22);
-  box-shadow:
-    0 15px 45px rgba(0,0,0,0.7),
-    0 0 25px rgba(124,58,237,0.15);
-  border-color: rgba(124, 58, 237, 0.5);
+  transform: scale(1.08);
+  border-color: var(--accent-purple);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+/* On Desktop where we have the Netflix popup, we reset the thumb scale 
+   so the expanded card cleanly takes over the same footprint. */
+@media (min-width: 769px) {
+  .card:hover .card__thumb {
+    transform: scale(1);
+    box-shadow: none;
+    border-color: transparent;
+  }
 }
 
 .card__img {
@@ -218,117 +233,144 @@
 .card__dot { opacity: 0.4; }
 
 
-/* ─── Expanded State Layer (Inside .card__thumb) ───────────────────────── */
-.card__expanded-layer {
+/* ─── Expanded Hover Card ───────────────────────── */
+.card__expanded-card {
   position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  border-radius: inherit;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #141414; /* Netflix standard dark background */
+  border-radius: 10px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.7);
+  opacity: 1; /* Already conditionally rendered */
+  pointer-events: auto;
+  transform: scale(1.3);
+  transform-origin: var(--origin, center calc(50% + 5px));
+  /* Transition applies initially to entering element */
+  animation: expandCard 0.25s forwards cubic-bezier(0.2, 0, 0.2, 1);
+  z-index: 1000;
   overflow: hidden;
-  will-change: opacity;
+  display: flex;
+  flex-direction: column;
 }
 
-.card:hover .card__expanded-layer {
-  opacity: 1;
-  pointer-events: auto;
+@keyframes expandCard {
+  0% { transform: scale(1); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 1; }
+}
+
+.card__expanded-video {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  position: relative;
 }
 
 .card__expanded-banner {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top;
 }
 
-.card__expanded-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(13,13,20,0.95) 0%, transparent 60%);
-}
-
-.card__expanded-content {
-  position: absolute;
-  inset: 0;
-}
-
-.card__tooltip-quality {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(13,13,20,0.9);
-  color: #f5a623;
-  border: 1px solid #f5a623;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.card__tooltip-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+.card__expanded-details {
+  padding: 10px;
   display: flex;
+  flex-direction: column;
   gap: 8px;
+  background: linear-gradient(to bottom, #141414 0%, #141414 100%);
 }
 
-.card__tooltip-controls button {
-  width: 32px;
-  height: 32px;
+.card__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card__controls-left {
+  display: flex;
+  gap: 6px;
+}
+
+.card__controls-right {
+  display: flex;
+}
+
+.card__btn {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: rgba(20,20,28,0.85);
-  border: 1.5px solid rgba(255,255,255,0.2);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-  /* Reduced blur radius for performance */
-  backdrop-filter: blur(2px);
+  border: none;
+  background: transparent;
+  transition: transform 0.2s, background 0.2s, border 0.2s;
 }
 
-.card__tooltip-controls button:hover {
-  background: rgba(255,255,255,0.2);
-  transform: scale(1.08);
+.card__btn--play {
+  background: white;
+  padding-left: 2px; /* Center correct play icon visually */
 }
 
-.card__tooltip-play-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  border: 1.5px solid rgba(255,255,255,0.3);
+.card__btn--play:hover {
+  background: #e6e6e6;
+  transform: scale(1.1);
+}
+
+.card__btn--icon {
+  border: 1.5px solid rgba(255,255,255,0.4);
+  background: #141414;
+}
+
+.card__btn--icon:hover {
+  border-color: white;
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.1);
+}
+
+.card__metadata-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  /* Reduced blur radius */
-  backdrop-filter: blur(3px);
-  transition: transform 0.2s, background 0.2s;
-  padding-left: 4px; /* visually center play icon */
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
 }
 
-.card__tooltip-play-center:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-  background: rgba(255,255,255,0.25);
+.card__match {
+  color: #46d369;
 }
 
-.card__tooltip-genres-bottom {
-  position: absolute;
-  bottom: 14px;
-  left: 14px;
+.card__age {
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 1px 3px;
+  text-transform: uppercase;
+}
+
+.card__duration {
   color: white;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+
+.card__quality-badge {
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 1px 3px;
+  font-size: 9px;
+  border-radius: 2px;
+}
+
+.card__genres-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 9.5px;
+  color: white;
+  margin-top: 1px;
+}
+
+.card__genre-dot {
+  color: rgba(255,255,255,0.3);
+  margin-left: 4px;
 }
 
 /* Responsive */

@@ -185,6 +185,26 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Branding grouping ──────────────────────────────────────── */
+.hero__branding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: fit-content;
+  gap: 0;
+  margin-bottom: 15px; /* Added gap between metadata and description */
+  position: relative;
+  z-index: 5;
+}
+
+/* Adjust desktop alignment: branding itself stays at start */
+@media (min-width: 769px) {
+  .hero__content {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
 /* ── Typography & UI ────────────────────────────────────────── */
 .hero__title {
   font-size: clamp(28px, 4vw, 42px);
@@ -199,16 +219,23 @@
   max-width: 320px;
   height: auto;
   position: relative;
-  top: 28px;
-  margin-bottom: -10px;
   filter: drop-shadow(0 4px 15px rgba(0,0,0,0.4));
-  z-index: 5;
+  z-index: 10;
+  margin-bottom: -48px; /* Pull meta significantly higher into logo area */
+}
+
+@media (min-width: 769px) {
+  .hero__logo {
+    margin-top: 35px; /* Shift logo further down on desktop */
+  }
 }
 
 .hero__meta {
   display: flex;
   align-items: center;
+  justify-content: center; /* Center meta items under logo */
   gap: 8px;
+  width: 100%;
 }
 
 .hero__rating {
@@ -381,6 +408,24 @@
 @media (max-width: 768px) {
   .hero {
     position: relative;
+    padding-top: 50px; /* Gap at the top */
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 180px; /* Longer gradient for smoother blend */
+    background: linear-gradient(to bottom, 
+      var(--bg-primary) 0%, 
+      rgba(13, 13, 20, 0.95) 30%, 
+      rgba(13, 13, 20, 0.6) 60%, 
+      transparent 100%
+    );
+    z-index: 50;
+    pointer-events: none;
   }
   .hero__stage {
     padding: 0;
@@ -412,7 +457,7 @@
     max-width: 50%;
     position: relative;
     top: 30px;
-    margin-bottom: -15px;
+    margin-bottom: 5px; /* Shift meta down on mobile */
   }
   .hero__meta {
     justify-content: center;
