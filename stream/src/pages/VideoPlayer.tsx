@@ -871,7 +871,7 @@ export default function VideoPlayer() {
                 Preview in {nextCountdown} seconds
               </p>
               <div className="mobile-recommendations-grid">
-                {nextThreeMovies.map((m, idx) => (
+                {nextThreeMovies.map((m) => (
                   <div
                     key={m.id}
                     className="mobile-recommendation-card"
