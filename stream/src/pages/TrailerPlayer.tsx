@@ -24,7 +24,6 @@ export default function TrailerPlayer() {
         className="trailer-video"
         src={trailerUrl}
         autoPlay
-        muted
         playsInline
         controls={false}
       />

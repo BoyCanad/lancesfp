@@ -620,16 +620,20 @@ export default function VideoPlayer() {
   };
 
   const handleTrailerEnded = () => {
+    // 1. Hide the video, show the static banner again
     setMobileTrailerReady(false);
+    
+    // 2. Wait 2 seconds (user requested wait time)
     setTimeout(() => {
-      // Re-trigger expansion state if still active
-      setIsExpandingTrailer(prev => {
-        if (prev) {
-          setMobileTrailerReady(true);
+      if (isExpandingTrailer) {
+        // 3. Trigger the cinematic cross-fade back to the video
+        setMobileTrailerReady(true);
+        if (trailerVideoRef.current) {
+          trailerVideoRef.current.currentTime = 0;
+          trailerVideoRef.current.play().catch(() => {});
         }
-        return prev;
-      });
-    }, 7000);
+      }
+    }, 2000);
   };
 
   const handleVideoClick = () => {
@@ -889,25 +893,27 @@ export default function VideoPlayer() {
       {/* ── Inline Trailer Overlay (TrailerPlayer look) — shows when countdown hits 0 ── */}
       {isExpandingTrailer && nextMovie && (
         <div className="inline-trailer-overlay inline-trailer-overlay--visible">
-          {!mobileTrailerReady ? (
+          {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
+          {isMobileWindow && (
             <img 
-              src={isMobileWindow ? (nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail) : (nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail)} 
-              className="mobile-expanding-banner" 
+              src={nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail} 
+              className={`mobile-expanding-banner ${mobileTrailerReady ? 'fade-out' : ''}`} 
               alt="" 
             />
-          ) : (
-            nextMovie.trailerUrl && (
-              <video
-                ref={trailerVideoRef}
-                className="inline-trailer-video"
-                src={nextMovie.trailerUrl}
-                autoPlay
-                playsInline
-                muted={false}
-                onTimeUpdate={handleTrailerTimeUpdate}
-                onEnded={handleTrailerEnded}
-              />
-            )
+          )}
+
+          {/* Render trailer video. On desktop it shows immediately, on mobile it fades in after banner expansion. */}
+          {nextMovie.trailerUrl && (!isMobileWindow || isExpandingTrailer) && (
+            <video
+              ref={trailerVideoRef}
+              className={`inline-trailer-video ${isMobileWindow ? (mobileTrailerReady ? 'fade-in' : 'hidden-mobile') : ''}`}
+              src={nextMovie.trailerUrl}
+              autoPlay
+              playsInline
+              muted
+              onTimeUpdate={handleTrailerTimeUpdate}
+              onEnded={handleTrailerEnded}
+            />
           )}
 
           {/* Trailer Subtitle Overlay */}

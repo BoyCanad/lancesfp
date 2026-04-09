@@ -28,7 +28,7 @@ export default function MovieDetail() {
   // Trailer preview states
   const [trailerActive, setTrailerActive] = useState(false);
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
-  const [isMuted, setIsMuted]             = useState(true);
+  const [isMuted, setIsMuted]             = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {

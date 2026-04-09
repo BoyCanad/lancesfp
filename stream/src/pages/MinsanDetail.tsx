@@ -16,7 +16,7 @@ const parseVTT = (vttData: string): ParsedCue[] => {
   const cues: ParsedCue[] = [];
   const lines = vttData.split(/\r?\n/);
   let i = 0;
-  
+
   const timeToSeconds = (timeStr: string) => {
     const parts = timeStr.trim().split(':');
     let secs = 0;
@@ -34,7 +34,7 @@ const parseVTT = (vttData: string): ParsedCue[] => {
       const parts = line.split('-->');
       const start = timeToSeconds(parts[0]);
       const end = timeToSeconds(parts[1]);
-      
+
       i++;
       let text = '';
       while (i < lines.length && lines[i].trim() !== '') {
@@ -66,14 +66,14 @@ export default function MinsanDetail() {
   const movie = featuredMovies.find((m) => m.id === 'f2');
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
-  
+
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Trailer preview states
   const [trailerActive, setTrailerActive] = useState(false); // true after 5 s
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
-  const [isMuted, setIsMuted]             = useState(true);
-  const [cues, setCues]                   = useState<ParsedCue[]>([]);
+  const [isMuted, setIsMuted] = useState(false);
+  const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -139,7 +139,7 @@ export default function MinsanDetail() {
   useEffect(() => {
     if (trailerActive && videoRef.current) {
       videoRef.current.muted = isMuted;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
     }
   }, [trailerActive]);
 
@@ -184,8 +184,6 @@ export default function MinsanDetail() {
             className={`mdetail-trailer-video ${trailerActive ? 'mdetail-trailer-video--visible' : ''}`}
             src={movie.trailerUrl}
             autoPlay={trailerActive}
-            muted={isMuted}
-            loop={false} // Change to false to trigger onEnded
             playsInline
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleTrailerEnd}
