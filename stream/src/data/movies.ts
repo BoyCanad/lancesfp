@@ -77,7 +77,7 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/index.m3u8",
-    trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.mp4",
+    trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/MINSAN_TRAILER_MOBILE.mp4",
     trailerVttUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.vtt",
   },
   {

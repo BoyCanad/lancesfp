@@ -11,7 +11,7 @@ export default function TrailerPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Fallback to Minsan trailer if not provided
-  const trailerUrl = movie?.trailerUrl || "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.mp4";
+  const trailerUrl = movie?.trailerUrl || "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/MINSAN_TRAILER_MOBILE.mp4";
 
   if (!movie) {
     return <div style={{ color: 'white' }}>Movie not found</div>;
@@ -24,6 +24,7 @@ export default function TrailerPlayer() {
         className="trailer-video"
         src={trailerUrl}
         autoPlay
+        muted
         playsInline
         controls={false}
       />

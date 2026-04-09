@@ -72,7 +72,7 @@ export default function MinsanDetail() {
   // Trailer preview states
   const [trailerActive, setTrailerActive] = useState(false); // true after 5 s
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
-  const [isMuted, setIsMuted]             = useState(false);
+  const [isMuted, setIsMuted]             = useState(true);
   const [cues, setCues]                   = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
