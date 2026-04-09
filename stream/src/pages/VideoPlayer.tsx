@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -15,7 +15,8 @@ import {
   Gauge,
   SkipForward,
   Flag,
-  Scissors
+  Scissors,
+  ThumbsUp
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
@@ -91,6 +92,11 @@ export default function VideoPlayer() {
   const [parsedSubtitles, setParsedSubtitles] = useState<Record<string, ParsedCue[]>>({});
   const [showRating, setShowRating] = useState(false);
   const [activeIndicator, setActiveIndicator] = useState<{ type: 'play' | 'pause' | 'forward' | 'backward'; key: number } | null>(null);
+  const [ambientColor, setAmbientColor] = useState('rgba(0,0,0,0.9)');
+  const [showRecommendation, setShowRecommendation] = useState(false);
+  const [dismissedRecommendation, setDismissedRecommendation] = useState(false);
+  const [nextCountdown, setNextCountdown] = useState(10);
+
   
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hasShownRatingRef = useRef<boolean>(false);
@@ -98,6 +104,7 @@ export default function VideoPlayer() {
   const hlsRef = useRef<Hls | null>(null);
   const playPendingRef = useRef<boolean>(false);
   const indicatorTimerRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const triggerIndicator = (type: 'play' | 'pause' | 'forward' | 'backward') => {
     if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
@@ -110,6 +117,15 @@ export default function VideoPlayer() {
   // Mock Data fallback
   const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
   const title = movie?.title || "Ang Huling El Bimbo";
+  
+  const nextMovie = useMemo(() => {
+    const currentIndex = featuredMovies.findIndex(m => m.id === movie?.id);
+    if (currentIndex !== -1 && currentIndex < featuredMovies.length - 1) {
+      return featuredMovies[currentIndex + 1];
+    }
+    return featuredMovies[0]; // loop back or fallback
+  }, [movie]);
+
   
   // Determine if it's a movie or series
   // For now, let's assume if it has 'h' in duration or is one of the featured musicals, it's a movie
@@ -150,6 +166,51 @@ export default function VideoPlayer() {
     };
   }, [isPlaying]);
 
+
+  // Ambient Color Sampling for Mobile Portrait
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const interval = setInterval(() => {
+      if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Sample less frequently for a smoother vibe (every 3 seconds)
+        if (ctx && video.readyState >= 2) {
+          try {
+            ctx.drawImage(video, 0, 0, 1, 1);
+            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            // Use a softer opacity, blending multiple scenes organically
+            setAmbientColor(`rgba(${r}, ${g}, ${b}, 0.5)`);
+          } catch (e) {
+            // Error handling
+          }
+        }
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+
+  // Next Up Recommendation Timer
+  useEffect(() => {
+    let timer: number;
+    if (showRecommendation && isPlaying && nextCountdown > 0) {
+      timer = window.setInterval(() => {
+        setNextCountdown(prev => {
+          if (prev <= 1) {
+            navigate(`/watch/${nextMovie.id}`);
+            return 10;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showRecommendation, isPlaying, nextCountdown, nextMovie, navigate]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -346,6 +407,10 @@ export default function VideoPlayer() {
       hlsManagedRef.current = false;
       hlsRef.current = null;
       playPendingRef.current = false;
+      // Reset recommendations on new video
+      setDismissedRecommendation(false);
+      setShowRecommendation(false);
+      setNextCountdown(10);
     };
   }, [videoSrc]);
 
@@ -452,6 +517,14 @@ export default function VideoPlayer() {
   };
 
   const handleVideoClick = () => {
+    // If in credits-shrink mode, clicking the video brings it back to full size
+    if (showRecommendation) {
+      setDismissedRecommendation(true);
+      setShowRecommendation(false);
+      setNextCountdown(10);
+      return;
+    }
+
     const isMobile = window.innerWidth <= 896;
     
     if (isMobile) {
@@ -484,9 +557,32 @@ export default function VideoPlayer() {
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
+      const time = videoRef.current.currentTime;
+      setCurrentTime(time);
+      
+      // Determine when to trigger the credits mode
+      let shouldShowRecommendation = false;
+      if (movie?.id === 'f1') {
+        // Specific request: trigger at 48:30 (2910 seconds) for Ang Huling El Bimbo Play
+        shouldShowRecommendation = time >= 2910;
+      } else if (duration > 0 && (duration - time) <= 15) {
+        // Default case: 15 seconds before the end
+        shouldShowRecommendation = true;
+      }
+      
+      if (shouldShowRecommendation && !dismissedRecommendation) {
+        if (!showRecommendation) {
+          setShowRecommendation(true);
+        }
+      } else {
+        if (showRecommendation) {
+          setShowRecommendation(false);
+          setNextCountdown(10);
+        }
+      }
     }
   };
+
 
   const handleWaiting = () => {
     setIsLoading(true);
@@ -600,7 +696,55 @@ export default function VideoPlayer() {
 
   return (
     <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
-      <div className="video-stage-wrapper">
+      
+      {/* GPU Accelerated Ambient Glow */}
+      <div 
+        className="ambient-glow"
+        style={{ backgroundColor: ambientColor }}
+      />
+
+      {/* Hidden canvas for color sampling */}
+      <canvas ref={canvasRef} width="1" height="1" style={{ display: 'none' }} />
+      
+      {/* Next Up Recommendation Overlay */}
+      {showRecommendation && nextMovie && (
+        <div className="next-up-overlay">
+          <img src={nextMovie.banner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
+          <div className="next-up-gradient"></div>
+          <div className="next-up-content">
+            {nextMovie.logo ? (
+              <img src={nextMovie.logo} className="next-up-logo" alt={nextMovie.title} />
+            ) : (
+              <h2 className="next-up-title-text">{nextMovie.title}</h2>
+            )}
+            <p className="next-up-desc">{nextMovie.description}</p>
+            <div className="next-up-buttons">
+              <button 
+                className="next-play-btn" 
+                onClick={() => navigate(`/watch/${nextMovie.id}`)}
+              >
+                <Play size={20} fill="black" /> Play
+              </button>
+              <button 
+                className="next-trailer-btn"
+                onClick={() => navigate(`/watch/${nextMovie.id}`)}
+              >
+                <Play size={20} fill="white" /> Trailer in {nextCountdown}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''}`}>
+        {/* If shrinking, show Rate overlay inside the frame too */}
+        {showRecommendation && (
+          <div className="rate-shrunken-video">
+            <span className="rate-text">Rate:</span>
+            <button className="rate-btn"><ThumbsUp size={16} color="white" /></button>
+          </div>
+        )}
+
         <video
           ref={videoRef}
           playsInline
