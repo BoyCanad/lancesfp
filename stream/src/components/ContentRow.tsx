@@ -1,7 +1,7 @@
 import { useRef, useState, memo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Play, Plus, Info, ThumbsUp, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Plus, ThumbsUp, ChevronDown } from 'lucide-react';
 import type { Movie } from '../data/movies';
 import './ContentRow.css';
 
