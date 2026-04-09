@@ -1055,6 +1055,11 @@
   background-color: rgba(109, 109, 110, 0.4);
 }
 
+/* Mobile recommendations overlay — hidden on desktop, shown only in mobile media query */
+.mobile-recommendations-overlay {
+  display: none;
+}
+
 /* ── Credits Shrunken Video Frame (PiP while countdown runs) ── */
 .video-stage-wrapper {
   transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
@@ -1469,6 +1474,7 @@
   z-index: 55;
   animation: mobileExpandIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: 16% center;
+  transition: opacity 1.2s ease-in-out;
 }
 
 @keyframes mobileExpandIn {

@@ -145,6 +145,9 @@ export default function VideoPlayer() {
   const title = movie?.title || "Ang Huling El Bimbo";
   
   const nextMovie = useMemo(() => {
+    // Special overrides for curated recommendations
+    if (movie?.id === 'f2') return featuredMovies.find(m => m.id === 'f1') ?? featuredMovies[0];
+
     const currentIndex = featuredMovies.findIndex(m => m.id === movie?.id);
     if (currentIndex !== -1 && currentIndex < featuredMovies.length - 1) {
       return featuredMovies[currentIndex + 1];
@@ -153,6 +156,16 @@ export default function VideoPlayer() {
   }, [movie]);
 
   const nextThreeMovies = useMemo(() => {
+    // Special overrides for curated recommendations
+    if (movie?.id === 'f2') {
+      // End of Minsan → recommend El Bimbo Play first, then Tindahan, Alapaap
+      return [
+        featuredMovies.find(m => m.id === 'f1'),
+        featuredMovies.find(m => m.id === 'f4'),
+        featuredMovies.find(m => m.id === 'f5'),
+      ].filter(Boolean) as typeof featuredMovies;
+    }
+
     const currentIndex = featuredMovies.findIndex(m => m.id === movie?.id);
     let list = [];
     if (currentIndex !== -1) {
@@ -606,6 +619,19 @@ export default function VideoPlayer() {
     setCurrentTrailerSubtitle(activeCue ? activeCue.text : '');
   };
 
+  const handleTrailerEnded = () => {
+    setMobileTrailerReady(false);
+    setTimeout(() => {
+      // Re-trigger expansion state if still active
+      setIsExpandingTrailer(prev => {
+        if (prev) {
+          setMobileTrailerReady(true);
+        }
+        return prev;
+      });
+    }, 7000);
+  };
+
   const handleVideoClick = () => {
     // If in credits-shrink mode, clicking the video brings it back to full size
     if (showRecommendation) {
@@ -801,7 +827,7 @@ export default function VideoPlayer() {
         <>
           {/* Desktop Layout */}
           <div className={`next-up-overlay desktop-recommendation-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
-            <img src={nextMovie.banner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
+            <img src={nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
             <div className="next-up-gradient"></div>
             <div className="next-up-content">
               {nextMovie.logo ? (
@@ -851,7 +877,7 @@ export default function VideoPlayer() {
                     className="mobile-recommendation-card"
                     onClick={() => navigate(`/watch/${m.id}`)}
                   >
-                    <img src={m.cardBanner || m.thumbnail} alt={m.title} loading="lazy" />
+                    <img src={m.thumbnail || m.mobileThumbnail || m.cardBanner} alt={m.title} loading="lazy" />
                   </div>
                 ))}
               </div>
@@ -863,9 +889,9 @@ export default function VideoPlayer() {
       {/* ── Inline Trailer Overlay (TrailerPlayer look) — shows when countdown hits 0 ── */}
       {isExpandingTrailer && nextMovie && (
         <div className="inline-trailer-overlay inline-trailer-overlay--visible">
-          {(!mobileTrailerReady && isMobileWindow) ? (
+          {!mobileTrailerReady ? (
             <img 
-              src={nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail} 
+              src={isMobileWindow ? (nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail) : (nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail)} 
               className="mobile-expanding-banner" 
               alt="" 
             />
@@ -877,9 +903,9 @@ export default function VideoPlayer() {
                 src={nextMovie.trailerUrl}
                 autoPlay
                 playsInline
-                loop
                 muted={false}
                 onTimeUpdate={handleTrailerTimeUpdate}
+                onEnded={handleTrailerEnded}
               />
             )
           )}
