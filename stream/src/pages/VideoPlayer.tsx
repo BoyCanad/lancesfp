@@ -18,6 +18,7 @@ import {
   Flag,
   Scissors,
   ThumbsUp,
+  FastForward,
   Plus,
   X
 } from 'lucide-react';
@@ -77,6 +78,7 @@ export default function VideoPlayer() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLInputElement>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -103,7 +105,13 @@ export default function VideoPlayer() {
   const [trailerCues, setTrailerCues] = useState<ParsedCue[]>([]);
   const [currentTrailerSubtitle, setCurrentTrailerSubtitle] = useState<string>('');
   const [mobileTrailerReady, setMobileTrailerReady] = useState(false);
+  const [is2xPressing, setIs2xPressing] = useState(false);
+  const [previewTime, setPreviewTime] = useState(0);
+  const [previewPos, setPreviewPos] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const [hoverLinePos, setHoverLinePos] = useState(0);
   const [isMobileWindow, setIsMobileWindow] = useState(window.innerWidth <= 896);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobileWindow(window.innerWidth <= 896);
@@ -114,7 +122,16 @@ export default function VideoPlayer() {
   useEffect(() => {
     if (isExpandingTrailer) {
       if (isMobileWindow) {
-        const timer = setTimeout(() => setMobileTrailerReady(true), 2000);
+        const timer = setTimeout(() => {
+          setMobileTrailerReady(true);
+          // Force play on mobile to ensure autoplay happens after expansion
+          if (trailerVideoRef.current) {
+            trailerVideoRef.current.load();
+            trailerVideoRef.current.play().catch(err => {
+              console.error("Trailer play failed:", err);
+            });
+          }
+        }, 2000);
         return () => clearTimeout(timer);
       } else {
         setMobileTrailerReady(true);
@@ -131,6 +148,25 @@ export default function VideoPlayer() {
   const indicatorTimerRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailerVideoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const lastTapRef = useRef<{ time: number; x: number } | null>(null);
+  const ratingTimerRef = useRef<number | null>(null);
+  const lastTriggeredRatingRef = useRef<number | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const isLongPressActiveRef = useRef(false);
+  const hlsPreviewRef = useRef<Hls | null>(null);
+  const seekDebounceRef = useRef<number | null>(null);
+
+  const EL_BIMBO_RATING_TIMESTAMPS = [1025, 1104, 1154, 1779, 2144, 2182];
+
+  const triggerRating = () => {
+    if (ratingTimerRef.current) window.clearTimeout(ratingTimerRef.current);
+    setShowRating(true);
+    ratingTimerRef.current = window.setTimeout(() => {
+      setShowRating(false);
+      ratingTimerRef.current = null;
+    }, 7000);
+  };
 
   const triggerIndicator = (type: 'play' | 'pause' | 'forward' | 'backward') => {
     if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
@@ -251,7 +287,9 @@ export default function VideoPlayer() {
   // Next Up Recommendation Timer
   useEffect(() => {
     let timer: number;
-    if (showRecommendation && isPlaying && nextCountdown > 0 && !isExpandingTrailer) {
+    const isMainVideoEnded = videoRef.current?.ended;
+    
+    if (showRecommendation && (isPlaying || isMainVideoEnded) && nextCountdown > 0 && !isExpandingTrailer) {
       timer = window.setInterval(() => {
         setNextCountdown(prev => {
           if (prev <= 1) {
@@ -342,13 +380,7 @@ export default function VideoPlayer() {
   useEffect(() => {
     if (isPlaying && !hasShownRatingRef.current) {
       hasShownRatingRef.current = true;
-      setShowRating(true);
-      
-      const timer = setTimeout(() => {
-        setShowRating(false);
-      }, 7000);
-      
-      return () => clearTimeout(timer);
+      triggerRating();
     }
   }, [isPlaying]);
 
@@ -510,6 +542,37 @@ export default function VideoPlayer() {
   }, [videoSrc]);
 
   useEffect(() => {
+    if (isMobileWindow || !previewVideoRef.current || !videoSrc) return;
+
+    if (videoSrc.includes('.m3u8') && Hls.isSupported()) {
+      const hlsP = new Hls({
+        enableWorker: true,
+        autoStartLoad: true,
+        lowLatencyMode: false,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+      });
+      hlsPreviewRef.current = hlsP;
+      hlsP.attachMedia(previewVideoRef.current);
+      hlsP.on(Hls.Events.MEDIA_ATTACHED, () => {
+        hlsP.loadSource(videoSrc);
+      });
+      hlsP.on(Hls.Events.MANIFEST_PARSED, () => {
+        hlsP.currentLevel = 0; // Force lowest quality chunk for instant preview
+        hlsP.startLoad();
+      });
+
+      return () => {
+        hlsP.destroy();
+        hlsPreviewRef.current = null;
+      };
+    } else {
+      previewVideoRef.current.src = videoSrc;
+    }
+  }, [videoSrc, isMobileWindow]);
+
+
+  useEffect(() => {
     const handleFullscreenChange = async () => {
       const isFull = !!document.fullscreenElement;
       setIsFullscreen(isFull);
@@ -636,18 +699,44 @@ export default function VideoPlayer() {
     }, 2000);
   };
 
-  const handleVideoClick = () => {
+  const handleDismissRecommendation = () => {
+    setDismissedRecommendation(true);
+    setShowRecommendation(false);
+    setIsExpandingTrailer(false);
+    setNextCountdown(10);
+  };
+
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     // If in credits-shrink mode, clicking the video brings it back to full size
     if (showRecommendation) {
-      setDismissedRecommendation(true);
-      setShowRecommendation(false);
-      setNextCountdown(10);
+      handleDismissRecommendation();
       return;
     }
 
     const isMobile = window.innerWidth <= 896;
     
     if (isMobile) {
+      const now = Date.now();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      
+      // Double tap detection (within 300ms)
+      if (lastTapRef.current && (now - lastTapRef.current.time) < 300) {
+        const width = rect.width;
+        // Left 40% for backward, Right 40% for forward
+        if (x < width * 0.4) {
+          skipBackward();
+          lastTapRef.current = null; // Reset to prevent triple tap
+          return;
+        } else if (x > width * 0.6) {
+          skipForward();
+          lastTapRef.current = null;
+          return;
+        }
+      }
+      
+      lastTapRef.current = { time: now, x };
+
       // Mobile behavior: toggle controls visibility
       if (showControls) {
         setShowControls(false);
@@ -666,6 +755,34 @@ export default function VideoPlayer() {
     }
   };
 
+  const handleTouchStart = () => {
+    if (!isMobileWindow) return;
+    longPressTimerRef.current = window.setTimeout(() => {
+      if (videoRef.current && isPlaying) {
+        isLongPressActiveRef.current = true;
+        videoRef.current.playbackRate = 2;
+        setIs2xPressing(true);
+        if ('vibrate' in navigator) navigator.vibrate(50);
+      }
+    }, 500); 
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    if (isLongPressActiveRef.current) {
+      isLongPressActiveRef.current = false;
+      if (videoRef.current) {
+        videoRef.current.playbackRate = playbackSpeed;
+        setIs2xPressing(false);
+      }
+      e.preventDefault(); 
+    }
+  };
+
   const handleVideoError = () => {
     // Suppress native error events when hls.js is in control —
     // the video element has no src initially, so browsers fire a spurious error.
@@ -676,13 +793,21 @@ export default function VideoPlayer() {
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
+    if (videoRef.current && !isScrubbing) {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
       
       // Determine when to trigger the credits mode
       let shouldShowRecommendation = false;
-      if (movie?.id === 'f1') {
+      if (movie?.id === 'f1' || movie?.id === 'eb1') {
+        const floorTime = Math.floor(time);
+        
+        // Age Rating Timestamps trigger
+        if (EL_BIMBO_RATING_TIMESTAMPS.includes(floorTime) && lastTriggeredRatingRef.current !== floorTime) {
+          lastTriggeredRatingRef.current = floorTime;
+          triggerRating();
+        }
+
         // Specific request: trigger at 48:30 (2910 seconds) for Ang Huling El Bimbo Play
         shouldShowRecommendation = time >= 2910;
       } else if (duration > 0 && (duration - time) <= 15) {
@@ -766,13 +891,7 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    if (videoRef.current) {
-      videoRef.current.currentTime = val;
-      setCurrentTime(val);
-    }
-  };
+
 
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
@@ -804,10 +923,100 @@ export default function VideoPlayer() {
     }
   };
 
+  // Shared seek calculation: pure linear from wrapper rect.
+  // Both the hover tooltip AND clicking use this same formula → they always match.
+  const seekFromEvent = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const time = pct * duration;
+    if (videoRef.current) videoRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+
+  const lastPreviewTimeRef = useRef(0);
+
+  const updatePreview = (clientX: number, target: HTMLElement) => {
+    if (!duration || !movie) return;
+    const rect = target.getBoundingClientRect();
+    let pct = (clientX - rect.left) / rect.width;
+    pct = Math.max(0, Math.min(1, pct));
+    
+    const time = pct * duration;
+    lastPreviewTimeRef.current = time; // track for touch end
+    
+    const cursorPx = pct * rect.width;
+    const thumbnailWidth = isMobileWindow ? 180 : 240; // smaller on mobile
+    const halfWidth = thumbnailWidth / 2;
+    const clampedPx = Math.max(halfWidth, Math.min(rect.width - halfWidth, cursorPx));
+    
+    setPreviewPos((clampedPx / rect.width) * 100);
+    setHoverLinePos(pct * 100);
+    setPreviewTime(time);
+    setIsScrubbing(true);
+    
+    // For mobile, visually move the progress bar thumb while dragging
+    if (isMobileWindow) {
+      setCurrentTime(time);
+    }
+    
+    setShowPreview(true);
+    
+    if (previewVideoRef.current) {
+      if (seekDebounceRef.current) window.clearTimeout(seekDebounceRef.current);
+      seekDebounceRef.current = window.setTimeout(() => {
+        if (previewVideoRef.current) previewVideoRef.current.currentTime = time;
+      }, 60);
+    }
+  };
+
+  const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    updatePreview(e.clientX, e.currentTarget);
+  };
+
+  const handleTimelineTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    updatePreview(e.touches[0].clientX, e.currentTarget);
+  };
+
+  const handleTimelineTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    updatePreview(e.touches[0].clientX, e.currentTarget);
+  };
+
+  const handleTimelineMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only hide when leaving the wrapper entirely, not when moving into overlay children.
+    const related = e.relatedTarget as Node | null;
+    if (related && e.currentTarget.contains(related)) return;
+    setShowPreview(false);
+    setIsScrubbing(false);
+  };
+
+  const handleTimelineTouchEnd = () => {
+    setShowPreview(false);
+    setIsScrubbing(false);
+    // Seek main video on release
+    if (videoRef.current) {
+      const finalTime = lastPreviewTimeRef.current;
+      videoRef.current.currentTime = finalTime;
+      setCurrentTime(finalTime);
+    }
+  };
+
   const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
+    const clamped = Math.max(0, time); // prevent -1:0-1 at video end
+    const minutes = Math.floor(clamped / 60);
+    const seconds = Math.floor(clamped % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  const handleVideoEnded = () => {
+    setIsPlaying(false);
+    // Show the recommendation overlay when the video fully ends, 
+    // giving the user another chance to watch the next movie even if they previously dismissed it to watch credits.
+    if (!showRecommendation) {
+      setDismissedRecommendation(false);
+      setNextCountdown(10);
+      setShowRecommendation(true);
+    }
   };
 
   const skipIds = ['f1', 'eb1', 'f4', 'f5'];
@@ -858,23 +1067,36 @@ export default function VideoPlayer() {
           </div>
 
           {/* Mobile Thumbnail Layout */}
-          <div className={`mobile-recommendations-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
-            <div className="mobile-recommendations-header-area">
-              <button className="mobile-recommendations-back" onClick={() => {
-                setDismissedRecommendation(true);
-                setShowRecommendation(false);
-                setIsExpandingTrailer(false);
-                setNextCountdown(10);
-              }}>
+          <div 
+            className={`mobile-recommendations-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleDismissRecommendation();
+            }}
+          >
+            <div 
+              className="mobile-recommendations-header-area"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) handleDismissRecommendation();
+              }}
+            >
+              <button className="mobile-recommendations-back" onClick={handleDismissRecommendation}>
                 <ArrowLeft size={24} color="white" />
               </button>
             </div>
-            <div className="mobile-recommendations-content">
+            <div 
+              className="mobile-recommendations-content"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) handleDismissRecommendation();
+              }}
+            >
               <h3 className="mobile-recommendations-title">Check out these recommendations</h3>
               <p className="mobile-recommendations-subtitle">
                 Preview in {nextCountdown} seconds
               </p>
-              <div className="mobile-recommendations-grid">
+              <div 
+                className="mobile-recommendations-grid"
+                onClick={(e) => e.stopPropagation()} // prevent grid area from closing
+              >
                 {nextThreeMovies.map((m) => (
                   <div
                     key={m.id}
@@ -907,13 +1129,14 @@ export default function VideoPlayer() {
             <video
               ref={trailerVideoRef}
               className={`inline-trailer-video ${isMobileWindow ? (mobileTrailerReady ? 'fade-in' : 'hidden-mobile') : ''}`}
-              src={nextMovie.trailerUrl}
               autoPlay
               playsInline
               muted
               onTimeUpdate={handleTrailerTimeUpdate}
               onEnded={handleTrailerEnded}
-            />
+            >
+              <source src={nextMovie.trailerUrl} type="video/mp4" />
+            </video>
           )}
 
           {/* Trailer Subtitle Overlay */}
@@ -932,10 +1155,7 @@ export default function VideoPlayer() {
             className={`inline-trailer-back ${isMobileWindow ? 'mobile-close-btn' : ''}`}
             onClick={() => {
               if (isMobileWindow) {
-                 setDismissedRecommendation(true);
-                 setShowRecommendation(false);
-                 setIsExpandingTrailer(false);
-                 setNextCountdown(10);
+                 handleDismissRecommendation();
                  if (videoRef.current) {
                    videoRef.current.volume = 1;
                    videoRef.current.play().catch(() => {});
@@ -1015,11 +1235,26 @@ export default function VideoPlayer() {
           onWaiting={handleWaiting}
           onCanPlay={handleCanPlay}
           onClick={handleVideoClick}
-          onDoubleClick={toggleFullscreen}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onContextMenu={(e) => isLongPressActiveRef.current && e.preventDefault()}
           onError={handleVideoError}
+          onEnded={handleVideoEnded}
         >
           {/* Subtitles handled by custom overlay */}
         </video>
+
+
+
+        {/* 2X Speed Indicator */}
+        {is2xPressing && isMobileWindow && (
+          <div className="speed-2x-indicator">
+            <div className="speed-2x-pill">
+              <FastForward size={16} fill="white" strokeWidth={0} />
+              <span>2X Speed</span>
+            </div>
+          </div>
+        )}
 
         {/* Playback Indicators Overlay */}
         {activeIndicator && (
@@ -1143,18 +1378,87 @@ export default function VideoPlayer() {
           
           {/* Timeline */}
           <div className="timeline-container">
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="timeline-slider"
-              style={{
-                backgroundSize: `${(currentTime / Math.max(duration, 1)) * 100}% 100%`,
-                marginRight: '15px'
-              }}
-            />
+            <div 
+              className="timeline-track-wrapper"
+              onMouseMove={handleTimelineMouseMove}
+              onMouseDown={seekFromEvent}
+              onMouseLeave={handleTimelineMouseLeave}
+              onTouchMove={handleTimelineTouchMove}
+              onTouchStart={handleTimelineTouchStart}
+              onTouchEnd={handleTimelineTouchEnd}
+              style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', marginRight: '15px', cursor: 'pointer' }}
+            >
+              {showPreview && (
+                <div 
+                  className="hover-progress-line"
+                  style={{
+                    position: 'absolute',
+                    left: `${hoverLinePos}%`,
+                    width: '2px',
+                    height: '8px', 
+                    top: '50%',
+                    backgroundColor: 'white',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    zIndex: 5
+                  }}
+                />
+              )}
+              <div 
+                className="seek-preview-overlay"
+                style={{ 
+                  left: `${previewPos}%`,
+                  opacity: showPreview ? 1 : 0,
+                  transform: `translateX(-50%) translateY(${showPreview ? '0' : '10px'})`,
+                  pointerEvents: 'none',
+                  zIndex: 10
+                }}
+              >
+                  <div className="seek-preview-frame">
+                    {movie.spriteUrl && movie.spriteConfig ? (
+                      <div 
+                        className="preview-sprite-element"
+                        style={{
+                          backgroundImage: `url(${movie.spriteUrl})`,
+                          backgroundPosition: (() => {
+                            const config = movie.spriteConfig;
+                            const index = Math.floor(previewTime / config.interval);
+                            const col = index % config.cols;
+                            const row = Math.floor(index / config.cols);
+                            const posX = config.cols > 1 ? (col / (config.cols - 1)) * 100 : 0;
+                            const posY = config.rows > 1 ? (row / (config.rows - 1)) * 100 : 0;
+                            return `${posX}% ${posY}%`;
+                          })(),
+                          backgroundSize: `${movie.spriteConfig.cols * 100}% ${movie.spriteConfig.rows * 100}%`
+                        }}
+                      />
+                    ) : (
+                      <video
+                        ref={previewVideoRef}
+                        className="preview-video-element"
+                        muted
+                        playsInline
+                        preload="auto"
+                      />
+                    )}
+                  </div>
+                  <span className="seek-preview-time">{formatTime(previewTime)}</span>
+                </div>
+              <input
+                ref={sliderRef}
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={currentTime}
+                onChange={() => {/* seeking handled by onMouseDown on wrapper */}}
+                className="timeline-slider"
+                style={{
+                  backgroundSize: `${(currentTime / Math.max(duration, 1)) * 100}% 100%`,
+                  margin: 0,
+                  pointerEvents: 'none' // wrapper handles all mouse events
+                }}
+              />
+            </div>
             <span className="time-text">{formatTime(duration - currentTime)}</span>
           </div>
 
@@ -1262,20 +1566,28 @@ export default function VideoPlayer() {
                 </button>
                 
                 {showSpeedMenu && (
-                  <div className="speed-menu subtitles-menu">
-                    <div className="menu-section">
-                      <h4>Speed</h4>
-                      <ul>
-                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
-                          <li 
-                            key={speed}
-                            className={playbackSpeed === speed ? "active" : ""}
-                            onClick={() => handleSpeedChange(speed)}
-                          >
-                            {speed === 1 ? "Normal (1x)" : `${speed}x`}
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="speed-menu subtitles-menu speed-slider-popover">
+                    <div className="speed-slider-container">
+                      <h4>Playback Speed</h4>
+                      <div className="speed-track-wrapper">
+                        <div className="speed-track"></div>
+                        <div className="speed-marks">
+                          {[0.5, 0.75, 1, 1.5, 2].map(speed => (
+                            <div 
+                              key={speed} 
+                              className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
+                              onClick={() => handleSpeedChange(speed)}
+                            >
+                              <div className="speed-dot-outer">
+                                <div className="speed-dot"></div>
+                              </div>
+                              <span className="speed-label">
+                                {speed === 1 ? '1x (Normal)' : `${speed}x`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1296,20 +1608,32 @@ export default function VideoPlayer() {
                 <Gauge size={20} />
                 <span>Speed ({playbackSpeed}x)</span>
                 {showSpeedMenu && (
-                  <div className="speed-menu subtitles-menu mobile-subtitles-menu">
-                    <div className="menu-section">
+                  <div 
+                    className="speed-menu subtitles-menu mobile-subtitles-menu mobile-speed-slider-menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="speed-slider-container">
+                      <div className="mobile-menu-handle"></div>
                       <h4>Playback Speed</h4>
-                      <ul>
-                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
-                          <li 
-                            key={speed}
-                            className={playbackSpeed === speed ? "active" : ""}
-                            onClick={() => handleSpeedChange(speed)}
-                          >
-                            {speed === 1 ? "Normal" : `${speed}x`}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="speed-track-wrapper">
+                        <div className="speed-track"></div>
+                        <div className="speed-marks">
+                          {[0.5, 0.75, 1, 1.5, 2].map(speed => (
+                            <div 
+                              key={speed} 
+                              className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
+                              onClick={() => handleSpeedChange(speed)}
+                            >
+                              <div className="speed-dot-outer">
+                                <div className="speed-dot"></div>
+                              </div>
+                              <span className="speed-label">
+                                {speed === 1 ? 'Normal' : `${speed}x`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1318,40 +1642,47 @@ export default function VideoPlayer() {
                 <MessageSquareText size={20} />
                 <span>Audio & Subtitles</span>
                 {showSubtitlesMenu && (
-                  <div className="subtitles-menu mobile-subtitles-menu">
-                    <div className="menu-section">
-                      <h4>Audio</h4>
-                      <ul>
-                        <li className="active">Filipino</li>
-                      </ul>
-                    </div>
-                    <div className="menu-section">
-                      <h4>Subtitles</h4>
-                      <ul>
-                        <li 
-                          className={activeSubtitle === -1 ? "active" : ""}
-                          onClick={() => handleSubtitleChange(-1)}
+                  <div 
+                    className="subtitles-menu mobile-subtitles-menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
+                    <div className="mobile-menu-title">Audio & Subtitles</div>
+                    <div className="mobile-menu-scrollable">
+                      <div className="mobile-menu-section">
+                        <h4>Audio</h4>
+                        <div className="mobile-menu-item active">
+                          Filipino <div className="active-dot" />
+                        </div>
+                      </div>
+                      <div className="mobile-menu-section">
+                        <h4>Subtitles</h4>
+                        <div 
+                          className={`mobile-menu-item ${activeSubtitle === -1 ? 'active' : ''}`}
+                          onClick={() => { handleSubtitleChange(-1); setShowSubtitlesMenu(false); }}
                         >
                           Off
-                        </li>
+                          {activeSubtitle === -1 && <div className="active-dot" />}
+                        </div>
                         {movie.subtitles?.map((sub, idx) => (
-                          <li 
+                          <div 
                             key={idx}
-                            className={activeSubtitle === idx ? "active" : ""}
-                            onClick={() => handleSubtitleChange(idx)}
+                            className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
+                            onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
                           >
                             {sub.label}
-                          </li>
+                            {activeSubtitle === idx && <div className="active-dot" />}
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+</div>
+);
 }

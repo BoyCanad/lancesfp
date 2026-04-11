@@ -27,6 +27,14 @@ export interface Movie {
   }[];
   trailerUrl?: string;
   trailerVttUrl?: string;
+  spriteUrl?: string;
+  spriteConfig?: {
+    rows: number;
+    cols: number;
+    interval: number;
+    thumbWidth: number;
+    thumbHeight: number;
+  };
 }
 
 export const featuredMovies: Movie[] = [
@@ -60,7 +68,15 @@ export const featuredMovies: Movie[] = [
         srclang: "en",
         url: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/Ang%20Huling%20El%20Bimbo%20Play%20English.vtt"
       }
-    ]
+    ],
+    spriteUrl: "/images/storyboards/sprite_5s_hq_synced.jpg",
+    spriteConfig: {
+      rows: 30,
+      cols: 20,
+      interval: 5, 
+      thumbWidth: 320,
+      thumbHeight: 180
+    }
   },
   {
     id: "f2",
