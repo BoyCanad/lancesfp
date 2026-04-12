@@ -55,13 +55,13 @@ export const featuredMovies: Movie[] = [
     ageRating: "PG-13",
     contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
     isOriginal: true,
-    videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/new_index.m3u8",
-    trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/trailer.mp4",
+    videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
+    trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
     subtitles: [
       {
         label: "Filipino",
         srclang: "fil",
-        url: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/Ang%20Huling%20El%20Bimbo%20Play.vtt"
+        url: "https://boycanad.github.io/stream-storage-1/AngHulingElBimboPlay.vtt"
       },
       {
         label: "English",
@@ -93,8 +93,8 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/index.m3u8",
-    trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/MINSAN_TRAILER_MOBILE.mp4",
-    trailerVttUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.vtt",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/MINSAN_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TRAILER.vtt",
   },
   {
     id: "f3",
@@ -334,7 +334,7 @@ export const elBimboFeatured: Movie = {
   contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
   quality: "HD",
   mobileThumbnail: "/images/el-bimbo-mobile.webp",
-  videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/index.m3u8",
-  trailerUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/trailer.mp4",
+  videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
+  trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
 };
 

@@ -65,26 +65,30 @@
 /* ── Subtitle Overlay ────────────────────────────────────── */
 .mdetail-subtitle-overlay {
   position: absolute;
-  top: 85%; /* Moving significantly lower on desktop */
-  left: 0;
-  width: 100%;
+  bottom: 12%; /* Positioned above the metadata row */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
   display: flex;
-  justify-content: flex-end; /* Back to the right-side position */
+  justify-content: center;
   align-items: center;
   pointer-events: none;
   z-index: 10;
-  padding: 0 20%; /* Restored old offset */
+  padding: 0;
 }
 
 .mdetail-subtitle-text {
   color: white;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 500;
-  text-align: center; /* Maintained centered text alignment */
-  text-shadow: 
-    0 0 4px rgba(0, 0, 0, 0.9),
-    0 2px 4px rgba(0, 0, 0, 0.8);
-  line-height: 1.2;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  line-height: 1.4;
+  padding: 8px 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  max-width: 80%;
   font-family: 'Roboto', sans-serif;
 }
 

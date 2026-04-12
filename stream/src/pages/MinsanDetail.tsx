@@ -119,14 +119,15 @@ export default function MinsanDetail() {
 
   // Fetch subtitles on mount
   useEffect(() => {
-    fetch('https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/TRAILER.vtt')
+    const vttUrl = movie?.trailerVttUrl || 'https://boycanad.github.io/stream-storage-2/TRAILER.vtt';
+    fetch(vttUrl)
       .then(res => res.text())
       .then(data => {
         const parsed = parseVTT(data);
         setCues(parsed);
       })
       .catch(err => console.error('Failed to load subtitles:', err));
-  }, []);
+  }, [movie]);
 
   // Sync muted state to video element
   useEffect(() => {

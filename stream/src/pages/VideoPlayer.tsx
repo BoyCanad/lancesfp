@@ -20,7 +20,8 @@ import {
   ThumbsUp,
   FastForward,
   Plus,
-  X
+  X,
+  Check
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
@@ -104,7 +105,7 @@ export default function VideoPlayer() {
   const [nextCountdown, setNextCountdown] = useState(10);
   const [trailerCues, setTrailerCues] = useState<ParsedCue[]>([]);
   const [currentTrailerSubtitle, setCurrentTrailerSubtitle] = useState<string>('');
-  const [mobileTrailerReady, setMobileTrailerReady] = useState(false);
+  const [isTrailerVideoVisible, setIsTrailerVideoVisible] = useState(false);
   const [is2xPressing, setIs2xPressing] = useState(false);
   const [previewTime, setPreviewTime] = useState(0);
   const [previewPos, setPreviewPos] = useState(0);
@@ -112,6 +113,7 @@ export default function VideoPlayer() {
   const [hoverLinePos, setHoverLinePos] = useState(0);
   const [isMobileWindow, setIsMobileWindow] = useState(window.innerWidth <= 896);
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const isScrubbingRef = useRef(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobileWindow(window.innerWidth <= 896);
@@ -123,7 +125,7 @@ export default function VideoPlayer() {
     if (isExpandingTrailer) {
       if (isMobileWindow) {
         const timer = setTimeout(() => {
-          setMobileTrailerReady(true);
+          setIsTrailerVideoVisible(true);
           // Force play on mobile to ensure autoplay happens after expansion
           if (trailerVideoRef.current) {
             trailerVideoRef.current.load();
@@ -134,10 +136,13 @@ export default function VideoPlayer() {
         }, 2000);
         return () => clearTimeout(timer);
       } else {
-        setMobileTrailerReady(true);
+        setIsTrailerVideoVisible(true);
+        if (trailerVideoRef.current) {
+          trailerVideoRef.current.play().catch(() => {});
+        }
       }
     } else {
-      setMobileTrailerReady(false);
+      setIsTrailerVideoVisible(false);
     }
   }, [isExpandingTrailer, isMobileWindow]);
   const hideControlsTimeoutRef = useRef<number | null>(null);
@@ -230,8 +235,11 @@ export default function VideoPlayer() {
     if (hideControlsTimeoutRef.current) {
       clearTimeout(hideControlsTimeoutRef.current);
     }
+
+    if (isScrubbingRef.current) return;
+
     hideControlsTimeoutRef.current = window.setTimeout(() => {
-      if (isPlaying) {
+      if (isPlaying && !isScrubbingRef.current) {
         setShowControls(false);
         setShowSubtitlesMenu(false);
         setShowSpeedMenu(false);
@@ -246,14 +254,18 @@ export default function VideoPlayer() {
     };
 
     window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('touchstart', handleActivity, { passive: true });
+    window.addEventListener('touchmove', handleActivity, { passive: true });
 
     return () => {
       window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('touchmove', handleActivity);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, isScrubbing]);
 
 
   // Ambient Color Sampling for Mobile Portrait
@@ -684,19 +696,19 @@ export default function VideoPlayer() {
 
   const handleTrailerEnded = () => {
     // 1. Hide the video, show the static banner again
-    setMobileTrailerReady(false);
+    setIsTrailerVideoVisible(false);
     
-    // 2. Wait 2 seconds (user requested wait time)
+    // 2. Wait 5 seconds (user requested wait time)
     setTimeout(() => {
       if (isExpandingTrailer) {
         // 3. Trigger the cinematic cross-fade back to the video
-        setMobileTrailerReady(true);
+        setIsTrailerVideoVisible(true);
         if (trailerVideoRef.current) {
           trailerVideoRef.current.currentTime = 0;
           trailerVideoRef.current.play().catch(() => {});
         }
       }
-    }, 2000);
+    }, 5000);
   };
 
   const handleDismissRecommendation = () => {
@@ -755,7 +767,8 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation(); // Prevent bubbling to handleActivity which double-toggles
     if (!isMobileWindow) return;
     longPressTimerRef.current = window.setTimeout(() => {
       if (videoRef.current && isPlaying) {
@@ -768,6 +781,7 @@ export default function VideoPlayer() {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation(); // Prevent bubbling to handleActivity
     if (longPressTimerRef.current) {
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
@@ -954,6 +968,11 @@ export default function VideoPlayer() {
     setHoverLinePos(pct * 100);
     setPreviewTime(time);
     setIsScrubbing(true);
+    isScrubbingRef.current = true;
+    setShowControls(true);
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+    }
     
     // For mobile, visually move the progress bar thumb while dragging
     if (isMobileWindow) {
@@ -988,17 +1007,21 @@ export default function VideoPlayer() {
     if (related && e.currentTarget.contains(related)) return;
     setShowPreview(false);
     setIsScrubbing(false);
+    isScrubbingRef.current = false;
+    resetControlsTimer();
   };
 
   const handleTimelineTouchEnd = () => {
     setShowPreview(false);
     setIsScrubbing(false);
+    isScrubbingRef.current = false;
     // Seek main video on release
     if (videoRef.current) {
       const finalTime = lastPreviewTimeRef.current;
       videoRef.current.currentTime = finalTime;
       setCurrentTime(finalTime);
     }
+    resetControlsTimer();
   };
 
   const formatTime = (time: number) => {
@@ -1040,7 +1063,7 @@ export default function VideoPlayer() {
         <>
           {/* Desktop Layout */}
           <div className={`next-up-overlay desktop-recommendation-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
-            <img src={nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
+            <img src={nextMovie.banner || nextMovie.cardBanner || nextMovie.thumbnail} className="next-up-bg" alt="Next Up Background" />
             <div className="next-up-gradient"></div>
             <div className="next-up-content">
               {nextMovie.logo ? (
@@ -1115,23 +1138,19 @@ export default function VideoPlayer() {
       {/* ── Inline Trailer Overlay (TrailerPlayer look) — shows when countdown hits 0 ── */}
       {isExpandingTrailer && nextMovie && (
         <div className="inline-trailer-overlay inline-trailer-overlay--visible">
-          {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
-          {isMobileWindow && (
-            <img 
-              src={nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.banner || nextMovie.thumbnail} 
-              className={`mobile-expanding-banner ${mobileTrailerReady ? 'fade-out' : ''}`} 
-              alt="" 
-            />
-          )}
+        {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
+        <img 
+          src={nextMovie.banner || nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.thumbnail} 
+          className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerVideoVisible ? 'fade-out' : ''}`} 
+          alt="" 
+        />
 
           {/* Render trailer video. On desktop it shows immediately, on mobile it fades in after banner expansion. */}
           {nextMovie.trailerUrl && (!isMobileWindow || isExpandingTrailer) && (
             <video
               ref={trailerVideoRef}
-              className={`inline-trailer-video ${isMobileWindow ? (mobileTrailerReady ? 'fade-in' : 'hidden-mobile') : ''}`}
-              autoPlay
+              className={`inline-trailer-video ${isTrailerVideoVisible ? 'fade-in' : 'hidden-video'}`}
               playsInline
-              muted
               onTimeUpdate={handleTrailerTimeUpdate}
               onEnded={handleTrailerEnded}
             >
@@ -1140,7 +1159,7 @@ export default function VideoPlayer() {
           )}
 
           {/* Trailer Subtitle Overlay */}
-          {currentTrailerSubtitle && mobileTrailerReady && (
+          {currentTrailerSubtitle && isTrailerVideoVisible && (
             <div className="inline-trailer-subtitle-overlay">
               <div className="inline-trailer-subtitle-text">
                 {currentTrailerSubtitle.split('\n').map((line, idx) => (
@@ -1180,45 +1199,47 @@ export default function VideoPlayer() {
           </div>
 
           {/* Bottom Branding (Desktop Right, Mobile Left) */}
-          {mobileTrailerReady && (
-            <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} fade-in-actions`}>
-              {nextMovie.logo ? (
-                <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
-              ) : (
-                <h2 className="inline-trailer-title">{nextMovie.title}</h2>
-              )}
-              <div className="inline-trailer-actions">
-                <button
-                  className="inline-trailer-btn inline-trailer-btn--play"
-                  onClick={() => navigate(`/watch/${nextMovie.id}`)}
-                >
-                  <Play size={17} fill={isMobileWindow ? "black" : "white"} color={isMobileWindow ? "black" : "white"} strokeWidth={0} /> Play
+          <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} fade-in-actions`}>
+            {nextMovie.logo ? (
+              <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
+            ) : (
+              <h2 className="inline-trailer-title">{nextMovie.title}</h2>
+            )}
+            
+            {/* Description (Desktop only, only during banner pause phase) */}
+            {!isTrailerVideoVisible && !isMobileWindow && <p className="inline-trailer-desc">{nextMovie.description}</p>}
+
+            <div className="inline-trailer-actions">
+              <button
+                className="inline-trailer-btn inline-trailer-btn--play"
+                onClick={() => navigate(`/watch/${nextMovie.id}`)}
+              >
+                <Play size={17} fill={isMobileWindow ? "black" : "white"} color={isMobileWindow ? "black" : "white"} strokeWidth={0} /> Play
+              </button>
+              {isMobileWindow ? (
+                <button className="inline-trailer-btn inline-trailer-btn--mylist">
+                  <Plus size={18} color="white" strokeWidth={2.5} /> My List
                 </button>
-                {isMobileWindow ? (
-                  <button className="inline-trailer-btn inline-trailer-btn--mylist">
-                    <Plus size={18} color="white" strokeWidth={2.5} /> My List
-                  </button>
-                ) : (
-                  <button
-                    className="inline-trailer-btn inline-trailer-btn--info"
-                    onClick={() => {
-                      if (nextMovie.id === 'f2') navigate('/minsan');
-                      else if (nextMovie.id === 'f1' || nextMovie.id === 'eb1') navigate('/ang-huling-el-bimbo-play');
-                      else navigate('/');
-                    }}
-                  >
-                    <Info size={17} /> More Info
-                  </button>
-                )}
-              </div>
+              ) : (
+                <button
+                  className="inline-trailer-btn inline-trailer-btn--info"
+                  onClick={() => {
+                    if (nextMovie.id === 'f2') navigate('/minsan');
+                    else if (nextMovie.id === 'f1' || nextMovie.id === 'eb1') navigate('/ang-huling-el-bimbo-play');
+                    else navigate('/');
+                  }}
+                >
+                  <Info size={17} /> More Info
+                </button>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+      </div>
+    )}
 
       <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
         {/* Rate overlay inside the shrunken frame */}
-        {showRecommendation && !isExpandingTrailer && (
+        {showRecommendation && !isExpandingTrailer && !isMobileWindow && (
           <div className="rate-shrunken-video">
             <span className="rate-text">Rate:</span>
             <button className="rate-btn"><ThumbsUp size={16} color="white" /></button>
@@ -1256,17 +1277,12 @@ export default function VideoPlayer() {
           </div>
         )}
 
-        {/* Playback Indicators Overlay */}
-        {activeIndicator && (
+        {/* Playback Indicators Overlay (Bubble Pop-up) - Filtered to only show for Play/Pause */}
+        {activeIndicator && (activeIndicator.type === 'play' || activeIndicator.type === 'pause') && (
           <div className={`playback-indicator playback-indicator--${activeIndicator.type}`} key={activeIndicator.key}>
             <div className="indicator-icon-wrapper">
               {activeIndicator.type === 'play' && <Play size={64} fill="currentColor" />}
               {activeIndicator.type === 'pause' && <Pause size={64} fill="currentColor" />}
-              {activeIndicator.type === 'forward' && <RotateCw size={64} />}
-              {activeIndicator.type === 'backward' && <RotateCcw size={64} />}
-              {(activeIndicator.type === 'forward' || activeIndicator.type === 'backward') && (
-                <span className="indicator-text-label">10</span>
-              )}
             </div>
           </div>
         )}
@@ -1527,30 +1543,47 @@ export default function VideoPlayer() {
                 {showSubtitlesMenu && (
                   <div className="subtitles-menu">
                     <div className="menu-section">
-                      <h4>Audio</h4>
-                      <ul>
-                        <li className="active">Filipino</li>
-                      </ul>
-                    </div>
-                    <div className="menu-section">
-                      <h4>Subtitles</h4>
-                      <ul>
-                        <li 
-                          className={activeSubtitle === -1 ? "active" : ""}
-                          onClick={() => handleSubtitleChange(-1)}
-                        >
-                          Off
-                        </li>
-                        {movie.subtitles?.map((sub, idx) => (
-                          <li 
-                            key={idx}
-                            className={activeSubtitle === idx ? "active" : ""}
-                            onClick={() => handleSubtitleChange(idx)}
-                          >
-                            {sub.label}
+                      <h4 className="menu-header">Audio</h4>
+                      <div className="scrollable-list">
+                        <ul className="menu-list">
+                          <li className="menu-item active">
+                            <Check size={20} className="check-icon" />
+                            <span>Filipino [Original]</span>
                           </li>
-                        ))}
-                      </ul>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <div className="menu-section">
+                      <h4 className="menu-header">Subtitles</h4>
+                      <div className="scrollable-list">
+                        <ul className="menu-list">
+                          <li 
+                            className={`menu-item ${activeSubtitle === -1 ? "active" : ""}`}
+                            onClick={() => handleSubtitleChange(-1)}
+                          >
+                            {activeSubtitle === -1 && <Check size={20} className="check-icon" />}
+                            {activeSubtitle !== -1 && <span className="spacer-icon" />}
+                            <span>Off</span>
+                          </li>
+                          <li 
+                            className={`menu-item ${activeSubtitle === 0 ? "active" : ""}`}
+                            onClick={() => handleSubtitleChange(0)}
+                          >
+                            {activeSubtitle === 0 && <Check size={20} className="check-icon" />}
+                            {activeSubtitle !== 0 && <span className="spacer-icon" />}
+                            <span>English</span>
+                          </li>
+                          <li 
+                            className={`menu-item ${activeSubtitle === 1 ? "active" : ""}`}
+                            onClick={() => handleSubtitleChange(1)}
+                          >
+                            {activeSubtitle === 1 && <Check size={20} className="check-icon" />}
+                            {activeSubtitle !== 1 && <span className="spacer-icon" />}
+                            <span>Filipino</span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1597,92 +1630,131 @@ export default function VideoPlayer() {
                 {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
               </button>
             </div>
+          </div>
 
-            {/* Mobile Bottom Fixed Row */}
+          {/* Mobile Bottom Fixed Row */}
             <div className="mobile-bottom-row mobile-only">
               <div className="mobile-bottom-btn">
                 <Scissors size={20} />
                 <span>Clip</span>
               </div>
-              <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}>
+              <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(true); setShowSubtitlesMenu(false); }}>
                 <Gauge size={20} />
                 <span>Speed ({playbackSpeed}x)</span>
-                {showSpeedMenu && (
-                  <div 
-                    className="speed-menu subtitles-menu mobile-subtitles-menu mobile-speed-slider-menu"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="speed-slider-container">
-                      <div className="mobile-menu-handle"></div>
-                      <h4>Playback Speed</h4>
-                      <div className="speed-track-wrapper">
-                        <div className="speed-track"></div>
-                        <div className="speed-marks">
-                          {[0.5, 0.75, 1, 1.5, 2].map(speed => (
-                            <div 
-                              key={speed} 
-                              className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
-                              onClick={() => handleSpeedChange(speed)}
-                            >
-                              <div className="speed-dot-outer">
-                                <div className="speed-dot"></div>
-                              </div>
-                              <span className="speed-label">
-                                {speed === 1 ? 'Normal' : `${speed}x`}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
-              <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
+              <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(true); setShowSpeedMenu(false); }}>
                 <MessageSquareText size={20} />
                 <span>Audio & Subtitles</span>
-                {showSubtitlesMenu && (
-                  <div 
-                    className="subtitles-menu mobile-subtitles-menu"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
-                    <div className="mobile-menu-title">Audio & Subtitles</div>
-                    <div className="mobile-menu-scrollable">
-                      <div className="mobile-menu-section">
-                        <h4>Audio</h4>
-                        <div className="mobile-menu-item active">
-                          Filipino <div className="active-dot" />
-                        </div>
-                      </div>
-                      <div className="mobile-menu-section">
-                        <h4>Subtitles</h4>
-                        <div 
+              </div>
+            </div>
+
+            {/* Mobile Menu Backdrop */}
+            <div 
+              className={`mobile-menu-backdrop ${(showSubtitlesMenu || showSpeedMenu) && isMobileWindow ? 'show' : ''}`}
+              onClick={() => { setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
+            />
+
+            {/* Mobile Subtitles Bottom Sheet */}
+            {isMobileWindow && showSubtitlesMenu && (
+              <div className="mobile-bottom-sheet show">
+                <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
+                <div className="mobile-sheet-header">
+                  <button className="close-sheet-btn" onClick={() => setShowSubtitlesMenu(false)}>
+                    <X size={24} />
+                  </button>
+                  <div className="mobile-menu-title">Audio & Subtitles</div>
+                </div>
+                <div className="mobile-menu-scrollable mobile-dual-column">
+                  <div className="mobile-menu-section">
+                    <h4>Audio</h4>
+                    <div className="mobile-scroll-container">
+                      <ul className="mobile-menu-list">
+                        <li className="mobile-menu-item active">
+                          <div className="mobile-menu-item-left">
+                            <Check size={20} className="mobile-check-icon" />
+                            <span>Filipino [Original]</span>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="mobile-menu-section">
+                    <h4>Subtitles</h4>
+                    <div className="mobile-scroll-container">
+                      <ul className="mobile-menu-list">
+                        <li 
                           className={`mobile-menu-item ${activeSubtitle === -1 ? 'active' : ''}`}
                           onClick={() => { handleSubtitleChange(-1); setShowSubtitlesMenu(false); }}
                         >
-                          Off
-                          {activeSubtitle === -1 && <div className="active-dot" />}
-                        </div>
-                        {movie.subtitles?.map((sub, idx) => (
-                          <div 
-                            key={idx}
-                            className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
-                            onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
-                          >
-                            {sub.label}
-                            {activeSubtitle === idx && <div className="active-dot" />}
+                          <div className="mobile-menu-item-left">
+                            {activeSubtitle === -1 && <Check size={20} className="mobile-check-icon" />}
+                            {activeSubtitle !== -1 && <div className="mobile-spacer-icon" />}
+                            <span>Off</span>
                           </div>
-                        ))}
-                      </div>
+                        </li>
+                        <li 
+                          className={`mobile-menu-item ${activeSubtitle === 0 ? 'active' : ''}`}
+                          onClick={() => { handleSubtitleChange(0); setShowSubtitlesMenu(false); }}
+                        >
+                          <div className="mobile-menu-item-left">
+                            {activeSubtitle === 0 && <Check size={20} className="mobile-check-icon" />}
+                            {activeSubtitle !== 0 && <div className="mobile-spacer-icon" />}
+                            <span>English</span>
+                          </div>
+                        </li>
+                        <li 
+                          className={`mobile-menu-item ${activeSubtitle === 1 ? 'active' : ''}`}
+                          onClick={() => { handleSubtitleChange(1); setShowSubtitlesMenu(false); }}
+                        >
+                          <div className="mobile-menu-item-left">
+                            {activeSubtitle === 1 && <Check size={20} className="mobile-check-icon" />}
+                            {activeSubtitle !== 1 && <div className="mobile-spacer-icon" />}
+                            <span>Filipino</span>
+                          </div>
+                        </li>
+                      </ul>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-        </div>
+            )}
+
+            {/* Mobile Speed Bottom Sheet */}
+            {isMobileWindow && showSpeedMenu && (
+              <div className="mobile-bottom-sheet mobile-speed-sheet show">
+                <div className="mobile-menu-handle" onClick={() => setShowSpeedMenu(false)}></div>
+                <div className="mobile-sheet-header">
+                    <button className="close-sheet-btn" onClick={() => setShowSpeedMenu(false)}>
+                      <X size={24} />
+                    </button>
+                    <div className="mobile-menu-title">Playback Speed</div>
+                </div>
+                <div className="speed-slider-container">
+                  <div className="speed-track-wrapper">
+                    <div className="speed-track"></div>
+                    <div className="speed-marks">
+                      {[0.5, 0.75, 1, 1.5, 2].map(speed => (
+                        <div 
+                          key={speed} 
+                          className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
+                          onClick={() => handleSpeedChange(speed)}
+                        >
+                          <div className="speed-dot-outer">
+                            <div className="speed-dot"></div>
+                          </div>
+                          <span className="speed-label">
+                            {speed === 1 ? 'Normal' : `${speed}x`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
       </div>
     </div>
-  </div>
-</div>
-);
+  );
 }
