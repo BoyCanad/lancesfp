@@ -7,6 +7,50 @@ import ContentRow from '../components/ContentRow';
 import './MovieDetail.css';
 import './MinsanDetail.css'; // Reuse Minsan's cinematic detail styles
 
+interface ParsedCue {
+  start: number;
+  end: number;
+  text: string;
+}
+
+const parseVTT = (vttData: string): ParsedCue[] => {
+  const cues: ParsedCue[] = [];
+  const lines = vttData.split(/\r?\n/);
+  let i = 0;
+
+  const timeToSeconds = (timeStr: string) => {
+    const parts = timeStr.trim().split(':');
+    let secs = 0;
+    if (parts.length === 3) {
+      secs = parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2].replace(',', '.'));
+    } else if (parts.length === 2) {
+      secs = parseFloat(parts[0]) * 60 + parseFloat(parts[1].replace(',', '.'));
+    }
+    return isNaN(secs) ? 0 : secs;
+  };
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line.includes('-->')) {
+      const parts = line.split('-->');
+      const start = timeToSeconds(parts[0]);
+      const end = timeToSeconds(parts[1]);
+
+      i++;
+      let text = '';
+      while (i < lines.length && lines[i].trim() !== '') {
+        const textLine = lines[i].trim().replace(/<[^>]+>/g, '');
+        text += (text ? '\n' : '') + textLine;
+        i++;
+      }
+      cues.push({ start, end, text });
+    } else {
+      i++;
+    }
+  }
+  return cues;
+};
+
 const elBimboCollections = [
   elBimboFeatured,
   featuredMovies[1],
@@ -31,6 +75,8 @@ export default function MovieDetail() {
   const [trailerActive, setTrailerActive] = useState(false);
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
   const [isMuted, setIsMuted]             = useState(false);
+  const [cues, setCues] = useState<ParsedCue[]>([]);
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const [isDownloading, setIsDownloading]   = useState(false);
   const [isCached, setIsCached]            = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
@@ -86,6 +132,25 @@ export default function MovieDetail() {
     }
   }, [isMuted]);
 
+  // Sync subtitles
+  useEffect(() => {
+    if (!trailerActive) {
+      setCurrentSubtitle('');
+    }
+  }, [trailerActive]);
+
+  // Fetch subtitles on mount
+  useEffect(() => {
+    if (!movie?.trailerVttUrl) return;
+    fetch(movie.trailerVttUrl)
+      .then(res => res.text())
+      .then(data => {
+        const parsed = parseVTT(data);
+        setCues(parsed);
+      })
+      .catch(err => console.error('Failed to load subtitles:', err));
+  }, [movie]);
+
   // Handle play when trailer active
   useEffect(() => {
     if (trailerActive && videoRef.current) {
@@ -93,6 +158,13 @@ export default function MovieDetail() {
       videoRef.current.play().catch(() => {});
     }
   }, [trailerActive]);
+
+  const handleTimeUpdate = () => {
+    if (!videoRef.current || !trailerActive) return;
+    const time = videoRef.current.currentTime;
+    const activeCue = cues.find(cue => time >= cue.start && time <= cue.end);
+    setCurrentSubtitle(activeCue ? activeCue.text : '');
+  };
 
   const handleTrailerEnd = () => {
     setTrailerActive(false);
@@ -259,8 +331,20 @@ export default function MovieDetail() {
             muted={isMuted}
             loop={false}
             playsInline
+            onTimeUpdate={handleTimeUpdate}
             onEnded={handleTrailerEnd}
           />
+        )}
+
+        {/* Custom Subtitle Overlay */}
+        {trailerActive && currentSubtitle && (
+          <div className="mdetail-subtitle-overlay">
+            <div className="mdetail-subtitle-text">
+              {currentSubtitle.split('\n').map((line, idx) => (
+                <span key={idx}>{line}<br /></span>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Gradient overlays */}

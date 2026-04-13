@@ -10,58 +10,114 @@
   z-index: 500;
 }
 
+/* Row Header Styles */
 .row__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 2px; /* Closer to the track like Netflix */
   position: relative;
-  /* Lower z-index so expanded cards from THIS row can go over it */
-  z-index: 1;
-  pointer-events: none;
+  z-index: 1; /* Below the track content so expanded cards can go over it */
 }
 
+/* Individual elements should be clickable, not the whole header overlaying the cards */
 .row__title,
-.row__see-all {
+.row__see-all,
+.row__header-right {
   pointer-events: auto;
 }
 
 .row__title {
-  font-size: 24px;
+  font-size: clamp(18px, 1.4vw, 22px); /* Responsive font size with min/max bounds */
   font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.4px;
+  color: #e5e5e5;
+  letter-spacing: -0.2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: 12px;
+  margin-bottom: 4px;
+  line-height: 1.25;
+  transition: color 0.3s ease;
+  cursor: pointer;
 }
+
+.row__title:hover {
+  color: #fff;
+}
+
 
 .row__header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
-  pointer-events: auto;
+  gap: 8px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.row:hover .row__header-right {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.row__see-all {
+  background: transparent;
+  border: none;
+  color: var(--accent-purple);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.row__see-all:hover {
+  text-decoration: underline;
+  color: #fff;
 }
 
 .row__pagination {
   display: flex;
-  gap: 2px;
+  gap: 4px;
+  align-items: center;
+  margin-left: 12px;
 }
 
 .row__pagination-dot {
   width: 12px;
   height: 2px;
   background-color: #4d4d4d;
+  transition: background-color 0.3s ease;
+  border-radius: 1px;
 }
 
 .row__pagination-dot.active {
   background-color: #aaa;
 }
 
-.row__see-all:hover {
-  color: white;
+/* ────────────────────────────────────────────────────────── */
+
+.row {
+  padding: 0 4% 1.5vw; /* Use percentage padding for responsive edge-to-edge feel */
+  position: relative;
 }
+
+@media (max-width: 768px) {
+  .row { padding: 0 16px 8px; }
+  .row__header { margin-bottom: 8px; }
+  .row__title { font-size: 18px; margin-bottom: 0px; }
+  .row__header-right { opacity: 1; transform: none; } /* Always show on mobile */
+  .row__pagination { display: none; } /* Hide dots on mobile to save space */
+  .row__see-all { font-size: 13px; color: var(--accent-purple); }
+  
+  .card { width: 140px; }
+  .card__thumb { aspect-ratio: 2 / 3; }
+}
+ 
 
 .row__wrapper {
   position: relative;
@@ -576,16 +632,6 @@
 @media (min-width: 769px) {
   .card__rating-badge { display: none; }
 }
-
-@media (max-width: 768px) {
-  .row { padding: 0 16px 8px; }
-
-  .row__title { font-size: 20px; }
-  .card { width: 140px; }
-  .card__thumb { aspect-ratio: 2 / 3; }
-  .card__tooltip { display: none; }
-}
- 
 
 /* Card Thumbnail Logo Overlay */
 .card__logo-overlay {
