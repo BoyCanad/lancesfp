@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lsfplus-v1';
+const CACHE_NAME = 'lsfplus-v2';
 const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
@@ -32,21 +32,21 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-
-  const url = event.request.url;
+  
+  // Skip chrome extension and other non-http requests
+  if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
 
       return fetch(event.request).then((networkResponse) => {
-        // Just return the network response if it's not successful
         if (!networkResponse || networkResponse.status !== 200) return networkResponse;
 
-        // Auto-cache common UI assets as they are requested
+        const url = event.request.url;
         const isAsset = url.includes('/images/') || url.includes('.js') || url.includes('.css') || url.includes('.woff') || url.includes('.vtt');
         
-        if (isAsset && !url.includes('chrome-extension')) {
+        if (isAsset) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
@@ -55,12 +55,11 @@ self.addEventListener('fetch', (event) => {
         
         return networkResponse;
       }).catch((err) => {
-        // Fallback for navigation (SPA)
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }
-        // Instead of returning undefined, we re-throw or return a dummy response to avoid TypeError
-        throw err;
+        // Return a basic error response instead of throwing to avoid the "Failed to convert value to Response" error
+        return new Response('Network error occurred', { status: 408, headers: { 'Content-Type': 'text/plain' } });
       });
     })
   );
