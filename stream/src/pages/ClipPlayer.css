@@ -1,0 +1,554 @@
+/* ── Reset / Base ─────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; }
+
+/* ── Loading / Error screen ──────────────────────────── */
+.cp-screen {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  gap: 16px;
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+  padding: 24px;
+}
+
+.cp-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cp-spin 0.8s linear infinite;
+}
+
+@keyframes cp-spin { to { transform: rotate(360deg); } }
+
+.cp-hint    { color: #a3a3a3; font-size: 1rem; }
+.cp-error-icon  { font-size: 3rem; }
+.cp-error-title { font-size: 1.5rem; font-weight: 700; }
+.cp-home-btn {
+  margin-top: 8px;
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* ── Main container ──────────────────────────────────── */
+.cp-container {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  background: #000;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ── Video ───────────────────────────────────────────── */
+.cp-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* ── Gradients ───────────────────────────────────────── */
+.cp-gradient-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 30%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cp-gradient-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 60%, transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Top bar ─────────────────────────────────────────── */
+.cp-top-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.cp-top-bar.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cp-movie-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-movie-logo {
+  height: 36px;
+  object-fit: contain;
+  max-width: 180px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+}
+
+.cp-movie-title {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-clip-badge {
+  background: rgba(255,255,255,0.15);
+  color: #e5e5e5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.cp-watch-full-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.cp-watch-full-btn:hover {
+  background: #e5e5e5;
+  transform: scale(1.03);
+}
+
+/* ── Ended overlay ───────────────────────────────────── */
+.cp-ended-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 8;
+  background: rgba(0,0,0,0.35);
+}
+
+.cp-replay-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 50%;
+  width: 96px;
+  height: 96px;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.cp-replay-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.06); }
+.cp-replay-btn span  { font-size: 0.78rem; }
+
+/* ── Bottom controls ─────────────────────────────────── */
+.cp-controls {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 0 20px 28px;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.cp-controls.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Progress */
+.cp-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  padding: 8px 0; /* larger tap target */
+  margin: -8px 0 2px;
+}
+
+.cp-progress-bg {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 4px;
+  position: relative;
+  overflow: visible;
+  transition: height 0.15s;
+}
+
+.cp-progress-wrap:hover .cp-progress-bg,
+.cp-progress-wrap:active .cp-progress-bg {
+  height: 6px;
+}
+
+.cp-progress-fill {
+  height: 100%;
+  background: #e50914;
+  border-radius: 4px;
+  transition: width 0.12s linear;
+}
+
+.cp-progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.cp-progress-wrap:hover .cp-progress-thumb,
+.cp-progress-wrap:active .cp-progress-thumb {
+  opacity: 1;
+}
+
+/* Subtitle */
+.cp-custom-subtitle-container {
+  position: absolute;
+  bottom: 85px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 800px;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+}
+
+.cp-custom-subtitle-text {
+  color: #fff;
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0px 0px 7px rgba(0,0,0,1), 0px 0px 4px rgba(0,0,0,1);
+}
+
+@media (max-width: 768px) {
+  .cp-custom-subtitle-container { bottom: 82px; width: 95%; }
+  .cp-custom-subtitle-text { font-size: 1rem; }
+}
+
+.cp-time {
+  color: #e5e5e5;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Button row */
+.cp-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cp-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+.cp-btn:hover { background: rgba(255,255,255,0.12); }
+
+.cp-time-label {
+  color: #e5e5e5;
+  font-size: 0.82rem;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* ── Mobile tweaks ───────────────────────────────────── */
+@media (max-width: 768px) {
+  .cp-top-bar { padding: 16px 16px 12px; }
+  .cp-controls { padding: 0 14px 20px; }
+  .cp-watch-full-btn { font-size: 0.78rem; padding: 6px 12px; }
+  .cp-movie-logo { height: 28px; max-width: 130px; }
+  .cp-replay-btn { width: 80px; height: 80px; }
+}
+
+/* ── Paused Gradient Overlay ─────────────────────────── */
+.cp-paused-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at bottom left, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 35%, transparent 70%);
+  opacity: 0;
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.cp-paused-gradient.visible {
+  opacity: 1;
+}
+
+/* ── Paused Info Panel ───────────────────────────────── */
+.cp-paused-info {
+  position: absolute;
+  bottom: 100px;
+  left: 28px;
+  max-width: 300px;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+.cp-paused-info.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.cp-paused-logo {
+  max-width: 280px;
+  max-height: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+}
+
+.cp-paused-title-text {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.cp-paused-desc {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cp-paused-watch-btn {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cp-paused-watch-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+@media (max-width: 768px) {
+  .cp-paused-info { left: 16px; bottom: 90px; max-width: 260px; }
+  .cp-paused-logo { max-width: 200px; max-height: 90px; }
+  .cp-paused-desc { font-size: 0.75rem; -webkit-line-clamp: 2; line-clamp: 2; }
+}
+/* ── Subtitles Menu ──────────────────────────────────── */
+.cp-sub-wrapper {
+  position: relative;
+}
+
+.cp-sub-menu {
+  position: absolute;
+  bottom: 50px;
+  right: -20px;
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px 0;
+  min-width: 400px;
+  display: flex !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  z-index: 1001;
+  animation: cp-menu-in 0.2s ease;
+}
+
+@keyframes cp-menu-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cp-menu-column {
+  flex: 1;
+  padding: 0 24px;
+}
+
+.cp-menu-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.cp-menu-divider-v {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 8px;
+}
+
+.cp-menu-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-menu-item {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a3a3a3;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.cp-menu-item:hover { color: #fff; }
+.cp-menu-item.active { color: #fff; font-weight: 700; }
+
+.cp-menu-item span { flex: 1; }
+
+@media (max-width: 768px) {
+  .cp-sub-menu {
+    position: fixed;
+    bottom: 80px;
+    left: 20px;
+    right: 20px;
+    min-width: 0;
+    padding: 20px 0;
+    flex-direction: row;
+  }
+  .cp-menu-column { padding: 0 16px; }
+  .cp-menu-header { margin-bottom: 12px; font-size: 0.75rem; }
+  .cp-menu-item { font-size: 0.85rem; padding: 8px 0; }
+}
+
+/* ── Logo Splash ─────────────────────────────────────── */
+.cp-logo-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  opacity: 1;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+}
+
+.cp-logo-splash.fading {
+  opacity: 0;
+}
+
+.cp-splash-logo {
+  max-width: 240px;
+  max-height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.6));
+  animation: cp-logo-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cp-splash-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #fff;
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  animation: cp-logo-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.cp-logo-tagline {
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  animation: cp-logo-in 0.6s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cp-logo-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+

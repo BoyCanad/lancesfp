@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Play, 
@@ -21,10 +21,14 @@ import {
   FastForward,
   Plus,
   X,
-  Check
+  Check,
+  MessageCircle,
+  Camera,
+  MoreHorizontal
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
+import { supabase } from '../lib/supabase';
 import './VideoPlayer.css';
 
 interface ParsedCue {
@@ -76,6 +80,73 @@ const parseVTT = (vttData: string): ParsedCue[] => {
 export default function VideoPlayer() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+
+  // --- Stateless Clip Sharing ---
+  const [sharedClip, setSharedClip] = useState<{ start: number; end: number } | null>(null);
+  const [showSharedBanner, setShowSharedBanner] = useState(false);
+  const [copyLinkDone, setCopyLinkDone] = useState(false);
+  const pendingClipSeekRef = useRef<number | null>(null);
+  const hasAppliedClipSeekRef = useRef(false);
+  const [isSavingClip, setIsSavingClip] = useState(false);
+
+  // Generate a random short alphanumeric ID for the clip
+  const generateClipId = () =>
+    Math.random().toString(36).slice(2, 8).toUpperCase();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const clipParam = params.get('clip');
+    if (clipParam) {
+      try {
+        const decoded = atob(clipParam);
+        const [s, e] = decoded.split('-').map(Number);
+        if (!isNaN(s) && !isNaN(e) && e > s) {
+          setSharedClip({ start: s, end: e });
+          setClipStart(s);
+          setClipEnd(e);
+          setShowSharedBanner(true);
+          // Store the seek target — we'll apply it once the video is ready
+          pendingClipSeekRef.current = s;
+          hasAppliedClipSeekRef.current = false;
+        }
+      } catch { /* bad param, ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+
+  const handleCopyLink = async () => {
+    setIsSavingClip(true);
+    const clipId = generateClipId();
+    // `id` comes from useParams — always available, no ordering issue
+    const movieSlug = id ?? 'unknown';
+    const { error } = await supabase.from('clips').insert({
+      id: clipId,
+      movie_id: movieSlug,
+      start_time: Math.round(clipStart),
+      end_time: Math.round(clipEnd),
+    });
+    setIsSavingClip(false);
+    if (error) {
+      console.error('Failed to save clip:', error);
+      // Fallback to stateless link if DB fails
+      const encoded = btoa(`${Math.round(clipStart)}-${Math.round(clipEnd)}`);
+      const fallback = `${window.location.origin}/watch/${movieSlug}?clip=${encoded}`;
+      try { await navigator.clipboard.writeText(fallback); } catch { prompt('Copy this link:', fallback); }
+      setCopyLinkDone(true);
+      setTimeout(() => setCopyLinkDone(false), 2500);
+      return;
+    }
+    const link = `${window.location.origin}/${movieSlug}/clip/${clipId}`;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      prompt('Copy this link:', link);
+    }
+    setCopyLinkDone(true);
+    setTimeout(() => setCopyLinkDone(false), 2500);
+  };
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,12 +185,111 @@ export default function VideoPlayer() {
   const [isMobileWindow, setIsMobileWindow] = useState(window.innerWidth <= 896);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const isScrubbingRef = useRef(false);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [isClippingMode, setIsClippingMode] = useState(false);
+  const [showShareMoment, setShowShareMoment] = useState(false);
+  const [clipStart, setClipStart] = useState(0);
+  const [clipEnd, setClipEnd] = useState(0);
+  const clipActiveHandleRef = useRef<'start' | 'end' | null>(null);
+  const clipTrackRef = useRef<HTMLDivElement>(null);
+  const clipScrollContainerRef = useRef<HTMLDivElement>(null);
+  const clipSeekDebounceRef = useRef<number | null>(null);
+
+  const clipStartUIRef = useRef<HTMLSpanElement>(null);
+  const clipEndUIRef = useRef<HTMLSpanElement>(null);
+  const clipDurationUIRef = useRef<HTMLDivElement>(null);
+  const clipProgressUIRef = useRef<HTMLDivElement>(null);
+  const clipStartHandleUIRef = useRef<HTMLDivElement>(null);
+  const clipEndHandleUIRef = useRef<HTMLDivElement>(null);
+  const clipLocalRef = useRef<{start: number, end: number}>({start: 0, end: 0});
+
+  const handleClipTrigger = () => {
+    setIsClippingMode(true);
+    const start = currentTime;
+    const end = Math.min(duration || 0, currentTime + 30);
+    setClipStart(start);
+    setClipEnd(end);
+    clipLocalRef.current = { start, end };
+    if (videoRef.current) {
+      videoRef.current.currentTime = start;
+      if (!isPlaying) togglePlay(); 
+    }
+  };
+
+
+
+  const handleClipTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!clipActiveHandleRef.current || !clipTrackRef.current || !duration) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const rect = clipTrackRef.current.getBoundingClientRect();
+    let percent = (clientX - rect.left) / rect.width;
+    percent = Math.max(0, Math.min(1, percent));
+    
+    const newTime = percent * duration;
+    const formatTimeLocal = (time: number) => {
+      const clamped = Math.max(0, time);
+      const minutes = Math.floor(clamped / 60);
+      const seconds = Math.floor(clamped % 60);
+      return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    };
+    
+    if (clipActiveHandleRef.current === 'start') {
+      if (newTime >= clipLocalRef.current.end - 2) return;
+      clipLocalRef.current.start = newTime;
+      
+      if (clipStartHandleUIRef.current) clipStartHandleUIRef.current.style.left = `${(newTime/duration)*100}%`;
+      if (clipProgressUIRef.current) clipProgressUIRef.current.style.left = `${(newTime/duration)*100}%`;
+      if (clipStartUIRef.current) clipStartUIRef.current.textContent = formatTimeLocal(newTime).replace(/^00:/, '');
+      if (clipDurationUIRef.current) clipDurationUIRef.current.textContent = formatTimeLocal(clipLocalRef.current.end - newTime).replace(/^00:/, '');
+
+      if (videoRef.current) {
+        if (clipSeekDebounceRef.current) window.clearTimeout(clipSeekDebounceRef.current);
+        clipSeekDebounceRef.current = window.setTimeout(() => {
+          if (videoRef.current) videoRef.current.currentTime = newTime;
+        }, 80);
+      }
+    } else {
+      if (newTime <= clipLocalRef.current.start + 2) return;
+      clipLocalRef.current.end = newTime;
+      
+      if (clipEndHandleUIRef.current) clipEndHandleUIRef.current.style.left = `${(newTime/duration)*100}%`;
+      if (clipProgressUIRef.current) clipProgressUIRef.current.style.right = `${100 - (newTime/duration)*100}%`;
+      if (clipEndUIRef.current) clipEndUIRef.current.textContent = formatTimeLocal(newTime).replace(/^00:/, '');
+      if (clipDurationUIRef.current) clipDurationUIRef.current.textContent = formatTimeLocal(newTime - clipLocalRef.current.start).replace(/^00:/, '');
+
+      if (videoRef.current) {
+        if (clipSeekDebounceRef.current) window.clearTimeout(clipSeekDebounceRef.current);
+        clipSeekDebounceRef.current = window.setTimeout(() => {
+          if (videoRef.current) videoRef.current.currentTime = newTime;
+        }, 80);
+      }
+    }
+  };
+
+  const handleClipTouchEnd = () => {
+    clipActiveHandleRef.current = null;
+    setClipStart(clipLocalRef.current.start);
+    setClipEnd(clipLocalRef.current.end);
+  };
+
+  useEffect(() => {
+    if ((isClippingMode || sharedClip) && videoRef.current && currentTime >= clipEnd) {
+      videoRef.current.currentTime = clipStart;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [currentTime, isClippingMode, sharedClip, clipEnd, clipStart]);
 
   useEffect(() => {
     const handleResize = () => setIsMobileWindow(window.innerWidth <= 896);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (isPlaying && !hasStartedPlaying) {
+      setHasStartedPlaying(true);
+    }
+  }, [isPlaying, hasStartedPlaying]);
 
   useEffect(() => {
     if (isExpandingTrailer) {
@@ -161,6 +331,7 @@ export default function VideoPlayer() {
   const isLongPressActiveRef = useRef(false);
   const hlsPreviewRef = useRef<Hls | null>(null);
   const seekDebounceRef = useRef<number | null>(null);
+  const hasCenteredClipRef = useRef(false);
 
   const EL_BIMBO_RATING_TIMESTAMPS = [1025, 1104, 1154, 1779, 2144, 2182];
 
@@ -196,6 +367,31 @@ export default function VideoPlayer() {
     return featuredMovies[0]; // loop back or fallback
   }, [movie]);
 
+  useEffect(() => {
+    if (movie?.subtitles) {
+      const filIndex = movie.subtitles.findIndex(s => s.label.toLowerCase() === 'filipino');
+      if (filIndex !== -1) {
+        setActiveSubtitle(filIndex);
+      }
+    }
+  }, [movie]);
+
+  useEffect(() => {
+    if (!isClippingMode) {
+      hasCenteredClipRef.current = false;
+      return;
+    }
+    if (isClippingMode && !hasCenteredClipRef.current && clipScrollContainerRef.current && movie?.spriteConfig && duration > 0) {
+      hasCenteredClipRef.current = true;
+      const totalThumbnails = movie.spriteConfig.cols * movie.spriteConfig.rows;
+      const trackWidth = totalThumbnails * (45 * (16 / 9));
+      // Scroll to exactly center the start handle
+      const percent = clipStart / duration;
+      const scrollPos = percent * trackWidth - (window.innerWidth / 2) + 45;
+      clipScrollContainerRef.current.scrollLeft = scrollPos;
+    }
+  }, [isClippingMode, movie?.spriteConfig, duration, clipStart]);
+
   const nextThreeMovies = useMemo(() => {
     // Special overrides for curated recommendations
     if (movie?.id === 'f2') {
@@ -230,6 +426,11 @@ export default function VideoPlayer() {
   
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+
+  useEffect(() => {
+    // Reset hasStartedPlaying when video source changes
+    setHasStartedPlaying(false);
+  }, [videoSrc]);
 
   const resetControlsTimer = () => {
     if (hideControlsTimeoutRef.current) {
@@ -514,9 +715,19 @@ export default function VideoPlayer() {
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setVideoError(null);
           setIsLoading(false);
-          // Auto-play on load
           videoRef.current?.play()
-            .then(() => setIsPlaying(true))
+            .then(() => {
+              setIsPlaying(true);
+              // Seek to shared clip start after playback begins
+              if (pendingClipSeekRef.current !== null && !hasAppliedClipSeekRef.current && videoRef.current) {
+                hasAppliedClipSeekRef.current = true;
+                const seekTo = pendingClipSeekRef.current;
+                // Small delay to let the buffer settle before seeking
+                setTimeout(() => {
+                  if (videoRef.current) videoRef.current.currentTime = seekTo;
+                }, 300);
+              }
+            })
             .catch(err => console.warn("Autoplay blocked or failed:", err));
         });
 
@@ -584,7 +795,16 @@ export default function VideoPlayer() {
       hlsManagedRef.current = false;
       videoRef.current.src = videoSrc;
       videoRef.current.play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true);
+          if (pendingClipSeekRef.current !== null && !hasAppliedClipSeekRef.current && videoRef.current) {
+            hasAppliedClipSeekRef.current = true;
+            const seekTo = pendingClipSeekRef.current;
+            setTimeout(() => {
+              if (videoRef.current) videoRef.current.currentTime = seekTo;
+            }, 300);
+          }
+        })
         .catch(err => console.warn("MP4 autoplay blocked:", err));
     }
 
@@ -772,6 +992,10 @@ export default function VideoPlayer() {
     // If in credits-shrink mode, clicking the video brings it back to full size
     if (showRecommendation) {
       handleDismissRecommendation();
+      return;
+    }
+
+    if (isClippingMode) {
       return;
     }
 
@@ -987,13 +1211,23 @@ export default function VideoPlayer() {
     }
   };
 
+
+
   // Shared seek calculation: pure linear from wrapper rect.
   // Both the hover tooltip AND clicking use this same formula → they always match.
   const seekFromEvent = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const time = pct * duration;
+    
+    let time;
+    if (sharedClip) {
+      // Scale click to be within the clip boundaries
+      time = sharedClip.start + (pct * (sharedClip.end - sharedClip.start));
+    } else {
+      time = pct * duration;
+    }
+
     if (videoRef.current) videoRef.current.currentTime = time;
     setCurrentTime(time);
   };
@@ -1006,7 +1240,14 @@ export default function VideoPlayer() {
     let pct = (clientX - rect.left) / rect.width;
     pct = Math.max(0, Math.min(1, pct));
     
-    const time = pct * duration;
+    let time;
+    if (sharedClip) {
+      // Only show preview within the clip boundaries
+      time = sharedClip.start + (pct * (sharedClip.end - sharedClip.start));
+    } else {
+      time = pct * duration;
+    }
+    
     lastPreviewTimeRef.current = time; // track for touch end
     
     const cursorPx = pct * rect.width;
@@ -1097,7 +1338,10 @@ export default function VideoPlayer() {
   const skipLabel = skipIds.includes(movie?.id) ? "Skip Logo" : "Skip Intro";
 
   return (
-    <div className={`video-player-container ${showControls ? 'show-controls' : ''}`} ref={containerRef}>
+    <div 
+      ref={containerRef}
+      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''}`} 
+    >
       
       {/* GPU Accelerated Ambient Glow */}
       <div 
@@ -1287,13 +1531,32 @@ export default function VideoPlayer() {
       </div>
     )}
 
-      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''}`}>
+      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''} ${isClippingMode ? 'clipping-active' : ''}`}>
         {/* Rate overlay inside the shrunken frame */}
         {showRecommendation && !isExpandingTrailer && !isMobileWindow && (
           <div className="rate-shrunken-video">
             <span className="rate-text">Rate:</span>
             <button className="rate-btn"><ThumbsUp size={16} color="white" /></button>
           </div>
+        )}
+
+        {/* Loading Poster Overlay */}
+        {(movie?.banner || movie?.thumbnail) && (
+          <img 
+            src={movie.banner || movie.thumbnail} 
+            alt="Loading poster"
+            style={{
+               position: 'absolute', 
+               inset: 0, 
+               width: '100%', 
+               height: '100%', 
+               objectFit: 'cover', 
+               zIndex: 15,
+               opacity: hasStartedPlaying ? 0 : 1,
+               transition: 'opacity 0.4s ease',
+               pointerEvents: 'none'
+            }}
+          />
         )}
         <video
           ref={videoRef}
@@ -1336,6 +1599,26 @@ export default function VideoPlayer() {
             </div>
           </div>
         )}
+
+        {/* Clip Editor Inner Buttons Overlay */}
+        {isClippingMode && (
+          <>
+            <button className="clip-inner-btn clip-inner-play" onClick={(e) => { e.stopPropagation(); togglePlay(); }}>
+              {isPlaying ? <Pause size={28} fill="currentColor" strokeWidth={0.5} /> : <Play size={28} fill="currentColor" strokeWidth={0.5} />}
+            </button>
+            <button className="clip-inner-btn clip-inner-replay" onClick={(e) => {
+              e.stopPropagation();
+              if (videoRef.current) {
+                videoRef.current.currentTime = clipStart;
+                videoRef.current.play().catch(()=>{});
+                setIsPlaying(true);
+              }
+            }}>
+              <RotateCcw size={28} />
+            </button>
+          </>
+        )}
+
         {/* Custom Subtitle Overlay */}
         {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
           <div className="custom-subtitle-overlay-container">
@@ -1616,22 +1899,17 @@ export default function VideoPlayer() {
                             {activeSubtitle !== -1 && <span className="spacer-icon" />}
                             <span>Off</span>
                           </li>
-                          <li 
-                            className={`menu-item ${activeSubtitle === 0 ? "active" : ""}`}
-                            onClick={() => handleSubtitleChange(0)}
-                          >
-                            {activeSubtitle === 0 && <Check size={20} className="check-icon" />}
-                            {activeSubtitle !== 0 && <span className="spacer-icon" />}
-                            <span>English</span>
-                          </li>
-                          <li 
-                            className={`menu-item ${activeSubtitle === 1 ? "active" : ""}`}
-                            onClick={() => handleSubtitleChange(1)}
-                          >
-                            {activeSubtitle === 1 && <Check size={20} className="check-icon" />}
-                            {activeSubtitle !== 1 && <span className="spacer-icon" />}
-                            <span>Filipino</span>
-                          </li>
+                          {movie.subtitles?.map((sub, idx) => (
+                            <li 
+                              key={idx}
+                              className={`menu-item ${activeSubtitle === idx ? "active" : ""}`}
+                              onClick={() => handleSubtitleChange(idx)}
+                            >
+                              {activeSubtitle === idx && <Check size={20} className="check-icon" />}
+                              {activeSubtitle !== idx && <span className="spacer-icon" />}
+                              <span>{sub.label}</span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     </div>
@@ -1676,6 +1954,8 @@ export default function VideoPlayer() {
                 )}
               </div>
 
+              <div style={{ flex: 1 }}></div>
+
               <button className="control-btn" onClick={toggleFullscreen}>
                 {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
               </button>
@@ -1684,7 +1964,7 @@ export default function VideoPlayer() {
 
           {/* Mobile Bottom Fixed Row */}
             <div className="mobile-bottom-row mobile-only">
-              <div className="mobile-bottom-btn">
+              <div className="mobile-bottom-btn" onClick={handleClipTrigger}>
                 <Scissors size={20} />
                 <span>Clip</span>
               </div>
@@ -1697,6 +1977,7 @@ export default function VideoPlayer() {
                 <span>Audio & Subtitles</span>
               </div>
             </div>
+
 
             {/* Mobile Menu Backdrop */}
             <div 
@@ -1743,26 +2024,19 @@ export default function VideoPlayer() {
                             <span>Off</span>
                           </div>
                         </li>
-                        <li 
-                          className={`mobile-menu-item ${activeSubtitle === 0 ? 'active' : ''}`}
-                          onClick={() => { handleSubtitleChange(0); setShowSubtitlesMenu(false); }}
-                        >
-                          <div className="mobile-menu-item-left">
-                            {activeSubtitle === 0 && <Check size={20} className="mobile-check-icon" />}
-                            {activeSubtitle !== 0 && <div className="mobile-spacer-icon" />}
-                            <span>English</span>
-                          </div>
-                        </li>
-                        <li 
-                          className={`mobile-menu-item ${activeSubtitle === 1 ? 'active' : ''}`}
-                          onClick={() => { handleSubtitleChange(1); setShowSubtitlesMenu(false); }}
-                        >
-                          <div className="mobile-menu-item-left">
-                            {activeSubtitle === 1 && <Check size={20} className="mobile-check-icon" />}
-                            {activeSubtitle !== 1 && <div className="mobile-spacer-icon" />}
-                            <span>Filipino</span>
-                          </div>
-                        </li>
+                        {movie.subtitles?.map((sub, idx) => (
+                          <li 
+                            key={idx}
+                            className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
+                            onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
+                          >
+                            <div className="mobile-menu-item-left">
+                              {activeSubtitle === idx && <Check size={20} className="mobile-check-icon" />}
+                              {activeSubtitle !== idx && <div className="mobile-spacer-icon" />}
+                              <span>{sub.label}</span>
+                            </div>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   </div>
@@ -1805,6 +2079,198 @@ export default function VideoPlayer() {
             )}
           </div>
       </div>
+        {/* Clip Editor Moment UI */}
+        {isClippingMode && (
+          <div className="clip-editor-ui">
+            <div className="clip-header">
+              <button className="clip-back-btn" onClick={() => {
+                setIsClippingMode(false);
+                if (videoRef.current) videoRef.current.play();
+              }}>
+                <ArrowLeft size={28} />
+              </button>
+              <h2 className="clip-title">Clip a Moment</h2>
+              <button className="clip-save-btn" onClick={() => {
+                 setIsClippingMode(false);
+                 setShowShareMoment(true);
+                 if (videoRef.current) videoRef.current.pause();
+                 setIsPlaying(false);
+              }}>Save</button>
+            </div>
+
+            <div className="clip-body-labels">
+              <div className="clip-side clip-side-left">
+                <span className="clip-label-green">Start</span>
+                <span className="clip-time-large" ref={clipStartUIRef}>{formatTime(clipStart).replace(/^00:/, '')}</span>
+              </div>
+              
+              <div className="clip-side clip-side-right">
+                <span className="clip-label-red">End</span>
+                <span className="clip-time-large" ref={clipEndUIRef}>{formatTime(clipEnd).replace(/^00:/, '')}</span>
+              </div>
+            </div>
+            
+            <div className="clip-duration-bottom" ref={clipDurationUIRef}>
+              {formatTime(clipEnd - clipStart).replace(/^00:/, '')}
+            </div>
+            
+            <div className="clip-timeline-scroll-container" ref={clipScrollContainerRef}>
+              <div className="clip-timeline-bottom" 
+                ref={clipTrackRef} 
+                style={{ width: movie?.spriteConfig ? `${movie.spriteConfig!.cols * movie.spriteConfig!.rows * (45 * (16/9))}px` : '100%' }}
+                onTouchMove={handleClipTouchMove} 
+                onTouchEnd={handleClipTouchEnd}
+                onMouseMove={handleClipTouchMove}
+                onMouseUp={handleClipTouchEnd}
+                onMouseLeave={handleClipTouchEnd}
+              >
+                 <div className="clip-track-bg" style={{ display: 'flex', overflow: 'hidden' }}>
+                   {movie?.spriteUrl && movie?.spriteConfig ? (
+                     Array.from({ length: movie.spriteConfig!.cols * movie.spriteConfig!.rows }).map((_, i) => {
+                       const col = i % movie.spriteConfig!.cols;
+                       const row = Math.floor(i / movie.spriteConfig!.cols);
+                       const posX = movie.spriteConfig!.cols > 1 ? (col / (movie.spriteConfig!.cols - 1)) * 100 : 0;
+                       const posY = movie.spriteConfig!.rows > 1 ? (row / (movie.spriteConfig!.rows - 1)) * 100 : 0;
+                       return (
+                         <div key={i} style={{
+                           width: `${45 * (16/9)}px`,
+                           flexShrink: 0,
+                           height: '100%',
+                           backgroundImage: `url(${movie.spriteUrl})`,
+                           backgroundPosition: `${posX}% ${posY}%`,
+                           backgroundSize: `${movie.spriteConfig!.cols * 100}% ${movie.spriteConfig!.rows * 100}%`
+                         }} />
+                       );
+                     })
+                   ) : null}
+                 </div>
+                 
+                 <div className="clip-track-progress" ref={clipProgressUIRef} style={{ 
+                     left: `${(clipStart/Math.max(duration, 1))*100}%`, 
+                     right: `${100 - (clipEnd/Math.max(duration, 1))*100}%` 
+                 }}>
+                    <div className="clip-playhead" style={{ 
+                       left: `${((currentTime - clipStart) / Math.max(clipEnd - clipStart, 1)) * 100}%` 
+                    }} />
+                 </div>
+                 
+                 <div 
+                    className="clip-handle start-handle" 
+                    ref={clipStartHandleUIRef}
+                    style={{ left: `${(clipStart/Math.max(duration, 1))*100}%` }}
+                    onTouchStart={(e) => { clipActiveHandleRef.current = 'start'; e.stopPropagation(); }}
+                    onMouseDown={() => clipActiveHandleRef.current = 'start'}
+                 >
+                    <div className="handle-chevron handle-chevron-left" />
+                    <div className="handle-chevron handle-chevron-right" />
+                 </div>
+                 <div 
+                    className="clip-handle end-handle" 
+                    ref={clipEndHandleUIRef}
+                    style={{ left: `${(clipEnd/Math.max(duration, 1))*100}%` }}
+                    onTouchStart={(e) => { clipActiveHandleRef.current = 'end'; e.stopPropagation(); }}
+                    onMouseDown={() => clipActiveHandleRef.current = 'end'}
+                 >
+                    <div className="handle-chevron handle-chevron-left" />
+                    <div className="handle-chevron handle-chevron-right" />
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Share Moment Screen Overlay */}
+      <div className={`share-moment-overlay ${showShareMoment ? 'show' : ''}`}>
+        <div className="share-moment-header">
+          <h2 className="share-moment-title">Share Moment</h2>
+          <button className="share-moment-skip" onClick={() => {
+            setShowShareMoment(false);
+            if (videoRef.current) videoRef.current.play();
+            setIsPlaying(true);
+          }}>Skip</button>
+        </div>
+
+        <div className="share-moment-card">
+          <img src={movie?.banner || movie?.thumbnail} className="share-moment-poster" alt={movie?.title} />
+          <div className="share-moment-card-gradient"></div>
+          <div className="share-moment-card-info">
+            <h3 className="share-moment-movie-title">{movie?.title}</h3>
+            <p className="share-moment-starts-at">Starts at {formatTime(clipStart).replace(/^00:/, '')}</p>
+          </div>
+        </div>
+
+        <div className="share-moment-apps-container">
+          <div className="share-moment-apps">
+            <div className="share-app-btn">
+              <div className="share-app-icon bg-whatsapp"><MessageCircle color="white" fill="white" /></div>
+              <span>WhatsApp</span>
+            </div>
+            <div className="share-app-btn">
+              <div className="share-app-icon bg-messages"><MessageSquareText color="white" fill="white" /></div>
+              <span>Messages</span>
+            </div>
+            <div className="share-app-btn">
+              <div className="share-app-icon bg-instagram"><Camera color="white" /></div>
+              <span>Instagram<br/>Stories</span>
+            </div>
+            <div className="share-app-btn">
+              <div className="share-app-icon bg-messenger"><MessageCircle color="white" fill="white" /></div>
+              <span>Messenger</span>
+            </div>
+            <div className="share-app-btn">
+              <div className="share-app-icon bg-x"><X color="white" /></div>
+              <span>X</span>
+            </div>
+            <div className="share-app-btn" onClick={!isSavingClip ? handleCopyLink : undefined} style={{ opacity: isSavingClip ? 0.6 : 1 }}>
+              <div className={`share-app-icon bg-gray ${copyLinkDone ? 'copy-done' : ''}`}>
+                {isSavingClip ? <div className="copy-spinner" /> : copyLinkDone ? <Check color="white" /> : <Copy color="white" />}
+              </div>
+              <span>{isSavingClip ? 'Saving…' : copyLinkDone ? 'Copied!' : 'Copy Link'}</span>
+            </div>
+            <div className="share-app-btn">
+              <div className="share-app-icon bg-gray"><MoreHorizontal color="white" /></div>
+              <span>More Options</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Shared Clip Banner */}
+      {showSharedBanner && sharedClip && (
+        <div className="shared-clip-banner">
+          <div className="shared-clip-banner-inner">
+            <div className="shared-clip-info">
+              <Scissors size={16} />
+              <div>
+                <span className="shared-clip-label">Shared Moment</span>
+                <span className="shared-clip-times">
+                  {formatTime(sharedClip.start).replace(/^00:/, '')} – {formatTime(sharedClip.end).replace(/^00:/, '')}
+                </span>
+              </div>
+            </div>
+            <div className="shared-clip-actions">
+              <button
+                className="shared-clip-watch-full"
+                onClick={() => {
+                  setSharedClip(null);
+                  setShowSharedBanner(false);
+                  // strip the ?clip= param without reload
+                  window.history.replaceState({}, '', window.location.pathname);
+                }}
+              >
+                Watch Full Movie
+              </button>
+              <button
+                className="shared-clip-dismiss"
+                onClick={() => setShowSharedBanner(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -75,6 +75,9 @@ export default function MinsanDetail() {
   const [isMuted, setIsMuted] = useState(false);
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isCached, setIsCached] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -82,6 +85,16 @@ export default function MinsanDetail() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Check if movie is already offline
+  useEffect(() => {
+    if (!movie?.videoUrl) return;
+    caches.open('lsfplus-movies').then(cache => {
+      cache.match(movie.videoUrl!).then(match => {
+        if (match) setIsCached(true);
+      });
+    });
+  }, [movie]);
 
   // Start trailer once after 5s upon landing (or immediately if from thumbnail)
   useEffect(() => {
@@ -157,6 +170,50 @@ export default function MinsanDetail() {
   };
 
   const toggleMute = () => setIsMuted(m => !m);
+
+  const handleDownload = async () => {
+    if (!movie?.videoUrl || isDownloading) return;
+    setIsDownloading(true);
+    setDownloadProgress(0);
+    try {
+      const resp = await fetch(movie.videoUrl);
+      if (!resp.ok) throw new Error('Download failed');
+      
+      const contentLength = resp.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+      const reader = resp.body?.getReader();
+      if (!reader) throw new Error('No reader found');
+
+      let received = 0;
+      const chunks = [];
+      
+      while(true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (total) {
+          setDownloadProgress(Math.round((received / total) * 100));
+        }
+      }
+
+      const blob = new Blob(chunks);
+      const cache = await caches.open('lsfplus-movies');
+      await cache.put(movie.videoUrl, new Response(blob, {
+        headers: { 'Content-Type': 'video/mp4', 'Content-Length': blob.size.toString() }
+      }));
+      
+      setIsCached(true);
+      alert(`"${movie.title}" added to offline cache!`);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save for offline viewing.');
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
+    }
+  };
 
   const isMobile = windowWidth < 768;
 
@@ -259,8 +316,12 @@ export default function MinsanDetail() {
               <button className="mdetail-btn mdetail-btn-secondary">
                 <Bookmark size={18} /> Save to Vault
               </button>
-              <button className="mdetail-btn mdetail-btn-secondary">
-                <Download size={18} /> Download
+              <button 
+                className={`mdetail-btn mdetail-btn-secondary ${isDownloading ? 'pulse' : ''} ${isCached ? 'cached' : ''}`}
+                onClick={handleDownload}
+                disabled={isDownloading || isCached}
+              >
+                <Download size={18} /> {isDownloading ? `Saving ${downloadProgress}%` : isCached ? 'Downloaded' : 'Download'}
               </button>
             </div>
           </div>

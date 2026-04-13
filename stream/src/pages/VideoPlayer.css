@@ -2006,3 +2006,507 @@
 
 /* Inline Trailer Branding Styles */
 .inline-trailer-desc { color: #e5e5e5; font-size: 1.05rem; line-height: 1.5; margin: 0 0 25px 0; max-width: 100%; text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9); opacity: 0; animation: trailerBrandingIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards; } .inline-trailer-btn { display: flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 4px; font-weight: 600; font-size: 1.05rem; cursor: pointer; border: none; transition: transform 0.2s, background-color 0.2s; } .inline-trailer-btn--play { background-color: white; color: black; } .inline-trailer-btn--play:hover { background-color: rgba(255, 255, 255, 0.75); } .inline-trailer-btn--info { background-color: rgba(109, 109, 110, 0.7); color: white; backdrop-filter: blur(5px); } .inline-trailer-btn--info:hover { background-color: rgba(109, 109, 110, 0.4); }
+
+/* Clip Moments Feature */
+.clip-flash-overlay { position: absolute; inset: 0; background-color: white; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+.clip-flash-overlay.show { opacity: 0.9; transition: opacity 0.05s ease; }
+.clip-toast-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); padding: 16px 28px; border-radius: 40px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.clip-toast-overlay.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+.clip-toast-content { display: flex; align-items: center; gap: 12px; color: white; font-weight: 600; font-size: 1.1rem; }
+/* Clip Editor Full UI */
+.video-player-container.clipping-mode .player-top-bar,
+.video-player-container.clipping-mode .skip-intro-btn,
+.video-player-container.clipping-mode .center-mobile-controls,
+.video-player-container.clipping-mode .player-controls-overlay {
+  display: none !important;
+}
+
+.video-stage-wrapper.clipping-active {
+  position: absolute;
+  top: 15%;
+  left: 20%;
+  width: 60%;
+  height: 50%;
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.video-stage-wrapper.clipping-active .video-element {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.video-stage-wrapper.clipping-active .custom-subtitle-overlay-container {
+  bottom: 2%;
+}
+
+.video-stage-wrapper.clipping-active .custom-subtitle-text {
+  font-size: 0.8rem !important;
+  line-height: 1.1 !important;
+}
+
+@media (max-width: 896px) {
+  .video-stage-wrapper.clipping-active .custom-subtitle-text {
+    font-size: 0.7rem !important;
+    line-height: 1.1 !important;
+    text-shadow: 0px 0px 2px rgba(0,0,0,1) !important;
+  }
+}
+
+.video-stage-wrapper.clipping-active .age-rating-overlay,
+.video-stage-wrapper.credits-shrink .age-rating-overlay {
+  display: none !important;
+}
+
+.video-player-container.clipping-mode {
+  overflow: hidden !important;
+  position: fixed;
+  inset: 0;
+}
+
+.clip-editor-ui {
+  position: absolute;
+  inset: 0;
+  background-color: black;
+  z-index: 90; 
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.clip-header {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  z-index: 95;
+}
+.clip-header h2 { color: white; font-size: 1.1rem; margin: 0; font-weight: 700; text-align: center; flex: 1; }
+.clip-back-btn { background: none; border: none; color: white; flex-shrink: 0; cursor: pointer; }
+.clip-save-btn { background-color: white; color: black; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; cursor: pointer; }
+
+.clip-body-labels {
+  position: absolute;
+  top: 30%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px;
+  z-index: 95;
+}
+.clip-side { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+.clip-inner-btn {
+  position: absolute;
+  bottom: 8px;
+  background: transparent;
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  cursor: pointer;
+  transition: transform 0.2s;
+  padding: 0;
+}
+.clip-inner-btn:hover {
+  transform: scale(1.1);
+}
+.clip-inner-play { left: -56px; }
+.clip-inner-replay { right: -56px; }
+
+@media (max-width: 896px) {
+  .clip-inner-btn { width: 36px; height: 36px; bottom: 4px; }
+  .clip-inner-play { left: -46px; }
+  .clip-inner-replay { right: -46px; }
+}
+
+.clip-label-green { color: #00cc66; font-size: 1.1rem; font-weight: 700; }
+.clip-label-red { color: #ff3333; font-size: 1.1rem; font-weight: 700; }
+.clip-time-large { color: white; font-size: 2.2rem; font-weight: 300; }
+
+.clip-duration-bottom {
+  position: absolute;
+  bottom: 110px;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  z-index: 95;
+}
+
+.clip-timeline-scroll-container {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  right: 30px;
+  height: 45px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  border-radius: 4px;
+  z-index: 95;
+  touch-action: pan-x;
+}
+
+.clip-timeline-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.clip-timeline-bottom {
+  position: relative;
+  height: 100%;
+  background: #111;
+  cursor: pointer;
+  touch-action: pan-x pan-y;
+}
+.clip-track-bg { position: absolute; inset: 0; opacity: 0.3; background-position: center; }
+.clip-track-progress {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
+  z-index: 5;
+}
+.clip-playhead {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  background: white;
+  transform: translateX(-50%);
+  box-shadow: 0 0 4px rgba(0,0,0,0.8);
+}
+.clip-handle {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 32px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  cursor: ew-resize;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  touch-action: none;
+}
+.start-handle { background: #00cc66; }
+.end-handle { background: #ff3333; }
+.handle-chevron {
+  border: solid rgba(0,0,0,0.5);
+  border-width: 0 2px 2px 0;
+  display: inline-block;
+  padding: 2px;
+}
+.handle-chevron-left { transform: rotate(135deg); }
+.handle-chevron-right { transform: rotate(-45deg); }
+
+/* Share Moment Overlay */
+.share-moment-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: black;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.share-moment-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.share-moment-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px 20px;
+  position: relative;
+}
+
+.share-moment-title {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.share-moment-skip {
+  position: absolute;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.share-moment-card {
+  margin: 60px auto 40px auto;
+  width: 90%;
+  max-width: 320px;
+  aspect-ratio: 16/10;
+  background-color: #1a1a1a;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.share-moment-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.share-moment-card-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(0,0,0,0.6) 50%, transparent);
+}
+
+.share-moment-card-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 15px;
+  background: transparent;
+  text-align: left;
+}
+
+.share-moment-movie-title {
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.share-moment-starts-at {
+  color: #a3a3a3;
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+}
+
+.share-moment-apps-container {
+  margin-top: auto;
+  margin-bottom: 40px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.share-moment-apps-container::-webkit-scrollbar {
+  display: none;
+}
+
+.share-moment-apps {
+  display: flex;
+  gap: 24px;
+  padding: 0 20px;
+  min-width: max-content;
+  justify-content: center;
+}
+
+.share-app-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.share-app-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.bg-whatsapp { background-color: #25D366; }
+.bg-messages { background-color: #FFFFFF; }
+.bg-messages svg { color: #0B84FF; fill: #0B84FF; }
+.bg-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+.bg-messenger { background-color: #0084FF; }
+.bg-x { background-color: #14171A; }
+.bg-gray { background-color: #333333; border-radius: 50%; }
+
+.share-app-btn span {
+  color: #e5e5e5;
+  font-size: 0.85rem;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+@media (max-width: 896px) {
+  .share-moment-apps {
+    justify-content: flex-start;
+  }
+}
+
+/* Shared Clip Banner */
+.shared-clip-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3000;
+  padding: 0 16px 24px;
+  animation: slideUpBanner 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes slideUpBanner {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.shared-clip-banner-inner {
+  background: rgba(25, 25, 25, 0.95);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.4);
+}
+
+.shared-clip-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  flex: 1;
+  min-width: 0;
+}
+
+.shared-clip-info svg {
+  flex-shrink: 0;
+  color: #e5e5e5;
+}
+
+.shared-clip-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shared-clip-label {
+  font-size: 0.75rem;
+  color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shared-clip-times {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+}
+
+.shared-clip-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.shared-clip-watch-full {
+  background: white;
+  color: black;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.shared-clip-watch-full:hover {
+  background: #e5e5e5;
+}
+
+.shared-clip-dismiss {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.shared-clip-dismiss:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Copy Link done state */
+.share-app-icon.copy-done {
+  background-color: #22c55e !important;
+  transition: background-color 0.3s ease;
+}
+
+.copy-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spinCopy 0.7s linear infinite;
+}
+
+@keyframes spinCopy {
+  to { transform: rotate(360deg); }
+}
+@keyframes downloading-pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.92); color: #e50914; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.downloading-pulse {
+  animation: downloading-pulse 1.5s infinite ease-in-out;
+  color: #e50914 !important;
+}
+
+.mobile-bottom-btn.pulse {
+  background: rgba(229, 9, 20, 0.2);
+  animation: downloading-pulse 1.5s infinite ease-in-out;
+}

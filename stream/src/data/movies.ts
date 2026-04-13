@@ -66,7 +66,7 @@ export const featuredMovies: Movie[] = [
       {
         label: "English",
         srclang: "en",
-        url: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Ang%20Huling%20El%20Bimbo%20Play/Ang%20Huling%20El%20Bimbo%20Play%20English.vtt"
+        url: "https://boycanad.github.io/stream-storage-1/AngHulingElBimboPlayEnglish.vtt"
       }
     ],
     spriteUrl: "/images/storyboards/sprite_5s_hq_synced.jpg",

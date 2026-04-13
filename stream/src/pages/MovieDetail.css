@@ -97,7 +97,23 @@
   font-size: 15px;
   font-weight: 500;
 }
+@keyframes download-pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
+.mdetail-btn.pulse {
+  animation: download-pulse 1.5s infinite ease-in-out;
+  border-color: #e50914 !important;
+  color: #e50914 !important;
+}
+
+.mdetail-btn.cached {
+  border-color: #22c55e !important;
+  color: #22c55e !important;
+  cursor: default;
+}
 .mdetail-badge {
   border: 1px solid rgba(255,255,255,0.3);
   padding: 2px 8px;
