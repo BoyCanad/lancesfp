@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, MessageSquareText, Check } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
 import './ClipPlayer.css';

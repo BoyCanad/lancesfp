@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
 import { updateWatchProgress, getWatchProgress } from '../services/profileService';
 import './VideoPlayer.css';
 
