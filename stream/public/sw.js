@@ -1,4 +1,5 @@
 const CACHE_NAME = 'lsfplus-v1';
+const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -7,25 +8,19 @@ const ASSETS_TO_CACHE = [
   '/icons.svg'
 ];
 
-// Install event: cache the "app shell" (basic UI files)
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Pre-caching app shell');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
   self.skipWaiting();
 });
 
-// Activate event: clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[SW] Clearing old cache:', key);
+          if (key !== CACHE_NAME && key !== MOVIE_CACHE) {
             return caches.delete(key);
           }
         })
@@ -35,35 +30,37 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event: handle offline requests
 self.addEventListener('fetch', (event) => {
-  // We only want to cache GET requests
   if (event.request.method !== 'GET') return;
+
+  const url = event.request.url;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      // Return cached file if found
       if (cachedResponse) return cachedResponse;
 
-      // Otherwise, try the network
       return fetch(event.request).then((networkResponse) => {
-        // Cache new assets (images, fonts, etc.) as they are encountered
-        if (
-          networkResponse && 
-          networkResponse.status === 200 && 
-          (event.request.url.includes('/images/') || event.request.url.includes('.js') || event.request.url.includes('.css'))
-        ) {
+        // Just return the network response if it's not successful
+        if (!networkResponse || networkResponse.status !== 200) return networkResponse;
+
+        // Auto-cache common UI assets as they are requested
+        const isAsset = url.includes('/images/') || url.includes('.js') || url.includes('.css') || url.includes('.woff') || url.includes('.vtt');
+        
+        if (isAsset && !url.includes('chrome-extension')) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
           });
         }
+        
         return networkResponse;
-      }).catch(() => {
-        // Fallback: If network fails and request is for a page, return index.html (for SPA routing)
+      }).catch((err) => {
+        // Fallback for navigation (SPA)
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }
+        // Instead of returning undefined, we re-throw or return a dummy response to avoid TypeError
+        throw err;
       });
     })
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, Bookmark, Download, Library, VolumeX, Volume2 } from 'lucide-react';
+import { Play, Bookmark, Download, Library, VolumeX, Volume2, X, Trash2 } from 'lucide-react';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
 import './MovieDetail.css';
@@ -33,6 +33,7 @@ export default function MovieDetail() {
   const [isCached, setIsCached]            = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -42,9 +43,10 @@ export default function MovieDetail() {
 
   // Check if movie is already offline
   useEffect(() => {
-    if (!movie?.videoUrl) return;
+    const checkTarget = movie?.downloadUrl || movie?.videoUrl;
+    if (!checkTarget) return;
     caches.open('lsfplus-movies').then(cache => {
-      cache.match(movie.videoUrl!).then(match => {
+      cache.match(checkTarget).then(match => {
         if (match) setIsCached(true);
       });
     });
@@ -96,12 +98,60 @@ export default function MovieDetail() {
 
   const toggleMute = () => setIsMuted(m => !m);
 
+  const handleCancelDownload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsDownloading(false);
+      setDownloadProgress(0);
+    }
+  };
+
+
+
+  const handleDeleteDownload = async () => {
+    if (!movie) return;
+    const confirmDelete = window.confirm(`Remove "${movie.title}" from your offline downloads?`);
+    if (!confirmDelete) return;
+
+    try {
+      const cache = await caches.open('lsfplus-movies');
+      
+      // Delete video
+      if (movie.videoUrl) await cache.delete(movie.videoUrl);
+      if (movie.downloadUrl) await cache.delete(movie.downloadUrl);
+      
+      // Delete subtitles
+      if (movie.subtitles) {
+        for (const sub of movie.subtitles) {
+          await cache.delete(sub.url);
+        }
+      }
+      
+      // Delete sprites
+      if (movie.spriteUrl) await cache.delete(movie.spriteUrl);
+
+      setIsCached(false);
+      alert('Movie removed from offline storage.');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete movie.');
+    }
+  };
+
   const handleDownload = async () => {
-    if (!movie?.videoUrl || isDownloading) return;
+    const targetUrl = movie?.downloadUrl || movie?.videoUrl;
+    if (!targetUrl || isDownloading) return;
+    
     setIsDownloading(true);
     setDownloadProgress(0);
+    
+    // Create new abort controller
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const resp = await fetch(movie.videoUrl);
+      const resp = await fetch(targetUrl, { signal: controller.signal });
       if (!resp.ok) throw new Error('Download failed');
 
       const contentLength = resp.headers.get('content-length');
@@ -125,18 +175,46 @@ export default function MovieDetail() {
 
       const blob = new Blob(chunks);
       const cache = await caches.open('lsfplus-movies');
-      await cache.put(movie.videoUrl, new Response(blob, {
-        headers: { 'Content-Type': 'video/mp4', 'Content-Length': blob.size.toString() }
+      
+      // Cache the video under its download URL
+      await cache.put(targetUrl, new Response(blob, {
+        headers: { 
+          'Content-Type': targetUrl.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4', 
+          'Content-Length': blob.size.toString() 
+        }
       }));
       
+      // Also cache all subtitles
+      if (movie.subtitles) {
+        for (const sub of movie.subtitles) {
+          try {
+            const subResp = await fetch(sub.url);
+            if (subResp.ok) await cache.put(sub.url, subResp);
+          } catch (e) { console.error('Sub cache fail', e); }
+        }
+      }
+
+      // Also cache the sprite/storyboard image
+      if (movie.spriteUrl) {
+        try {
+          const spriteResp = await fetch(movie.spriteUrl);
+          if (spriteResp.ok) await cache.put(movie.spriteUrl, spriteResp);
+        } catch (e) { console.error('Sprite cache fail', e); }
+      }
+      
       setIsCached(true);
-      alert(`"${movie.title}" added to offline cache!`);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save for offline viewing.');
+      alert(`"${movie.title}" and its data are now available offline!`);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.log('Download cancelled by user');
+      } else {
+        console.error(err);
+        alert('Failed to save for offline viewing.');
+      }
     } finally {
       setIsDownloading(false);
       setDownloadProgress(0);
+      abortControllerRef.current = null;
     }
   };
 
@@ -231,13 +309,37 @@ export default function MovieDetail() {
               <button className="mdetail-btn mdetail-btn-secondary">
                 <Bookmark size={18} /> Save to Vault
               </button>
-              <button 
-                className={`mdetail-btn mdetail-btn-secondary ${isDownloading ? 'pulse' : ''} ${isCached ? 'cached' : ''}`}
-                onClick={handleDownload}
-                disabled={isDownloading || isCached}
-              >
-                <Download size={18} /> {isDownloading ? `Saving ${downloadProgress}%` : isCached ? 'Downloaded' : 'Download'}
-              </button>
+              {isDownloading ? (
+                <button 
+                  className="mdetail-btn mdetail-btn-secondary pulse cancel-mode"
+                  onClick={handleCancelDownload}
+                >
+                  <X size={18} /> Cancel {downloadProgress}%
+                </button>
+              ) : isCached ? (
+                <div className="mdetail-downloaded-wrapper">
+                  <button 
+                    className="mdetail-btn mdetail-btn-secondary cached"
+                    disabled
+                  >
+                    <Download size={18} /> Downloaded
+                  </button>
+                  <button 
+                    className="mdetail-delete-btn"
+                    onClick={handleDeleteDownload}
+                    title="Delete Download"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  className="mdetail-btn mdetail-btn-secondary"
+                  onClick={handleDownload}
+                >
+                  <Download size={18} /> Download
+                </button>
+              )}
             </div>
           </div>
 

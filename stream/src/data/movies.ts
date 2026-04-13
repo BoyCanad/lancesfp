@@ -35,6 +35,7 @@ export interface Movie {
     thumbWidth: number;
     thumbHeight: number;
   };
+  downloadUrl?: string;
 }
 
 export const featuredMovies: Movie[] = [
@@ -56,6 +57,7 @@ export const featuredMovies: Movie[] = [
     contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
     isOriginal: true,
     videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
+    downloadUrl: "https://video-proxy.booran-special.workers.dev/",
     trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
     subtitles: [
       {

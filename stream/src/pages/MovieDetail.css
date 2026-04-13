@@ -97,6 +97,39 @@
   font-size: 15px;
   font-weight: 500;
 }
+
+.mdetail-btn.cached {
+  border-color: #46d369;
+  color: #46d369;
+  cursor: default;
+}
+
+.mdetail-downloaded-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mdetail-delete-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ff4d4d;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mdetail-delete-btn:hover {
+  background: rgba(255, 77, 77, 0.2);
+  border-color: #ff4d4d;
+  transform: scale(1.1);
+}
+
 @keyframes download-pulse {
   0% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(0.98); }

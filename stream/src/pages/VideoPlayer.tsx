@@ -203,6 +203,9 @@ export default function VideoPlayer() {
   const clipEndHandleUIRef = useRef<HTMLDivElement>(null);
   const clipLocalRef = useRef<{start: number, end: number}>({start: 0, end: 0});
 
+  const [activeSource, setActiveSource] = useState('');
+  const [isUsingOfflineSource, setIsUsingOfflineSource] = useState(false);
+
   const handleClipTrigger = () => {
     setIsClippingMode(true);
     const start = currentTime;
@@ -428,9 +431,31 @@ export default function VideoPlayer() {
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
   useEffect(() => {
-    // Reset hasStartedPlaying when video source changes
+    // Reset hasStartedPlaying and activeSource when video source changes
     setHasStartedPlaying(false);
-  }, [videoSrc]);
+    setActiveSource(videoSrc);
+    setIsUsingOfflineSource(false);
+
+    const checkOfflineCache = async () => {
+      if (!movie) return;
+      const target = movie.downloadUrl || movie.videoUrl;
+      if (!target) return;
+
+      try {
+        const cache = await caches.open('lsfplus-movies');
+        const match = await cache.match(target);
+        if (match) {
+          console.log('[Player] Playing from offline cache:', target);
+          setActiveSource(target);
+          setIsUsingOfflineSource(true);
+        }
+      } catch (e) {
+        console.error('Cache check failed', e);
+      }
+    };
+
+    checkOfflineCache();
+  }, [videoSrc, movie]);
 
   const resetControlsTimer = () => {
     if (hideControlsTimeoutRef.current) {
@@ -690,7 +715,7 @@ export default function VideoPlayer() {
 
     if (!videoRef.current) return;
 
-    if (videoSrc.includes('.m3u8')) {
+    if (activeSource.includes('.m3u8') && !isUsingOfflineSource) {
       // First, try MSE (hls.js). This works beautifully on Android Chrome and Desktop Safari/Chrome.
       // We must not force Android to native HLS, because Android native HLS often drops video layers (black screen).
       if (Hls.isSupported()) {
@@ -709,7 +734,7 @@ export default function VideoPlayer() {
         hls.attachMedia(videoRef.current);
 
         hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-          hls?.loadSource(videoSrc);
+          hls?.loadSource(activeSource);
         });
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -781,7 +806,7 @@ export default function VideoPlayer() {
         videoRef.current.removeAttribute('crossorigin');
         videoRef.current.removeAttribute('src');
         videoRef.current.load();
-        videoRef.current.src = videoSrc;
+        videoRef.current.src = activeSource;
         videoRef.current.load();
         videoRef.current.play()
           .then(() => setIsPlaying(true))
@@ -790,10 +815,10 @@ export default function VideoPlayer() {
         setVideoError("Your browser does not support HLS video streaming.");
         setIsLoading(false);
       }
-    } else {
-      // Regular mp4 or other formats
+    } else if (activeSource) {
+      // Regular mp4 or other formats (including cached downloads)
       hlsManagedRef.current = false;
-      videoRef.current.src = videoSrc;
+      videoRef.current.src = activeSource;
       videoRef.current.play()
         .then(() => {
           setIsPlaying(true);
@@ -821,7 +846,7 @@ export default function VideoPlayer() {
       setIsExpandingTrailer(false);
       setNextCountdown(10);
     };
-  }, [videoSrc]);
+  }, [activeSource]);
 
   useEffect(() => {
     if (isMobileWindow || !previewVideoRef.current || !videoSrc) return;
