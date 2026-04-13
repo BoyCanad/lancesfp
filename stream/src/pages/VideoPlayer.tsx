@@ -247,6 +247,56 @@ export default function VideoPlayer() {
     }, 3000);
   };
 
+  // Setup Media Session API for native mobile notifications
+  useEffect(() => {
+    if ('mediaSession' in navigator && movie) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: title,
+        artist: 'LSFPlus',
+        artwork: movie.thumbnail || movie.mobileThumbnail || movie.banner ? [
+          { src: movie.thumbnail || movie.mobileThumbnail || movie.banner || '', sizes: '512x512', type: 'image/jpeg' }
+        ] : undefined
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (videoRef.current) {
+          videoRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch(() => {});
+        }
+      });
+      
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (videoRef.current) {
+          videoRef.current.pause();
+          setIsPlaying(false);
+        }
+      });
+      
+      navigator.mediaSession.setActionHandler('seekbackward', () => {
+        if (videoRef.current) {
+          videoRef.current.currentTime -= 10;
+        }
+      });
+      
+      navigator.mediaSession.setActionHandler('seekforward', () => {
+        if (videoRef.current) {
+          videoRef.current.currentTime += 10;
+        }
+      });
+    }
+    
+    return () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('seekbackward', null);
+        navigator.mediaSession.setActionHandler('seekforward', null);
+      }
+    };
+  }, [movie, title]);
+
   useEffect(() => {
     const handleActivity = () => {
       setShowControls(true);

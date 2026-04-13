@@ -73,7 +73,7 @@ export const featuredMovies: Movie[] = [
     spriteConfig: {
       rows: 30,
       cols: 20,
-      interval: 5, 
+      interval: 5,
       thumbWidth: 320,
       thumbHeight: 180
     }
@@ -89,7 +89,7 @@ export const featuredMovies: Movie[] = [
     description: "“Minsan” is a heartfelt reflection on friendship, nostalgia, and the bittersweet passage of time. It tells the story of people who once shared deep connections and carefree moments, only to drift apart as life moves forward.",
     rating: "9.5",
     year: "2026",
-    duration: "1h 35m",
+    duration: "5m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     videoUrl: "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/index.m3u8",
