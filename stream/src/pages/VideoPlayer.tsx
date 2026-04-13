@@ -29,6 +29,7 @@ import {
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../lib/supabase';
+import { updateWatchProgress, getWatchProgress } from '../services/profileService';
 import './VideoPlayer.css';
 
 interface ParsedCue {
@@ -205,6 +206,10 @@ export default function VideoPlayer() {
 
   const [activeSource, setActiveSource] = useState('');
   const [isUsingOfflineSource, setIsUsingOfflineSource] = useState(false);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  
+  const latestTimeRef = useRef(0);
+  const latestDurationRef = useRef(0);
 
   const handleClipTrigger = () => {
     setIsClippingMode(true);
@@ -285,6 +290,13 @@ export default function VideoPlayer() {
   useEffect(() => {
     const handleResize = () => setIsMobileWindow(window.innerWidth <= 896);
     window.addEventListener('resize', handleResize);
+
+    const stored = localStorage.getItem('activeProfile');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setActiveProfileId(parsed.id);
+    }
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -456,6 +468,62 @@ export default function VideoPlayer() {
 
     checkOfflineCache();
   }, [videoSrc, movie]);
+
+  useEffect(() => {
+    if (!activeProfileId || !id) return;
+
+    // Load initial progress
+    getWatchProgress(activeProfileId).then(data => {
+      const existing = data.find(p => p.movie_id === id);
+      if (existing && videoRef.current) {
+        // If progress is > 95%, maybe just start over? 
+        // For now, always seek.
+        videoRef.current.currentTime = existing.progress_ms / 1000;
+        setCurrentTime(existing.progress_ms / 1000);
+      }
+    });
+  }, [activeProfileId, id]);
+
+  const saveProgress = async () => {
+    if (activeProfileId && id && latestDurationRef.current > 0) {
+      try {
+        await updateWatchProgress(
+          activeProfileId,
+          id,
+          Math.floor(latestTimeRef.current * 1000),
+          Math.floor(latestDurationRef.current * 1000)
+        );
+      } catch (e) {
+        console.error('Final progress save failed', e);
+      }
+    }
+  };
+
+  useEffect(() => {
+    // periodic save
+    const interval = setInterval(() => {
+      if (videoRef.current && isPlaying && !isScrubbing && duration > 0) {
+        saveProgress();
+      }
+    }, 5000);
+
+    const handleBeforeUnload = () => {
+      saveProgress();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      saveProgress(); // Save when navigating away via React Router
+    };
+  }, [activeProfileId, id, isPlaying, isScrubbing, duration]);
+
+  // Update refs whenever time/duration changes
+  useEffect(() => {
+    latestTimeRef.current = currentTime;
+    latestDurationRef.current = duration;
+  }, [currentTime, duration]);
 
   const resetControlsTimer = () => {
     if (hideControlsTimeoutRef.current) {
@@ -1499,7 +1567,7 @@ export default function VideoPlayer() {
                    videoRef.current.play().catch(() => {});
                  }
               } else {
-                 navigate('/');
+                 navigate('/browse');
               }
             }}
           >
@@ -1545,7 +1613,7 @@ export default function VideoPlayer() {
                   onClick={() => {
                     if (nextMovie.id === 'f2') navigate('/minsan');
                     else if (nextMovie.id === 'f1' || nextMovie.id === 'eb1') navigate('/ang-huling-el-bimbo-play');
-                    else navigate('/');
+                    else navigate('/browse');
                   }}
                 >
                   <Info size={17} /> More Info

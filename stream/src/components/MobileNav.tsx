@@ -29,7 +29,7 @@ export default function MobileNav() {
               onClick={() => {
                 setActive(item.id);
                 if (item.id === 'home') {
-                  navigate('/');
+                  navigate('/browse');
                 }
               }}
             >

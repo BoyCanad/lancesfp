@@ -1,0 +1,263 @@
+.cp-container {
+  min-height: 100vh;
+  background-color: #141414;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-header {
+  height: 68px;
+  background-color: #141414;
+  display: flex;
+  align-items: center;
+  padding: 0 4%;
+}
+
+.cp-logo {
+  color: #e50914;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.cp-main-wrapper {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 4%;
+}
+
+.cp-main {
+  width: 100%;
+  max-width: 800px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.cp-title {
+  font-size: 3.5rem;
+  font-weight: 500;
+  margin: 0 0 1rem 0;
+}
+
+.cp-subtitle {
+  font-size: 1.2rem;
+  color: #737373;
+  margin: 0 0 2rem 0;
+}
+
+.cp-form {
+  border-top: 1px solid #333;
+  border-bottom: 1px solid #333;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Avatar */
+.cp-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.cp-avatar-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.cp-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+.cp-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.cp-avatar-wrapper:hover .cp-avatar-overlay {
+  opacity: 1;
+}
+
+/* Always show pencil subtly */
+.cp-avatar-wrapper .cp-avatar-overlay {
+  opacity: 0.7;
+}
+
+.cp-input-group {
+  flex-grow: 1;
+  max-width: 400px;
+}
+
+.cp-input {
+  width: 100%;
+  background: #333;
+  border: none;
+  color: white;
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.cp-input:focus {
+  outline: none;
+  background: #454545;
+}
+
+.cp-error {
+  color: #e50914;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+/* Inline Icon Picker */
+.cp-icon-picker {
+  background: #1e1e1e;
+  border-radius: 6px;
+  padding: 1.2rem 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.cp-icon-picker-label {
+  font-size: 1.2rem;
+  color: white;
+  font-weight: 500;
+  margin: 0 0 1.5rem 0;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+.cp-picker-section {
+  margin-bottom: 1.5rem;
+}
+
+.cp-picker-section:last-child {
+  margin-bottom: 0;
+}
+
+.cp-picker-category-title {
+  font-size: 1rem;
+  color: #aaa;
+  margin: 0 0 0.8rem 0;
+}
+
+.cp-icon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cp-icon-option {
+  width: 72px;
+  height: 72px;
+  border-radius: 4px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.cp-icon-option:hover {
+  transform: scale(1.1);
+  border-color: #aaa;
+}
+
+.cp-icon-option--selected {
+  border-color: white;
+  outline: 2px solid #e50914;
+  outline-offset: 2px;
+}
+
+/* Buttons */
+.cp-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 1.2rem;
+  align-items: center;
+}
+
+.cp-btn {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.8rem 2.5rem;
+  cursor: pointer;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  text-align: center;
+  min-width: 140px;
+  position: relative;
+  z-index: 0;
+}
+
+.cp-continue-btn {
+  background: #ccc;
+  color: #888;
+  border: 2px solid #ccc;
+  cursor: not-allowed;
+}
+
+.cp-continue-btn.active {
+  background: white;
+  color: black;
+  border-color: white;
+  cursor: pointer;
+}
+
+.cp-continue-btn.active:hover {
+  background: #e50914;
+  color: white;
+  border-color: #e50914;
+}
+
+.cp-cancel-btn {
+  background: transparent;
+  color: #999;
+  border: 2px solid #666;
+  transition: all 0.2s;
+}
+
+.cp-cancel-btn:hover {
+  border-color: white;
+  color: white;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .cp-title {
+    font-size: 2.5rem;
+  }
+  .cp-avatar-wrapper {
+    width: 88px;
+    height: 88px;
+  }
+  .cp-icon-option {
+    width: 60px;
+    height: 60px;
+  }
+}

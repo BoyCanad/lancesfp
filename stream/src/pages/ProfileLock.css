@@ -1,0 +1,353 @@
+.pl-container {
+  min-height: 100vh;
+  background-color: #f3f3f3;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.pl-header {
+  height: 68px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 4%;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.pl-logo {
+  color: #E50914;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.pl-main {
+  flex-grow: 1;
+  display: flex;
+  padding: 40px 10%;
+  gap: 20px;
+}
+
+.pl-back-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  height: fit-content;
+  color: #333;
+}
+
+.pl-back-btn:hover {
+  color: #000;
+}
+
+.pl-content {
+  max-width: 650px;
+  width: 100%;
+}
+
+.pl-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #333;
+}
+
+.pl-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pl-for-text {
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.pl-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.pl-description {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #555;
+  margin: 0 0 32px 0;
+}
+
+.pl-create-btn {
+  background-color: black;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-bottom: 24px;
+}
+
+.pl-create-btn:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.pl-create-btn:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+.pl-divider {
+  height: 1px;
+  background-color: #ddd;
+  margin-bottom: 24px;
+}
+
+.pl-footer-note {
+  font-size: 0.9rem;
+  color: #737373;
+}
+
+/* Modals */
+.pl-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pl-modal {
+  background: white;
+  border-radius: 4px;
+  width: 90%;
+  max-width: 480px;
+  padding: 40px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pl-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.pl-modal-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0 0 16px 0;
+  color: #000;
+}
+
+.pl-modal-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin: 0 0 24px 0;
+}
+
+.pl-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #b3b3b3;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+
+.pl-error-msg {
+  color: #e50914;
+  font-size: 0.9rem;
+  margin: -16px 0 16px 0;
+  text-align: left;
+}
+
+.pl-modal-submit {
+  width: 100%;
+  background: black;
+  color: white;
+  border: none;
+  padding: 14px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.pl-modal-submit:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.pl-modal-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.pl-modal-link {
+  color: #0071eb;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.pl-modal-link:hover {
+  text-decoration: underline;
+}
+
+/* Manage View Styles */
+.pl-lock-status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pl-lock-icon {
+  color: #333;
+}
+
+.pl-lock-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-lock-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.pl-lock-value {
+  font-size: 0.95rem;
+  color: #737373;
+}
+
+.pl-manage-divider {
+  height: 1px;
+  background-color: #e6e6e6;
+  margin: 16px 0 24px 0;
+}
+
+.pl-manage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pl-edit-pin-btn {
+  background-color: #d8d8d8;
+  color: black;
+  border: none;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pl-edit-pin-btn:hover {
+  background-color: #bfbfbf;
+}
+
+.pl-delete-lock-btn {
+  background-color: white;
+  color: #e50914;
+  border: 1px solid #ccc;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pl-delete-lock-btn:hover {
+  opacity: 0.8;
+}
+
+/* PIN Screen */
+.pl-pin-content {
+  max-width: 700px;
+}
+
+.pl-pin-subtitle {
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0 0 32px 0;
+}
+
+.pl-pin-boxes {
+  display: flex;
+  gap: 8px;
+}
+
+.pl-pin-input {
+  width: 48px;
+  height: 56px;
+  border: 1px solid #b3b3b3;
+  border-radius: 4px;
+  font-size: 1.5rem;
+  text-align: center;
+  background: transparent;
+}
+
+.pl-pin-input:focus {
+  outline: 2px solid #0071eb;
+  border-color: transparent;
+}
+
+.pl-pin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.pl-cancel-btn {
+  width: 100%;
+  background: #e6e6e6;
+  color: black;
+  border: none;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pl-cancel-btn:hover {
+  background: #ccc;
+}
+
+@media (max-width: 768px) {
+  .pl-main {
+    flex-direction: column;
+    padding: 24px 5%;
+  }
+}

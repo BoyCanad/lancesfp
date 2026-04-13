@@ -37,18 +37,30 @@
   margin-right: 12px;
 }
 
-.row__see-all {
-  background: none;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: color 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
+.row__header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+}
+
+.row__pagination {
+  display: flex;
+  gap: 2px;
+}
+
+.row__pagination-dot {
+  width: 12px;
+  height: 2px;
+  background-color: #4d4d4d;
+}
+
+.row__pagination-dot.active {
+  background-color: #aaa;
 }
 
 .row__see-all:hover {
-  color: var(--accent-purple-light);
+  color: white;
 }
 
 .row__wrapper {
@@ -184,21 +196,54 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
-/* Progress bar */
-.card__progress-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(255,255,255,0.15);
+/* Progress bar below thumb */
+.card__progress-container {
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.card__progress-bar-bg {
+  width: 100%;
+  height: 2.5px;
+  background: #4d4d4d;
+  border-radius: 1px;
+  overflow: hidden;
 }
 
 .card__progress-fill {
   height: 100%;
-  background: var(--accent-purple);
-  border-radius: 0 2px 2px 0;
+  background: #e50914;
   transition: width 0.3s ease;
+}
+
+/* Badges */
+.card__badges {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.card__badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+.card__badge--new {
+  background-color: #e50914;
+  color: white;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+.card__badge--watch {
+  background-color: white;
+  color: black;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
 }
 
 /* Card info */
@@ -316,11 +361,11 @@
   position: absolute;
   bottom: 12px;
   right: 12px;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.5);
-  border: 1.5px solid rgba(255,255,255,0.3);
+  background: rgba(0,0,0,0.4);
+  border: 2px solid rgba(255,255,255,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,10 +383,10 @@
 
 .card__video-logo {
   position: absolute;
-  bottom: 4px;
+  bottom: 12px;
   left: 12px;
-  max-width: 180px;
-  max-height: 90px;
+  max-width: 140px;
+  max-height: 60px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
@@ -365,7 +410,7 @@
 
 .card__controls-left {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .card__controls-right {
@@ -373,9 +418,6 @@
 }
 
 .card__btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -385,25 +427,105 @@
   transition: transform 0.2s, background 0.2s, border 0.2s;
 }
 
-.card__btn--play {
+.card__btn--play-large {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
   background: white;
-  padding-left: 2px; /* Center correct play icon visually */
+  padding-left: 3px;
 }
 
-.card__btn--play:hover {
+.card__btn--play-large:hover {
+  background: #e6e6e6;
+  transform: scale(1.1);
+}
+
+.card__btn--play.card__btn--white {
+  width: 32px;
+  height: 32px;
+  background: white;
+  border-radius: 50%;
+  padding-left: 2px;
+}
+
+.card__btn--play.card__btn--white:hover {
   background: #e6e6e6;
   transform: scale(1.1);
 }
 
 .card__btn--icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: 1.5px solid rgba(255,255,255,0.4);
-  background: #141414;
+  background: rgba(42, 42, 42, 0.6);
 }
 
 .card__btn--icon:hover {
   border-color: white;
   background: rgba(255,255,255,0.1);
   transform: scale(1.1);
+}
+
+.card__btn--circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5);
+  background: rgba(42, 42, 42, 0.6);
+}
+
+.card__btn--circle-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  background: rgba(42, 42, 42, 0.6);
+}
+
+.card__btn--circle:hover,
+.card__btn--circle-small:hover {
+  border-color: white;
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.1);
+}
+
+.card__expanded-progress-row {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card__expanded-progress-bg {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.card__expanded-progress-fill {
+  height: 100%;
+  background: #e50914;
+}
+
+.card__expanded-time {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-align: right;
+  opacity: 0.9;
+}
+
+.card__n-logo {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 16px;
+  height: auto;
+  z-index: 10;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .card__metadata-row {

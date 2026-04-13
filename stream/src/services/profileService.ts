@@ -1,0 +1,99 @@
+import { supabase } from '../supabaseClient';
+
+export interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  image: string;
+  locked: boolean;
+  pin?: string;
+  display_order: number;
+}
+
+export interface WatchProgress {
+  id: string;
+  profile_id: string;
+  movie_id: string;
+  progress_ms: number;
+  duration_ms: number;
+  last_watched: string;
+}
+
+export async function getProfiles(): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('display_order', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createProfile(name: string, image: string): Promise<Profile> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const existing = await getProfiles();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert({
+      user_id: session.user.id,
+      name,
+      image,
+      locked: false,
+      display_order: existing.length,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateProfile(
+  id: string,
+  updates: Partial<Pick<Profile, 'name' | 'image' | 'locked' | 'pin'>>
+): Promise<Profile> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+  const { error } = await supabase.from('profiles').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function getWatchProgress(profileId: string): Promise<WatchProgress[]> {
+  const { data, error } = await supabase
+    .from('watch_progress')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('last_watched', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateWatchProgress(
+  profileId: string,
+  movieId: string,
+  progressMs: number,
+  durationMs: number
+): Promise<void> {
+  const { error } = await supabase
+    .from('watch_progress')
+    .upsert({
+      profile_id: profileId,
+      movie_id: movieId,
+      progress_ms: progressMs,
+      duration_ms: durationMs,
+      last_watched: new Date().toISOString()
+    }, { onConflict: 'profile_id,movie_id' });
+  
+  if (error) throw error;
+}

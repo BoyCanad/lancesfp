@@ -262,7 +262,7 @@ export default function ClipPlayer() {
       <div className="cp-error-icon">✂</div>
       <h2 className="cp-error-title">Clip Not Found</h2>
       <p className="cp-hint">{error}</p>
-      <button className="cp-home-btn" onClick={() => navigate('/')}>Go Home</button>
+      <button className="cp-home-btn" onClick={() => navigate('/browse')}>Go Home</button>
     </div>
   );
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Bookmark } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import type { Movie } from '../data/movies';
 import './HeroCarousel.css';
 
@@ -83,7 +84,13 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
 
   };
 
-  const handlePlay = (movie: Movie) => {
+  const handlePlay = async (movie: Movie) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/login');
+      return;
+    }
+
     if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
       navigate('/watch/ang-huling-el-bimbo-play');
     } else {

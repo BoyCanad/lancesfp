@@ -1,0 +1,249 @@
+.profile-picker-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #141414;
+  color: white;
+  width: 100%;
+}
+
+.profile-picker__inner {
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+  padding: 0 40px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.profile-picker__title {
+  font-size: 3.5rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+}
+
+.profile-picker__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 3.5rem;
+}
+
+.profile-picker__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-picker__btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.profile-picker__btn:hover {
+  transform: scale(1.05);
+}
+
+.profile-picker__btn:hover .profile-picker__avatar {
+  border-color: white;
+}
+
+.profile-picker__btn:hover .profile-picker__name {
+  color: white;
+}
+
+.profile-picker__avatar-wrapper {
+  width: 160px;
+  height: 160px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.profile-picker__edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-picker__avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #333;
+  border: 3px solid transparent;
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.profile-picker__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-picker__name {
+  font-size: 1.25rem;
+  color: grey;
+  transition: color 0.2s ease;
+}
+
+.profile-picker__lock {
+  color: grey;
+}
+
+.profile-picker__actions {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-picker__manage-btn {
+  background: transparent;
+  color: grey;
+  border: 1px solid grey;
+  padding: 0.5rem 1.5rem;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.profile-picker__manage-btn:hover {
+  color: white;
+  border-color: white;
+}
+
+.profile-picker__done-btn {
+  background: white;
+  color: black;
+  border: 1px solid white;
+  padding: 0.5rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.profile-picker__done-btn:hover {
+  background: #c00;
+  color: white;
+  border-color: #c00;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-picker__title {
+    font-size: 2.5rem;
+  }
+  
+  .profile-picker__avatar-wrapper {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-picker__name {
+    font-size: 1rem;
+  }
+  
+  .profile-picker__manage-btn {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* PIN Modal */
+.profile-picker__pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.profile-picker__pin-modal {
+  text-align: center;
+  position: relative;
+  max-width: 400px;
+  width: 100%;
+}
+
+.profile-picker__close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-picker__pin-title {
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+}
+
+.profile-picker__pin-subtitle {
+  color: #a3a3a3;
+  margin: 0 0 2rem 0;
+}
+
+.profile-picker__pin-boxes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.profile-picker__pin-input {
+  width: 56px;
+  height: 64px;
+  background: transparent;
+  border: 1px solid #737373;
+  border-radius: 4px;
+  color: white;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.profile-picker__pin-input:focus {
+  outline: flex;
+  border-color: white;
+}
+
+.profile-picker__pin-input.error {
+  border-color: #e50914;
+}

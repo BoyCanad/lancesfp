@@ -51,7 +51,7 @@ export const featuredMovies: Movie[] = [
     description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
     rating: "9.8",
     year: "2026",
-    duration: "49m",
+    duration: "49m 51s",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
     contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
@@ -125,6 +125,8 @@ export const featuredMovies: Movie[] = [
     duration: "6m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/Tindahan_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Tindahan_TRAILER_MOBILE.vtt",
   },
   {
     id: "f5",
@@ -138,6 +140,8 @@ export const featuredMovies: Movie[] = [
     duration: "20m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/Alapaap_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Alapaap_TRAILER_MOBILE.vtt",
   },
   {
     id: "f6",
@@ -151,6 +155,8 @@ export const featuredMovies: Movie[] = [
     duration: "25m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/Spoliarium_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Spoliarium_TRAILER_MOBILE.vtt",
   },
   {
     id: "f7",
@@ -167,6 +173,8 @@ export const featuredMovies: Movie[] = [
     duration: "18m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/PareKo_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/PareKo_TRAILER_MOBILE.vtt",
   },
   {
     id: "f8",
@@ -184,6 +192,8 @@ export const featuredMovies: Movie[] = [
     duration: "22m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/TamaKa_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TamaKa_TRAILER_MOBILE.vtt",
   },
   {
     id: "f9",
@@ -201,6 +211,8 @@ export const featuredMovies: Movie[] = [
     duration: "30m",
     genre: ["Musical", "Drama", "Nostalgia"],
     ageRating: "PG-13",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.mp4",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.vtt",
   },
   {
     id: "f10",
@@ -330,7 +342,7 @@ export const elBimboFeatured: Movie = {
   description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
   rating: "9.8",
   year: "2026",
-  duration: "3h 15m",
+  duration: "49m 51s",
   genre: ["Musical", "Drama", "Nostalgia"],
   ageRating: "PG-13",
   contentWarnings: ["mature themes", "language", "violence", "alcohol use"],

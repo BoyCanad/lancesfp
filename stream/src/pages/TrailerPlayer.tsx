@@ -29,7 +29,7 @@ export default function TrailerPlayer() {
       />
       
       <div className="trailer-overlay">
-        <div className="trailer-top-left" onClick={() => navigate('/')}>
+        <div className="trailer-top-left" onClick={() => navigate('/browse')}>
           <div className="trailer-back-btn">
             <ArrowLeft size={24} color="white" strokeWidth={2.5} />
           </div>
@@ -49,7 +49,7 @@ export default function TrailerPlayer() {
             <button className="trailer-btn trailer-btn-info" onClick={() => {
               if (movie.id === 'f2') navigate('/minsan');
               else if (movie.id === 'f1') navigate('/ang-huling-el-bimbo-play');
-              else navigate('/');
+              else navigate('/browse');
             }}>
               <Info size={18} /> More Info
             </button>

@@ -1,7 +1,7 @@
 import { useRef, useState, memo, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Play, Plus, ThumbsUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Plus, Check, X, ThumbsUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import type { Movie } from '../data/movies';
 import './ContentRow.css';
 
@@ -11,6 +11,16 @@ interface ContentRowProps {
   showProgress?: boolean;
   variant?: 'default' | 'wide';
 }
+
+const parseDurationToMin = (dur: string) => {
+  if (!dur) return 120;
+  let total = 0;
+  const hMatch = dur.match(/(\d+)h/);
+  const mMatch = dur.match(/(\d+)m/);
+  if (hMatch) total += parseInt(hMatch[1]) * 60;
+  if (mMatch) total += parseInt(mMatch[1]);
+  return total || parseInt(dur) || 120;
+};
 
 const MovieCard = memo(({ 
   movie, 
@@ -106,17 +116,20 @@ const MovieCard = memo(({
           />
         </picture>
         
-        {/* Normal State Info */}
-        {showProgress && movie.progress !== undefined && (
-          <div className="card__progress-bar card__default-item">
+        {/* Thumbnail logic continue... */}
+      </div>
+
+      {/* Progress bar below thumb */}
+      {showProgress && movie.progress !== undefined && (
+        <div className="card__progress-container">
+          <div className="card__progress-bar-bg">
             <div
               className="card__progress-fill"
               style={{ width: `${movie.progress}%` }}
             />
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
 
       {/* Expanded State Layer */}
       {isHovered && (
@@ -153,6 +166,7 @@ const MovieCard = memo(({
                     setHasFinishedOnce(true);
                   }}
                 />
+                
                 <button 
                   className="card__vol-btn"
                   onClick={(e) => {
@@ -161,9 +175,9 @@ const MovieCard = memo(({
                   }}
                 >
                   {isMuted ? (
-                    <VolumeX size={14} color="white" />
+                    <VolumeX size={18} color="white" />
                   ) : (
-                    <Volume2 size={14} color="white" />
+                    <Volume2 size={18} color="white" />
                   )}
                 </button>
                 {movie.logo && (
@@ -173,40 +187,74 @@ const MovieCard = memo(({
             )}
           </div>
           
-          <div className="card__expanded-details">
+          <div className={`card__expanded-details ${showProgress ? 'card__expanded-details--continue' : ''}`}>
             <div className="card__controls">
               <div className="card__controls-left">
-                <button className="card__btn card__btn--play" onClick={handlePlayClick}>
-                  <Play size={12} fill="black" color="black" />
-                </button>
-                <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
-                  <Plus size={14} color="white" />
-                </button>
-                <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
-                  <ThumbsUp size={12} color="white" />
-                </button>
+                {showProgress ? (
+                  <>
+                    <button className="card__btn card__btn--play-large" onClick={handlePlayClick}>
+                      <Play size={20} fill="black" color="black" />
+                    </button>
+                    <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
+                      <Check size={18} color="white" />
+                    </button>
+                    <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
+                      <X size={18} color="white" />
+                    </button>
+                    <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
+                      <ThumbsUp size={16} color="white" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="card__btn card__btn--play card__btn--white" onClick={handlePlayClick}>
+                      <Play size={12} fill="black" color="black" />
+                    </button>
+                    <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
+                      <Plus size={14} color="white" />
+                    </button>
+                    <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
+                      <ThumbsUp size={12} color="white" />
+                    </button>
+                  </>
+                )}
               </div>
               <div className="card__controls-right">
-                <button className="card__btn card__btn--icon" onClick={(e) => { e.stopPropagation(); onClick(movie, videoElemRef.current?.currentTime); }}>
-                  <ChevronDown size={14} color="white" />
+                <button className="card__btn card__btn--circle-small" onClick={(e) => { e.stopPropagation(); onClick(movie, videoElemRef.current?.currentTime); }}>
+                  <ChevronDown size={showProgress ? 20 : 16} color="white" />
                 </button>
               </div>
             </div>
-            
-            <div className="card__metadata-row">
-              <span className="card__match">98% Match</span>
-              <span className="card__age">{movie.ageRating || '13+'}</span>
-              <span className="card__duration">{movie.duration || '2h 1m'}</span>
-              <span className="card__quality-badge">{movie.quality || 'HD'}</span>
-            </div>
-            
-            <div className="card__genres-row">
-              {movie.genre.slice(0, 3).map((g, i, arr) => (
-                <span key={g}>
-                  {g} {i < arr.length - 1 && <span className="card__genre-dot">•</span>}
+
+            {showProgress && movie.progress !== undefined ? (
+              <div className="card__expanded-progress-row">
+                <div className="card__expanded-progress-bg">
+                  <div className="card__expanded-progress-fill" style={{ width: `${movie.progress}%` }} />
+                </div>
+                <span className="card__expanded-time">
+                  {Math.round((movie.progress / 100) * parseDurationToMin(movie.duration))}m of {parseDurationToMin(movie.duration)}m
                 </span>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <>
+                <div className="card__metadata-row">
+                  <span className="card__match">98% Match</span>
+                  <span className="card__age">{movie.ageRating || '13+'}</span>
+                  <span className="card__duration">
+                    {movie.duration.includes('s') ? `${parseDurationToMin(movie.duration)}m` : movie.duration}
+                  </span>
+                  <span className="card__quality-badge">{movie.quality || 'HD'}</span>
+                </div>
+                
+                <div className="card__genres-row">
+                  {movie.genre.slice(0, 3).map((g, i, arr) => (
+                    <span key={g}>
+                      {g} {i < arr.length - 1 && <span className="card__genre-dot">•</span>}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -278,7 +326,15 @@ export default function ContentRow({
     <section className="row">
       <div className="row__header">
         <h2 className="row__title">{title}</h2>
-        <button className="row__see-all">See All →</button>
+        <div className="row__header-right">
+          <div className="row__pagination">
+            <div className="row__pagination-dot active"></div>
+            <div className="row__pagination-dot"></div>
+            <div className="row__pagination-dot"></div>
+            <div className="row__pagination-dot"></div>
+          </div>
+          <button className="row__see-all">See All →</button>
+        </div>
       </div>
 
       <div className="row__wrapper">

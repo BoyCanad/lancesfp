@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Play, Bookmark, Download, Library, VolumeX, Volume2, X, Trash2 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
 import './MovieDetail.css';
@@ -20,6 +21,7 @@ const elBimboCollections = [
 
 export default function MovieDetail() {
   const movie = featuredMovies.find((m) => m.id === 'f1');
+  const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
   
@@ -218,6 +220,15 @@ export default function MovieDetail() {
     }
   };
 
+  const handlePlayClick = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/login');
+    } else {
+      navigate('/watch/f1');
+    }
+  };
+
   const isMobile = windowWidth < 768;
 
   if (!movie) {
@@ -301,9 +312,13 @@ export default function MovieDetail() {
 
           {/* Action Buttons */}
           <div className="mdetail-actions">
-            <Link to={`/watch/f1`} className="mdetail-btn mdetail-btn-play" style={{ textDecoration: 'none' }}>
+            <button 
+              onClick={handlePlayClick} 
+              className="mdetail-btn mdetail-btn-play" 
+              style={{ textDecoration: 'none', border: 'none', cursor: 'pointer' }}
+            >
               <Play size={18} fill="black" strokeWidth={0} /> Play
-            </Link>
+            </button>
 
             <div className="mdetail-actions-row">
               <button className="mdetail-btn mdetail-btn-secondary">
