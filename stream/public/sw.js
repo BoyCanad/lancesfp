@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lsfplus-v3';
+const CACHE_NAME = 'lsfplus-v4';
 const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
@@ -33,37 +33,57 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
-  // Skip chrome extension and other non-http requests
+  // Skip non-http requests
   if (!event.request.url.startsWith('http')) return;
 
+  const url = new URL(event.request.url);
+
+  // NETWORK FIRST STRATEGY for HTML / Navigation requests
+  // This ensures users always get the latest JS bundle hashes when online
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          return networkResponse;
+        })
+        .catch(() => {
+          // Fallback to cache if offline
+          return caches.match('/index.html').then((cachedResponse) => {
+            return cachedResponse || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+          });
+        })
+    );
+    return;
+  }
+
+  // CACHE FIRST STRATEGY for static assets and media
+  // Fallback to network if not in cache
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      // CACHE FIRST STRATEGY: Always serve from cache if available.
-      // This is essential for offline HLS (.m3u8 and .ts files) and static assets.
       if (cachedResponse) {
         return cachedResponse;
       }
 
-      // If not in cache, fallback to Network
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200) return networkResponse;
 
-        const url = event.request.url;
+        const urlString = event.request.url;
         
-        // Cache static assets and HLS segments dynamically if they aren't pre-cached
         const isStaticAsset = 
-          url.includes('/images/') || 
-          url.includes('.js') || 
-          url.includes('.css') || 
-          url.includes('.woff') || 
-          url.includes('.vtt') ||
-          url.includes('.tsx') || // Add .tsx for dev mode support
-          url.includes('/src/') || // Add /src/ for dev mode modules
-          url.includes('node_modules/.vite') || // Add Vite deps
-          url.includes('/@vite/') || // Vite internal
-          url.includes('/@id/'); // Vite modules
+          urlString.includes('/images/') || 
+          urlString.includes('.js') || 
+          urlString.includes('.css') || 
+          urlString.includes('.woff') || 
+          urlString.includes('.vtt') ||
+          urlString.includes('.tsx') || 
+          urlString.includes('/src/') || 
+          urlString.includes('node_modules/.vite') || 
+          urlString.includes('/@vite/') || 
+          urlString.includes('/@id/'); 
 
-        const isHlsSegment = url.includes('.m3u8') || url.includes('.ts');
+        const isHlsSegment = urlString.includes('.m3u8') || urlString.includes('.ts');
 
         if (isStaticAsset) {
           const responseClone = networkResponse.clone();
@@ -74,10 +94,7 @@ self.addEventListener('fetch', (event) => {
         }
         
         return networkResponse;
-      }).catch((err) => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
+      }).catch(() => {
         return new Response('Network error occurred', { status: 408, headers: { 'Content-Type': 'text/plain' } });
       });
     })
