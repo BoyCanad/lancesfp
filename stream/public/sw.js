@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lsfplus-v6';
+const CACHE_NAME = 'lsfplus-v7';
 const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
@@ -71,7 +71,8 @@ self.addEventListener('fetch', (event) => {
 
         const urlString = event.request.url;
         
-        const isStaticAsset = 
+        const isHlsSegment = urlString.includes('.m3u8') || urlString.endsWith('.ts') || urlString.includes('.ts?');
+        const isStaticAsset = !isHlsSegment && (
           urlString.includes('/images/') || 
           urlString.includes('.js') || 
           urlString.includes('.ts') || 
@@ -84,21 +85,20 @@ self.addEventListener('fetch', (event) => {
           urlString.includes('node_modules/') || 
           urlString.includes('/@vite/') || 
           urlString.includes('/@react-refresh') || 
-          urlString.includes('/@id/');
-
-        const isHlsSegment = urlString.includes('.m3u8') || urlString.includes('.ts');
+          urlString.includes('/@id/')
+        );
 
         if (isStaticAsset) {
           const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        } else if (isHlsSegment) {
-          const responseClone = networkResponse.clone();
-          caches.open('offline-hls-cache').then((cache) => cache.put(event.request, responseClone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone).catch(() => {}));
         }
         
         return networkResponse;
-      }).catch(() => {
-        return new Response('Network error occurred', { status: 408, headers: { 'Content-Type': 'text/plain' } });
+      }).catch((error) => {
+        if (error.name === 'AbortError') {
+          throw error; // Let the browser handle standard aborts cleanly
+        }
+        return new Response('Network error occurred', { status: 503, headers: { 'Content-Type': 'text/plain' } });
       });
     })
   );
