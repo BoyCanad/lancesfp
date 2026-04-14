@@ -15,6 +15,7 @@ export interface DownloadedMovie {
   thumbnail: string;
   timestamp: number;
   duration: string;
+  blob?: Blob; // Added for robust binary storage
 }
 
 const HLS_CACHE_NAME = 'offline-hls-cache';
@@ -46,6 +47,16 @@ class DownloadService {
   ): Promise<void> {
     const db = await this.initDB();
     const cache = await caches.open(HLS_CACHE_NAME);
+
+    // Initial metadata for IndexedDB
+    const movieData: DownloadedMovie = {
+      id,
+      title: metadata.title,
+      thumbnail: metadata.thumbnail,
+      duration: metadata.duration,
+      url,
+      timestamp: Date.now(),
+    };
 
     try {
       const response = await fetch(url, { signal });
@@ -120,19 +131,14 @@ class DownloadService {
         }
       } else {
         // --- STANDARD MP4 DOWNLOADER ---
-        await cache.put(url, response);
+        const responseClone = response.clone();
+        const [blob] = await Promise.all([
+          responseClone.blob(),
+          cache.put(url, response)
+        ]);
+        movieData.blob = blob;
         if (onProgress) onProgress(100);
       }
-
-      // Store Metadata in IndexedDB
-      const movieData: DownloadedMovie = {
-        id,
-        title: metadata.title,
-        thumbnail: metadata.thumbnail,
-        duration: metadata.duration,
-        url,
-        timestamp: Date.now(),
-      };
 
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');

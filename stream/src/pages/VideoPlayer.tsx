@@ -466,7 +466,12 @@ export default function VideoPlayer() {
       const downloaded = await downloadService.getDownloadedMovie(movie.id);
       if (downloaded) {
         console.log('[Player] Playing from IndexedDB storage');
-        setActiveSource(URL.createObjectURL(downloaded.blob));
+        if (downloaded.blob) {
+          setActiveSource(URL.createObjectURL(downloaded.blob));
+        } else {
+          // If no blob (e.g. HLS), use the original URL which is served by Cache API
+          setActiveSource(downloaded.url);
+        }
         setIsUsingOfflineSource(true);
         return;
       }
@@ -812,7 +817,7 @@ export default function VideoPlayer() {
 
     if (!videoRef.current) return;
 
-    if (activeSource.includes('.m3u8') && !isUsingOfflineSource) {
+    if (activeSource.includes('.m3u8') && (!isUsingOfflineSource || !activeSource.startsWith('blob:'))) {
       // First, try MSE (hls.js). This works beautifully on Android Chrome and Desktop Safari/Chrome.
       // We must not force Android to native HLS, because Android native HLS often drops video layers (black screen).
       if (Hls.isSupported()) {
