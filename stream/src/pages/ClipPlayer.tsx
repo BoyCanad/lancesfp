@@ -109,7 +109,7 @@ export default function ClipPlayer() {
     };
 
     if (src.includes('.m3u8') && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: false, maxBufferLength: 60 });
+      const hls = new Hls({ enableWorker: true, maxBufferLength: 60 });
       hlsRef.current = hls;
       hls.attachMedia(video);
       hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(src));

@@ -826,10 +826,11 @@ export default function VideoPlayer() {
         let mediaErrorRecoveries = 0;
 
         hls = new Hls({
-          enableWorker: false,
+          enableWorker: true,
           autoStartLoad: true,
           lowLatencyMode: false,
-          maxBufferLength: 30,
+          maxBufferLength: 60,
+          maxMaxBufferLength: 90,
         });
 
         hlsRef.current = hls;
