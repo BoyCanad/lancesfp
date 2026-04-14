@@ -47,6 +47,7 @@
   flex-direction: column;
   align-items: center;
   transition: transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .profile-picker__btn:hover {
@@ -125,6 +126,7 @@
   letter-spacing: 2px;
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .profile-picker__manage-btn:hover {
@@ -143,6 +145,7 @@
   letter-spacing: 2px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .profile-picker__done-btn:hover {
@@ -209,6 +212,7 @@
   background: none;
   border: none;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .profile-picker__pin-title {

@@ -485,7 +485,8 @@ export default function VideoPlayer() {
         const match = await cache.match(target);
         if (match) {
           console.log('[Player] Playing from legacy offline cache:', target);
-          setActiveSource(target);
+          const blob = await match.blob();
+          setActiveSource(URL.createObjectURL(blob));
           setIsUsingOfflineSource(true);
         }
       } catch (e) {

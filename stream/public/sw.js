@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lsfplus-v7';
+const CACHE_NAME = 'lsfplus-v8';
 const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((networkResponse) => {
           const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone).catch(() => {}));
           return networkResponse;
         })
         .catch(() => {
@@ -56,6 +56,13 @@ self.addEventListener('fetch', (event) => {
         })
     );
     return;
+  }
+
+  // BYPASS MEDIA AND RANGE REQUESTS
+  // Safari and Android Chrome require strict 206 Partial Content for video/audio.
+  // Proxying these through SW fetch() breaks mobile video buffering/loading.
+  if (event.request.headers.has('range') || event.request.destination === 'video' || event.request.destination === 'audio' || url.pathname.endsWith('.mp4')) {
+    return; // Fallback entirely to default browser network fetch
   }
 
   // CACHE FIRST STRATEGY for static assets and media

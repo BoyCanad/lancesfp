@@ -52,6 +52,7 @@ body { background: #000; }
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Video ───────────────────────────────────────────── */
@@ -152,6 +153,7 @@ body { background: #000; }
   white-space: nowrap;
   flex-shrink: 0;
   transition: background 0.2s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cp-watch-full-btn:hover {
@@ -190,6 +192,7 @@ body { background: #000; }
 }
 
 .cp-replay-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.06); }
+.cp-replay-btn { -webkit-tap-highlight-color: transparent; }
 .cp-replay-btn span  { font-size: 0.78rem; }
 
 /* ── Bottom controls ─────────────────────────────────── */
@@ -217,6 +220,7 @@ body { background: #000; }
   cursor: pointer;
   padding: 8px 0; /* larger tap target */
   margin: -8px 0 2px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cp-progress-bg {
@@ -314,6 +318,7 @@ body { background: #000; }
   cursor: pointer;
   border-radius: 50%;
   transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cp-btn:hover { background: rgba(255,255,255,0.12); }
@@ -409,6 +414,7 @@ body { background: #000; }
   font-size: 0.82rem;
   cursor: pointer;
   transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cp-paused-watch-btn:hover {
@@ -484,6 +490,7 @@ body { background: #000; }
 .cp-menu-item.active { color: #fff; font-weight: 700; }
 
 .cp-menu-item span { flex: 1; }
+.cp-menu-item { -webkit-tap-highlight-color: transparent; }
 
 @media (max-width: 768px) {
   .cp-sub-menu {
