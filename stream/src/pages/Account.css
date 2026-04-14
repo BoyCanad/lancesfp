@@ -302,6 +302,29 @@
   margin: 0;
 }
 
+.account-detail-value {
+  font-size: 13px !important;
+  color: #666 !important;
+  font-weight: 500 !important;
+  margin: 2px 0;
+}
+
+.account-verified-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.account-verified-row span {
+  font-size: 12px;
+  color: #333;
+}
+
+.account-placeholder {
+  text-align: center;
+  padding: 100px 20px;
+}
+
 /* Responsive */
 @media (max-width: 896px) {
   .account-layout {

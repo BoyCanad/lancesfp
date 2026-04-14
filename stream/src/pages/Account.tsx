@@ -10,7 +10,10 @@ import {
   ChevronRight, 
   Layers, 
   Mail,
-  Zap
+  Zap,
+  Lock,
+  Check,
+  MonitorSmartphone
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import './Account.css';
@@ -19,6 +22,7 @@ export default function Account() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [activeProfile, setActiveProfile] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'membership' | 'security' | 'devices' | 'profiles'>('overview');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -61,23 +65,38 @@ export default function Account() {
           </button>
 
           <div className="account-menu">
-            <button className="account-menu-item active">
+            <button 
+              className={`account-menu-item ${activeTab === 'overview' ? 'active' : ''}`}
+              onClick={() => setActiveTab('overview')}
+            >
               <Home size={20} />
               <span>Overview</span>
             </button>
-            <button className="account-menu-item">
+            <button 
+              className={`account-menu-item ${activeTab === 'membership' ? 'active' : ''}`}
+              onClick={() => setActiveTab('membership')}
+            >
               <CreditCard size={20} />
               <span>Membership</span>
             </button>
-            <button className="account-menu-item">
+            <button 
+              className={`account-menu-item ${activeTab === 'security' ? 'active' : ''}`}
+              onClick={() => setActiveTab('security')}
+            >
               <ShieldCheck size={20} />
               <span>Security</span>
             </button>
-            <button className="account-menu-item">
+            <button 
+              className={`account-menu-item ${activeTab === 'devices' ? 'active' : ''}`}
+              onClick={() => setActiveTab('devices')}
+            >
               <Smartphone size={20} />
               <span>Devices</span>
             </button>
-            <button className="account-menu-item">
+            <button 
+              className={`account-menu-item ${activeTab === 'profiles' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profiles')}
+            >
               <Smile size={20} />
               <span>Profiles</span>
             </button>
@@ -86,72 +105,159 @@ export default function Account() {
 
         {/* Main Content */}
         <main className="account-main">
-          <h1 className="account-title">Account</h1>
-          <p className="account-subtitle">Membership Details</p>
+          {activeTab === 'overview' && (
+            <>
+              <h1 className="account-title">Account</h1>
+              <p className="account-subtitle">Membership Details</p>
 
-          <section className="account-section">
-            <div className="account-card">
-              <div className="account-badge">
-                Member since April 2020
-              </div>
-              
-              <div className="account-card__body">
-                <div className="account-plan-info">
-                  <h2 className="account-plan-title">Premium plan</h2>
-                  <p className="account-payment-date">Next payment: 4 May 2026</p>
+              <section className="account-section">
+                <div className="account-card">
+                  <div className="account-badge">
+                    Member since April 2020
+                  </div>
                   
-                  <div className="account-payment-method">
-                    <div className="celcom-logo">
-                      <div className="celcom-icon"><Zap size={14} fill="#0d68b1" color="#0d68b1" /></div>
-                      <span>Celcom</span>
+                  <div className="account-card__body">
+                    <div className="account-plan-info">
+                      <h2 className="account-plan-title">Premium plan</h2>
+                      <p className="account-payment-date">Next payment: 4 May 2026</p>
+                      
+                      <div className="account-payment-method">
+                        <div className="celcom-logo">
+                          <div className="celcom-icon"><Zap size={14} fill="#0d68b1" color="#0d68b1" /></div>
+                          <span>Celcom</span>
+                        </div>
+                        <span className="account-masked-number">*** *** ***0499</span>
+                      </div>
                     </div>
-                    <span className="account-masked-number">*** *** ***0499</span>
                   </div>
+
+                  <button className="account-card__action">
+                    <span>Manage membership</span>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
                 </div>
-              </div>
+              </section>
 
-              <button className="account-card__action">
-                <span>Manage membership</span>
-                <ChevronRight size={20} color="#666" />
-              </button>
-            </div>
-          </section>
-
-          <p className="account-section-label">Quick Links</p>
-          
-          <section className="account-section">
-            <div className="account-quick-links-card">
-              <button className="account-link-item">
-                <div className="account-link-item__left">
-                  <Layers size={22} className="account-link-icon" />
-                  <span>Change plan</span>
-                </div>
-                <ChevronRight size={20} color="#666" />
-              </button>
-
-              <button className="account-link-item">
-                <div className="account-link-item__left">
-                  <CreditCard size={22} className="account-link-icon" />
-                  <span>Manage payment method</span>
-                </div>
-                <ChevronRight size={20} color="#666" />
-              </button>
-
-              <button className="account-link-item">
-                <div className="account-link-item__left">
-                  <Mail size={22} className="account-link-icon" />
-                  <div className="account-link-text-stack">
-                    <div className="account-link-with-badge">
-                      <span>Buy an extra member slot</span>
-                      <span className="account-new-badge">New</span>
+              <p className="account-section-label">Quick Links</p>
+              
+              <section className="account-section">
+                <div className="account-quick-links-card">
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <Layers size={22} className="account-link-icon" />
+                      <span>Change plan</span>
                     </div>
-                    <p className="account-link-desc">Share your Netflix with someone who doesn't live with you.</p>
-                  </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <CreditCard size={22} className="account-link-icon" />
+                      <span>Manage payment method</span>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <Mail size={22} className="account-link-icon" />
+                      <div className="account-link-text-stack">
+                        <div className="account-link-with-badge">
+                          <span>Buy an extra member slot</span>
+                          <span className="account-new-badge">New</span>
+                        </div>
+                        <p className="account-link-desc">Share your Netflix with someone who doesn't live with you.</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
                 </div>
-                <ChevronRight size={20} color="#666" />
-              </button>
+              </section>
+            </>
+          )}
+
+          {activeTab === 'security' && (
+            <>
+              <h1 className="account-title">Security</h1>
+              <p className="account-subtitle">Account Details</p>
+
+              <section className="account-section">
+                <div className="account-quick-links-card">
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <Lock size={22} className="account-link-icon" />
+                      <span>Password</span>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <Mail size={22} className="account-link-icon" />
+                      <div className="account-link-text-stack">
+                         <span>Email</span>
+                         <span className="account-detail-value">{userEmail || 'zedsmash154@gmail.com'}</span>
+                         <div className="account-verified-row">
+                           <Check size={14} color="#333" />
+                           <span>Verified</span>
+                         </div>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <Smartphone size={22} className="account-link-icon" />
+                      <div className="account-link-text-stack">
+                         <span>Mobile phone</span>
+                         <span className="account-detail-value">016-742 8352</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+                </div>
+              </section>
+
+              <p className="account-section-label">Access and Privacy</p>
+
+              <section className="account-section">
+                <div className="account-quick-links-card">
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <MonitorSmartphone size={22} className="account-link-icon" />
+                      <div className="account-link-text-stack">
+                        <span>Access and devices</span>
+                        <p className="account-link-desc">Manage signed-in devices</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+
+                  <button className="account-link-item">
+                    <div className="account-link-item__left">
+                      <Smile size={22} className="account-link-icon" />
+                      <div className="account-link-text-stack">
+                        <div className="account-link-with-badge">
+                          <span>Profile Transfer</span>
+                          <span className="account-new-badge">New</span>
+                        </div>
+                        <p className="account-link-desc">Off</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#666" />
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
+
+          {(activeTab !== 'overview' && activeTab !== 'security') && (
+            <div className="account-placeholder">
+              <h1 className="account-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+              <p className="account-subtitle">Coming soon...</p>
             </div>
-          </section>
+          )}
         </main>
       </div>
     </div>
