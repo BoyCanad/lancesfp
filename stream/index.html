@@ -13,9 +13,33 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Nuclear Reset for stuck Service Workers
+      async function resetPWA() {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+        const cacheNames = await caches.keys();
+        for (let cacheName of cacheNames) {
+          if (cacheName !== 'lsfplus-movies') { // Keep movies, clear logic
+             await caches.delete(cacheName);
+          }
+        }
+      }
+
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+        window.addEventListener('load', async () => {
+          // Check if we need to force a reset (v4 update)
+          const swVersion = localStorage.getItem('sw_version');
+          if (swVersion !== '4') {
+            console.log('Forcing PWA cache reset to v4...');
+            await resetPWA();
+            localStorage.setItem('sw_version', '4');
+            window.location.reload();
+            return;
+          }
+
+          navigator.serviceWorker.register('/sw.js?v=4')
             .then(reg => console.log('Service Worker registered:', reg.scope))
             .catch(err => console.log('Service Worker registration failed:', err));
         });
