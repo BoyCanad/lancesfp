@@ -1,0 +1,331 @@
+.account-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+  color: #333333;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nav */
+.account-nav {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4%;
+  border-bottom: 1px solid #e6e6e6;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 100;
+}
+
+.account-nav__logo {
+  color: #e50914;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  cursor: pointer;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.account-nav__profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.account-nav__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+}
+
+.account-nav__caret {
+  font-size: 10px;
+  color: #333;
+}
+
+/* Layout */
+.account-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  gap: 40px;
+}
+
+/* Sidebar */
+.account-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.account-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+}
+
+.account-back-btn:hover {
+  text-decoration: underline;
+}
+
+.account-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: #666;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.account-menu-item:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.account-menu-item.active {
+  background-color: #f5f5f7;
+  color: #000;
+}
+
+.account-menu-item span {
+  font-size: 15px;
+}
+
+/* Main */
+.account-main {
+  max-width: 720px;
+}
+
+.account-title {
+  font-size: 40px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #000;
+  letter-spacing: -0.5px;
+}
+
+.account-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.account-section-label {
+  font-size: 14px;
+  color: #666;
+  margin: 40px 0 16px;
+}
+
+/* Cards */
+.account-card, .account-quick-links-card {
+  border: 1px solid #e6e6e6;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.account-card {
+  padding-top: 24px;
+  position: relative;
+}
+
+.account-badge {
+  display: inline-block;
+  background: linear-gradient(90deg, #2a1b5d 0%, #d80c16 100%);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 24px;
+  margin-bottom: 24px;
+}
+
+.account-card__body {
+  padding: 0 24px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.account-plan-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #000;
+}
+
+.account-payment-date {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.account-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+.celcom-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.celcom-icon {
+  background: #f0f7ff;
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-masked-number {
+  color: #666;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.account-card__action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.account-card__action:hover {
+  background: #fafafa;
+}
+
+/* Quick Links List */
+.account-link-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.account-link-item:last-child {
+  border-bottom: none;
+}
+
+.account-link-item:hover {
+  background: #fafafa;
+}
+
+.account-link-item__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  text-align: left;
+}
+
+.account-link-icon {
+  color: #333;
+  margin-top: 2px;
+}
+
+.account-link-item span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.account-link-text-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-link-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-new-badge {
+  background: #0071eb;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.account-link-desc {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 896px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 20px;
+  }
+  
+  .account-sidebar {
+    gap: 20px;
+  }
+  
+  .account-menu {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  
+  .account-menu-item {
+    white-space: nowrap;
+    width: auto;
+  }
+  
+  .account-title {
+    font-size: 32px;
+  }
+}

@@ -26,6 +26,7 @@ import Auth from './pages/Auth';
 import Downloads from './pages/Downloads';
 import CreateProfile from './pages/CreateProfile';
 import ProfileLock from './pages/ProfileLock';
+import Account from './pages/Account';
 import './App.css';
 
 function App() {
@@ -37,7 +38,8 @@ function App() {
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
-  const showNavAndFooter = !isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth;
+  const isAccount = pathname === '/account';
+  const showNavAndFooter = !isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isAccount;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
@@ -91,6 +93,7 @@ function App() {
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
         <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
+        <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
       </Routes>
 
       {showNavAndFooter && (

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lsfplus-v2';
+const CACHE_NAME = 'lsfplus-v3';
 const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
@@ -51,7 +51,18 @@ self.addEventListener('fetch', (event) => {
         const url = event.request.url;
         
         // Cache static assets and HLS segments dynamically if they aren't pre-cached
-        const isStaticAsset = url.includes('/images/') || url.includes('.js') || url.includes('.css') || url.includes('.woff') || url.includes('.vtt');
+        const isStaticAsset = 
+          url.includes('/images/') || 
+          url.includes('.js') || 
+          url.includes('.css') || 
+          url.includes('.woff') || 
+          url.includes('.vtt') ||
+          url.includes('.tsx') || // Add .tsx for dev mode support
+          url.includes('/src/') || // Add /src/ for dev mode modules
+          url.includes('node_modules/.vite') || // Add Vite deps
+          url.includes('/@vite/') || // Vite internal
+          url.includes('/@id/'); // Vite modules
+
         const isHlsSegment = url.includes('.m3u8') || url.includes('.ts');
 
         if (isStaticAsset) {

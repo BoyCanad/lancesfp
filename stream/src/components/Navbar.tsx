@@ -175,7 +175,7 @@ export default function Navbar() {
                         </div>
                         <span className="navbar__dropdown-text">Transfer Profile</span>
                       </div>
-                      <div className="navbar__dropdown-item">
+                      <div className="navbar__dropdown-item" onClick={() => navigate('/account')}>
                         <div className="navbar__dropdown-icon-wrapper">
                           <User size={20} color="#b3b3b3" />
                         </div>
