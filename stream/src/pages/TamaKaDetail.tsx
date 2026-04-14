@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function TamaKaDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f8');
+  const movie = featuredMovies.find((m) => m.id === 'tama-ka-ligaya');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -277,7 +277,7 @@ export default function TamaKaDetail() {
     if (!session) {
       navigate('/login');
     } else {
-      navigate('/watch/tama-ka');
+      navigate('/watch/tama-ka-ligaya');
     }
   };
 

@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function MinsanDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f2');
+  const movie = featuredMovies.find((m) => m.id === 'minsan');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;

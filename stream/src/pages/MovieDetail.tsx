@@ -4,6 +4,7 @@ import { Play, Bookmark, Download, Library, VolumeX, Volume2, X, Trash2 } from '
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
+import { downloadService } from '../services/downloadService';
 import './MovieDetail.css';
 import './MinsanDetail.css'; // Reuse Minsan's cinematic detail styles
 
@@ -64,7 +65,7 @@ const elBimboCollections = [
 ];
 
 export default function MovieDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f1');
+  const movie = featuredMovies.find((m) => m.id === 'ang-huling-el-bimbo-play');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -91,13 +92,8 @@ export default function MovieDetail() {
 
   // Check if movie is already offline
   useEffect(() => {
-    const checkTarget = movie?.downloadUrl || movie?.videoUrl;
-    if (!checkTarget) return;
-    caches.open('lsfplus-movies').then(cache => {
-      cache.match(checkTarget).then(match => {
-        if (match) setIsCached(true);
-      });
-    });
+    if (!movie) return;
+    downloadService.isDownloaded(movie.id).then(setIsCached);
   }, [movie]);
 
   // Start trailer once after 3s upon landing (or immediately if from thumbnail)
@@ -189,22 +185,7 @@ export default function MovieDetail() {
     if (!confirmDelete) return;
 
     try {
-      const cache = await caches.open('lsfplus-movies');
-      
-      // Delete video
-      if (movie.videoUrl) await cache.delete(movie.videoUrl);
-      if (movie.downloadUrl) await cache.delete(movie.downloadUrl);
-      
-      // Delete subtitles
-      if (movie.subtitles) {
-        for (const sub of movie.subtitles) {
-          await cache.delete(sub.url);
-        }
-      }
-      
-      // Delete sprites
-      if (movie.spriteUrl) await cache.delete(movie.spriteUrl);
-
+      await downloadService.deleteDownload(movie.id);
       setIsCached(false);
       alert('Movie removed from offline storage.');
     } catch (err) {
@@ -214,8 +195,7 @@ export default function MovieDetail() {
   };
 
   const handleDownload = async () => {
-    const targetUrl = movie?.downloadUrl || movie?.videoUrl;
-    if (!targetUrl || isDownloading) return;
+    if (!movie || isDownloading) return;
     
     setIsDownloading(true);
     setDownloadProgress(0);
@@ -225,65 +205,26 @@ export default function MovieDetail() {
     abortControllerRef.current = controller;
 
     try {
-      const resp = await fetch(targetUrl, { signal: controller.signal });
-      if (!resp.ok) throw new Error('Download failed');
-
-      const contentLength = resp.headers.get('content-length');
-      const total = contentLength ? parseInt(contentLength, 10) : 0;
-      
-      const reader = resp.body?.getReader();
-      if (!reader) throw new Error('No reader found');
-
-      let received = 0;
-      const chunks = [];
-      
-      while(true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        received += value.length;
-        if (total) {
-          setDownloadProgress(Math.round((received / total) * 100));
-        }
-      }
-
-      const blob = new Blob(chunks);
-      const cache = await caches.open('lsfplus-movies');
-      
-      // Cache the video under its download URL
-      await cache.put(targetUrl, new Response(blob, {
-        headers: { 
-          'Content-Type': targetUrl.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4', 
-          'Content-Length': blob.size.toString() 
-        }
-      }));
-      
-      // Also cache all subtitles
-      if (movie.subtitles) {
-        for (const sub of movie.subtitles) {
-          try {
-            const subResp = await fetch(sub.url);
-            if (subResp.ok) await cache.put(sub.url, subResp);
-          } catch (e) { console.error('Sub cache fail', e); }
-        }
-      }
-
-      // Also cache the sprite/storyboard image
-      if (movie.spriteUrl) {
-        try {
-          const spriteResp = await fetch(movie.spriteUrl);
-          if (spriteResp.ok) await cache.put(movie.spriteUrl, spriteResp);
-        } catch (e) { console.error('Sprite cache fail', e); }
-      }
+      await downloadService.downloadAndStore(
+        movie.id,
+        movie.videoUrl || '',
+        {
+          title: movie.title,
+          thumbnail: movie.thumbnail,
+          duration: movie.duration
+        },
+        (progress) => setDownloadProgress(progress),
+        controller.signal
+      );
       
       setIsCached(true);
-      alert(`"${movie.title}" and its data are now available offline!`);
+      alert(`"${movie.title}" is now available offline!`);
     } catch (err: any) {
-      if (err.name === 'AbortError') {
+      if (err.name === 'AbortError' || err.message === 'AbortError') {
         console.log('Download cancelled by user');
       } else {
         console.error(err);
-        alert('Failed to save for offline viewing.');
+        alert('Failed to save for offline viewing. Please check your connection and storage space.');
       }
     } finally {
       setIsDownloading(false);
@@ -293,11 +234,18 @@ export default function MovieDetail() {
   };
 
   const handlePlayClick = async () => {
+    if (!movie) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate('/login');
+      return;
+    }
+
+    const downloaded = await downloadService.getDownloadedMovie(movie.id);
+    if (downloaded) {
+      navigate(`/watch/${movie.id}?src=offline`, { state: { offlineUrl: downloaded.url } });
     } else {
-      navigate('/watch/f1');
+      navigate(`/watch/${movie.id}`);
     }
   };
 

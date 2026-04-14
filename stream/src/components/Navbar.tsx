@@ -94,6 +94,7 @@ export default function Navbar() {
             <li className="navbar__menu-item">Games</li>
             <li className="navbar__menu-item">New & Popular</li>
             <li className="navbar__menu-item">My List</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/downloads')}>My Downloads</li>
             <li className="navbar__menu-item">Browse by Languages</li>
           </ul>
         </div>
@@ -163,19 +164,27 @@ export default function Navbar() {
                     {/* Menu Actions */}
                     <div className="navbar__dropdown-menu">
                       <div className="navbar__dropdown-item" onClick={() => navigate('/')}>
-                        <Pencil size={20} color="#b3b3b3" />
+                        <div className="navbar__dropdown-icon-wrapper">
+                          <Pencil size={20} color="#b3b3b3" />
+                        </div>
                         <span className="navbar__dropdown-text">Manage Profiles</span>
                       </div>
                       <div className="navbar__dropdown-item">
-                        <RefreshCw size={20} color="#b3b3b3" />
+                        <div className="navbar__dropdown-icon-wrapper">
+                          <RefreshCw size={20} color="#b3b3b3" />
+                        </div>
                         <span className="navbar__dropdown-text">Transfer Profile</span>
                       </div>
                       <div className="navbar__dropdown-item">
-                        <User size={20} color="#b3b3b3" />
+                        <div className="navbar__dropdown-icon-wrapper">
+                          <User size={20} color="#b3b3b3" />
+                        </div>
                         <span className="navbar__dropdown-text">Account</span>
                       </div>
                       <div className="navbar__dropdown-item">
-                        <HelpCircle size={20} color="#b3b3b3" />
+                        <div className="navbar__dropdown-icon-wrapper">
+                          <HelpCircle size={20} color="#b3b3b3" />
+                        </div>
                         <span className="navbar__dropdown-text">Help Center</span>
                       </div>
                     </div>

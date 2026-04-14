@@ -30,6 +30,7 @@ import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../supabaseClient';
 import { updateWatchProgress, getWatchProgress } from '../services/profileService';
+import { downloadService } from '../services/downloadService';
 import './VideoPlayer.css';
 
 interface ParsedCue {
@@ -443,13 +444,34 @@ export default function VideoPlayer() {
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
   useEffect(() => {
-    // Reset hasStartedPlaying and activeSource when video source changes
+    // Reset hasStartedPlaying and initial source setup
     setHasStartedPlaying(false);
+    
+    // PRIORITY 1: Check if we were passed a direct offline blob URL
+    if (location.state?.offlineUrl) {
+      console.log('[Player] Playing from provided offline blob URL');
+      setActiveSource(location.state.offlineUrl);
+      setIsUsingOfflineSource(true);
+      return;
+    }
+
+    // PRIORITY 2: Check standard source
     setActiveSource(videoSrc);
     setIsUsingOfflineSource(false);
 
     const checkOfflineCache = async () => {
       if (!movie) return;
+      
+      // Check IndexedDB first (the new service)
+      const downloaded = await downloadService.getDownloadedMovie(movie.id);
+      if (downloaded) {
+        console.log('[Player] Playing from IndexedDB storage');
+        setActiveSource(URL.createObjectURL(downloaded.blob));
+        setIsUsingOfflineSource(true);
+        return;
+      }
+
+      // Fallback: Check standard Cache API (legacy method)
       const target = movie.downloadUrl || movie.videoUrl;
       if (!target) return;
 
@@ -457,7 +479,7 @@ export default function VideoPlayer() {
         const cache = await caches.open('lsfplus-movies');
         const match = await cache.match(target);
         if (match) {
-          console.log('[Player] Playing from offline cache:', target);
+          console.log('[Player] Playing from legacy offline cache:', target);
           setActiveSource(target);
           setIsUsingOfflineSource(true);
         }
@@ -467,7 +489,14 @@ export default function VideoPlayer() {
     };
 
     checkOfflineCache();
-  }, [videoSrc, movie]);
+
+    return () => {
+      // Clean up blob URLs to prevent memory leaks
+      if (activeSource.startsWith('blob:')) {
+        URL.revokeObjectURL(activeSource);
+      }
+    };
+  }, [videoSrc, movie, location.state]);
 
   useEffect(() => {
     if (!activeProfileId || !id) return;

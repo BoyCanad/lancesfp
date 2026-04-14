@@ -64,6 +64,7 @@ export default function ClipPlayer() {
   const [activeSubtitle, setActiveSubtitle] = useState('');
   const [activeSubIdx, setActiveSubIdx] = useState<number>(-1);
   const [showSubMenu, setShowSubMenu] = useState(false);
+  const [session, setSession] = useState<any>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   // ── 1. Fetch clip row from Supabase ──────────────────────────────────────
@@ -88,6 +89,7 @@ export default function ClipPlayer() {
         }
         setLoading(false);
       });
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
   }, [clipId]);
 
   // ── 2. Once we have the clip, load the video ─────────────────────────────
@@ -317,9 +319,9 @@ export default function ClipPlayer() {
         </div>
         <button
           className="cp-watch-full-btn"
-          onClick={e => { e.stopPropagation(); navigate(`/watch/${clipData?.movie_id}`); }}
+          onClick={e => { e.stopPropagation(); navigate(session ? `/watch/${clipData?.movie_id}` : '/login'); }}
         >
-          Watch Full Movie
+          {session ? 'Watch Full Movie' : 'Sign In to Watch'}
         </button>
       </div>
 
@@ -337,9 +339,9 @@ export default function ClipPlayer() {
         )}
         <button
           className="cp-paused-watch-btn"
-          onClick={e => { e.stopPropagation(); navigate(`/watch/${clipData?.movie_id}`); }}
+          onClick={e => { e.stopPropagation(); navigate(session ? `/watch/${clipData?.movie_id}` : '/login'); }}
         >
-          Watch Full Movie
+          {session ? 'Watch Full Movie' : 'Sign in to watch full movie'}
         </button>
       </div>
 

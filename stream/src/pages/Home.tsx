@@ -1,24 +1,15 @@
 import HeroCarousel from '../components/HeroCarousel';
 import ContentRow from '../components/ContentRow';
-import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
+import { featuredMovies, trendingMovies, elBimboFeatured, elBimboCollections } from '../data/movies';
 import { useState, useEffect } from 'react';
 import { getProfiles, getWatchProgress } from '../services/profileService';
+import { useNavigate } from 'react-router-dom';
 import type { Profile } from '../services/profileService';
 
 const archiveMovies = [trendingMovies[0], elBimboFeatured, ...trendingMovies.slice(1)];
-const elBimboCollections = [
-  elBimboFeatured,
-  featuredMovies[1],
-  featuredMovies[3],
-  featuredMovies[4],
-  featuredMovies[5],
-  featuredMovies[6],
-  featuredMovies[7],
-  featuredMovies[8],
-  ...[...trendingMovies].reverse().slice(7)
-];
 
 export default function Home() {
+  const navigate = useNavigate();
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [dynamicContinueWatching, setDynamicContinueWatching] = useState<any[]>([]);
 
@@ -69,7 +60,6 @@ export default function Home() {
             title={`Continue Watching for ${activeProfile?.name || 'User'}`}
             movies={dynamicContinueWatching}
             showProgress
-            variant="wide"
           />
         )}
         <ContentRow
@@ -79,6 +69,7 @@ export default function Home() {
         <ContentRow
           title="Ang Huling El Bimbo Collections"
           movies={elBimboCollections}
+          onSeeAll={() => navigate('/collections/el-bimbo')}
         />
       </div>
     </main>

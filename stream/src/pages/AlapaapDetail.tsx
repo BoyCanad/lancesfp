@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function AlapaapDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f5');
+  const movie = featuredMovies.find((m) => m.id === 'alapaap-overdrive');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -277,7 +277,7 @@ export default function AlapaapDetail() {
     if (!session) {
       navigate('/login');
     } else {
-      navigate('/watch/alapaap');
+      navigate('/watch/alapaap-overdrive');
     }
   };
 

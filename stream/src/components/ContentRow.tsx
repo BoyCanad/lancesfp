@@ -10,6 +10,7 @@ interface ContentRowProps {
   movies: Movie[];
   showProgress?: boolean;
   variant?: 'default' | 'wide';
+  onSeeAll?: () => void;
 }
 
 const parseDurationToMin = (dur: string) => {
@@ -279,6 +280,7 @@ export default function ContentRow({
   movies,
   showProgress = false,
   variant = 'default',
+  onSeeAll,
 }: ContentRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -302,22 +304,26 @@ export default function ContentRow({
   const handleMovieClick = useCallback((movie: Movie, startTime?: number) => {
     const navOptions = { state: { startTime } };
     
-    if (movie.id === 'f1' || movie.id === 'eb1' || movie.title === 'Ang Huling El Bimbo Play') {
+    // Use movie.id (The slug) to navigate
+    if (movie.id === 'ang-huling-el-bimbo-play') {
       navigate('/ang-huling-el-bimbo-play', navOptions);
-    } else if (movie.id === 'f2' || movie.title === 'Minsan') {
+    } else if (movie.id === 'minsan') {
       navigate('/minsan', navOptions);
-    } else if (movie.id === 'f4' || movie.title === 'Tindahan ni Aling Nena') {
-      navigate('/tindahan', navOptions);
-    } else if (movie.id === 'f5' || movie.title === 'Alapaap/Overdrive') {
-      navigate('/alapaap', navOptions);
-    } else if (movie.id === 'f6' || movie.title === 'Spoliarium/Graduation') {
-      navigate('/spoliarium', navOptions);
-    } else if (movie.id === 'f7' || movie.title === 'Pare Ko') {
+    } else if (movie.id === 'tindahan-ni-aling-nena') {
+      navigate('/tindahan-ni-aling-nena', navOptions);
+    } else if (movie.id === 'alapaap-overdrive') {
+      navigate('/alapaap-overdrive', navOptions);
+    } else if (movie.id === 'spoliarium-graduation') {
+      navigate('/spoliarium-graduation', navOptions);
+    } else if (movie.id === 'pare-ko') {
       navigate('/pare-ko', navOptions);
-    } else if (movie.id === 'f8' || movie.title === 'Tama Ka/Ligaya') {
-      navigate('/tama-ka', navOptions);
-    } else if (movie.id === 'f9' || movie.title === 'Ang Huling El Bimbo') {
-      navigate('/el-bimbo', navOptions);
+    } else if (movie.id === 'tama-ka-ligaya') {
+      navigate('/tama-ka-ligaya', navOptions);
+    } else if (movie.id === 'ang-huling-el-bimbo') {
+      navigate('/ang-huling-el-bimbo', navOptions);
+    } else {
+      // Fallback or generic detail page
+      navigate(`/browse`, navOptions);
     }
 
   }, [navigate]);
@@ -333,7 +339,9 @@ export default function ContentRow({
             <div className="row__pagination-dot"></div>
             <div className="row__pagination-dot"></div>
           </div>
-          <button className="row__see-all">See All →</button>
+          {onSeeAll && (
+            <button className="row__see-all" onClick={onSeeAll}>See All →</button>
+          )}
         </div>
       </div>
 

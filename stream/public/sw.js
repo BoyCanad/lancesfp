@@ -38,19 +38,28 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
+      // CACHE FIRST STRATEGY: Always serve from cache if available.
+      // This is essential for offline HLS (.m3u8 and .ts files) and static assets.
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
+      // If not in cache, fallback to Network
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200) return networkResponse;
 
         const url = event.request.url;
-        const isAsset = url.includes('/images/') || url.includes('.js') || url.includes('.css') || url.includes('.woff') || url.includes('.vtt');
         
-        if (isAsset) {
+        // Cache static assets and HLS segments dynamically if they aren't pre-cached
+        const isStaticAsset = url.includes('/images/') || url.includes('.js') || url.includes('.css') || url.includes('.woff') || url.includes('.vtt');
+        const isHlsSegment = url.includes('.m3u8') || url.includes('.ts');
+
+        if (isStaticAsset) {
           const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        } else if (isHlsSegment) {
+          const responseClone = networkResponse.clone();
+          caches.open('offline-hls-cache').then((cache) => cache.put(event.request, responseClone));
         }
         
         return networkResponse;
@@ -58,7 +67,6 @@ self.addEventListener('fetch', (event) => {
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }
-        // Return a basic error response instead of throwing to avoid the "Failed to convert value to Response" error
         return new Response('Network error occurred', { status: 408, headers: { 'Content-Type': 'text/plain' } });
       });
     })

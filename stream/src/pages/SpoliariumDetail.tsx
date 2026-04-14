@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function SpoliariumDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f6');
+  const movie = featuredMovies.find((m) => m.id === 'spoliarium-graduation');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -277,7 +277,7 @@ export default function SpoliariumDetail() {
     if (!session) {
       navigate('/login');
     } else {
-      navigate('/watch/spoliarium');
+      navigate('/watch/spoliarium-graduation');
     }
   };
 

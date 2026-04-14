@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function PareKoDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f7');
+  const movie = featuredMovies.find((m) => m.id === 'pare-ko');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;

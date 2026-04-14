@@ -2259,21 +2259,23 @@
 }
 
 .share-moment-card {
-  margin: 60px auto 40px auto;
-  width: 90%;
-  max-width: 320px;
-  aspect-ratio: 16/10;
+  margin: 30px auto 30px auto;
+  width: 95%;
+  max-width: 340px;
+  aspect-ratio: 16 / 11;
   background-color: #1a1a1a;
-  border-radius: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
 
 .share-moment-poster {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .share-moment-card-gradient {

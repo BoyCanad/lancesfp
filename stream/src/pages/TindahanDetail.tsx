@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function TindahanDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f4');
+  const movie = featuredMovies.find((m) => m.id === 'tindahan-ni-aling-nena');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -277,7 +277,7 @@ export default function TindahanDetail() {
     if (!session) {
       navigate('/login');
     } else {
-      navigate('/watch/tindahan');
+      navigate('/watch/tindahan-ni-aling-nena');
     }
   };
 

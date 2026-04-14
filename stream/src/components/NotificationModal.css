@@ -1,0 +1,163 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  background: #181818;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  padding: 32px 24px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.modal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Success Styles */
+.modal-header.success .modal-icon {
+  background: rgba(70, 211, 105, 0.1);
+  color: #46d369;
+}
+
+.modal-header.success .modal-title {
+  color: #46d369;
+}
+
+/* Error Styles */
+.modal-header.error .modal-icon {
+  background: rgba(229, 9, 20, 0.1);
+  color: #e50914;
+}
+
+.modal-header.error .modal-title {
+  color: #e50914;
+}
+
+/* Info Styles */
+.modal-header.info .modal-icon {
+  background: rgba(0, 113, 235, 0.1);
+  color: #0071eb;
+}
+
+.modal-header.info .modal-title {
+  color: #0071eb;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-body {
+  padding: 0 32px 32px;
+  text-align: center;
+  color: #e5e5e5;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.modal-body p {
+  margin: 0;
+}
+
+.modal-actions {
+  padding: 0 32px 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-btn.success {
+  background: #46d369;
+  color: #000;
+}
+
+.modal-btn.success:hover {
+  background: #3ebf5e;
+  transform: translateY(-1px);
+}
+
+.modal-btn.error {
+  background: #e50914;
+  color: #fff;
+}
+
+.modal-btn.error:hover {
+  background: #f40612;
+  transform: translateY(-1px);
+}
+
+.modal-btn.info {
+  background: #0071eb;
+  color: #fff;
+}
+
+.modal-btn.info:hover {
+  background: #007efc;
+  transform: translateY(-1px);
+}
+
+.modal-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

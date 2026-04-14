@@ -64,7 +64,7 @@ const elBimboCollections = [
 ];
 
 export default function ElBimboDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'f9');
+  const movie = featuredMovies.find((m) => m.id === 'ang-huling-el-bimbo');
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -277,7 +277,7 @@ export default function ElBimboDetail() {
     if (!session) {
       navigate('/login');
     } else {
-      navigate('/watch/el-bimbo');
+      navigate('/watch/ang-huling-el-bimbo');
     }
   };
 

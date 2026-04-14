@@ -156,7 +156,9 @@ export default function IconPicker() {
           </div>
 
           <div className="ip-category">
-            <h2 className="ip-category-title">Ang Huling El Bimbo</h2>
+            <div className="ip-category-header">
+              <img src="/images/el-bimbo-logo.webp" alt="Ang Huling El Bimbo" className="ip-category-logo" />
+            </div>
             <IconRow icons={elBimboIcons} label="Ang Huling El Bimbo" showArrows={true} onSelect={handleSelect} />
           </div>
         </div>

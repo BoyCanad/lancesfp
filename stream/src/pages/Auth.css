@@ -36,9 +36,16 @@
 }
 
 .auth-title {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 500;
-  margin-bottom: 28px;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 24px;
+  font-weight: 400;
 }
 
 .auth-form {
@@ -84,6 +91,128 @@
   cursor: not-allowed;
 }
 
+.auth-btn--continue {
+  margin-top: 10px;
+}
+
+.auth-help-container {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.auth-help-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+
+.auth-recaptcha-text {
+  color: #737373;
+  font-size: 0.8rem;
+  margin-top: 20px;
+}
+
+.auth-email-display {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.auth-edit-link:hover {
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: #737373;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #333;
+}
+
+.auth-divider span {
+  padding: 0 10px;
+  font-size: 0.9rem;
+}
+
+.auth-btn--secondary {
+  background-color: rgba(128, 128, 128, 0.4);
+  color: white;
+  margin-top: 0;
+}
+
+.auth-btn--secondary:hover {
+  background-color: rgba(128, 128, 128, 0.6);
+}
+
+.auth-otp-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.auth-otp-input {
+  width: 45px;
+  height: 60px;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 1.8rem;
+  text-align: center;
+  color: white;
+}
+
+.auth-otp-input:focus {
+  outline: none;
+  border-color: #e50914;
+  box-shadow: 0 0 0 1px #e50914;
+}
+
+.auth-otp-timer {
+  font-size: 0.9rem;
+  color: #737373;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.auth-otp-resend {
+  font-size: 0.9rem;
+  color: #737373;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-resend-link {
+  background: transparent;
+  border: none;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
 .auth-error {
   background-color: #e87c03;
   color: white;
@@ -115,6 +244,70 @@
 
 .auth-toggle-btn:hover {
   text-decoration: underline;
+}
+
+.password-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.password-strength-container {
+  padding: 8px 4px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.strength-bar-bg {
+  height: 4px;
+  background-color: #333;
+  border-radius: 2px;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.strength-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease-in-out, background-color 0.3s ease;
+}
+
+.strength-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.password-requirements {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.password-requirements li {
+  font-size: 0.75rem;
+  color: #737373;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.password-requirements li::before {
+  content: '○';
+  font-size: 0.8rem;
+}
+
+.password-requirements li.met {
+  color: #46d369;
+}
+
+.password-requirements li.met::before {
+  content: '●';
 }
 
 @media (max-width: 768px) {

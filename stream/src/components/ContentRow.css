@@ -106,17 +106,7 @@
   position: relative;
 }
 
-@media (max-width: 768px) {
-  .row { padding: 0 16px 8px; }
-  .row__header { margin-bottom: 8px; }
-  .row__title { font-size: 18px; margin-bottom: 0px; }
-  .row__header-right { opacity: 1; transform: none; } /* Always show on mobile */
-  .row__pagination { display: none; } /* Hide dots on mobile to save space */
-  .row__see-all { font-size: 13px; color: var(--accent-purple); }
-  
-  .card { width: 140px; }
-  .card__thumb { aspect-ratio: 2 / 3; }
-}
+
  
 
 .row__wrapper {
@@ -177,46 +167,35 @@
 
 
 /* ─── Card ────────────────────────────────────────────────── */
-.card {
-  flex-shrink: 0;
-  width: 240px;
-  scroll-snap-align: start;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.3s ease;
-  z-index: 1;
-  will-change: z-index;
-}
-
-.card:hover {
-  /* Ultra-high z-index and force elevation */
-  z-index: 1000;
-  transform: translateZ(0); 
-}
-
-.card__thumb {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--bg-card);
-  /* Faster transition */
-  transition: transform 0.25s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
-  border: 2px solid transparent;
-  transform-origin: var(--origin, center calc(50% + 5px));
-}
-
-.card:hover .card__thumb {
-  transform: scale(1.08);
-  border-color: var(--accent-purple);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.5);
-  z-index: 10;
-}
-
-/* On Desktop where we have the Netflix popup, we reset the thumb scale 
-   so the expanded card cleanly takes over the same footprint. */
 @media (min-width: 769px) {
+  .card {
+    flex-shrink: 0;
+    width: 240px;
+    scroll-snap-align: start;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.3s ease;
+    z-index: 1;
+    will-change: z-index;
+  }
+
+  .card:hover {
+    z-index: 1000;
+    transform: translateZ(0); 
+  }
+
+  .card__thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-card);
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+    border: 2px solid transparent;
+    transform-origin: var(--origin, center calc(50% + 5px));
+  }
+
   .card:hover .card__thumb {
     transform: scale(1);
     box-shadow: none;
@@ -663,3 +642,77 @@
 }
 
 @keyframes fadeInCard { from { opacity: 0; } to { opacity: 1; } }
+
+/* Mobile Portrait Aspect Ratio Reversion */
+@media (max-width: 768px) {
+  .row { 
+    padding: 0 16px 12px !important; 
+    margin: 0 !important;
+  }
+  .row__header { 
+    margin-bottom: 2px !important; 
+    padding: 0 4px;
+  }
+  .row__title { 
+    font-size: 15px !important; 
+    font-weight: 700 !important;
+    margin-bottom: 0px !important; 
+  }
+  .row__header-right { opacity: 1; transform: none; display: flex; align-items: center; }
+  .row__pagination { display: none !important; }
+  .row__see-all { font-size: 11px !important; color: #7c3aed !important; font-weight: 700 !important; }
+  
+  .row__track {
+    gap: 12px !important;
+    padding: 8px 4px !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+  }
+
+  .card { 
+    position: relative !important;
+    width: 125px !important; /* Enlarged for better visibility */
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    margin: 0 !important;
+    cursor: pointer !important;
+    transition: transform 0.2s ease !important; /* Smooth interaction */
+  }
+
+  .card:active {
+    transform: scale(1.04) !important;
+    z-index: 50 !important;
+  }
+  
+  .card__thumb { 
+    position: relative !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    background: var(--bg-card) !important;
+    aspect-ratio: 2 / 3 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    border: 2px solid transparent !important;
+    transition: border-color 0.2s ease !important;
+  }
+
+  .card:active .card__thumb {
+    border-color: #e50914 !important; /* Netflix Red edge */
+  }
+
+  .card__info {
+    padding: 4px 2px !important;
+  }
+  .card__title {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .card__meta {
+    font-size: 9px !important;
+    gap: 4px !important;
+  }
+}

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, Lock, Languages, AlertCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Lock, Languages, AlertCircle, MessageSquare, Bell, History, ShieldCheck, PlayCircle, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getProfiles } from '../services/profileService';
 import type { Profile } from '../services/profileService';
@@ -97,6 +97,57 @@ export default function ManageProfile() {
             <ChevronRight size={20} color="#737373" />
           </div>
         </section>
+
+        <section className="mp-card">
+          <div className="mp-row">
+            <div className="mp-row-left">
+              <PlayCircle size={24} color="#333" className="mp-icon" />
+              <div className="mp-text-group">
+                <span className="mp-row-title">Playback settings</span>
+                <span className="mp-row-sub">Set autoplay and audio, video quality</span>
+              </div>
+            </div>
+            <ChevronRight size={20} color="#737373" />
+          </div>
+          <div className="mp-divider" />
+          <div className="mp-row">
+            <div className="mp-row-left">
+              <Bell size={24} color="#333" className="mp-icon" />
+              <div className="mp-text-group">
+                <span className="mp-row-title">Notification settings</span>
+                <span className="mp-row-sub">Manage notifications for email, text, push</span>
+              </div>
+            </div>
+            <ChevronRight size={20} color="#737373" />
+          </div>
+          <div className="mp-divider" />
+          <div className="mp-row">
+            <div className="mp-row-left">
+              <History size={24} color="#333" className="mp-icon" />
+              <div className="mp-text-group">
+                <span className="mp-row-title">Viewing activity</span>
+                <span className="mp-row-sub">Manage viewing history and ratings</span>
+              </div>
+            </div>
+            <ChevronRight size={20} color="#737373" />
+          </div>
+          <div className="mp-divider" />
+          <div className="mp-row">
+            <div className="mp-row-left">
+              <ShieldCheck size={24} color="#333" className="mp-icon" />
+              <div className="mp-text-group">
+                <span className="mp-row-title">Privacy and data settings</span>
+                <span className="mp-row-sub">Manage usage of personal info</span>
+              </div>
+            </div>
+            <ChevronRight size={20} color="#737373" />
+          </div>
+        </section>
+
+        <button className="mp-delete-btn">
+          <Trash2 size={20} />
+          <span>Delete Profile</span>
+        </button>
       </main>
     </div>
   );

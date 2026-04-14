@@ -13,6 +13,7 @@ import SpoliariumDetail from './pages/SpoliariumDetail';
 import PareKoDetail from './pages/PareKoDetail';
 import TamaKaDetail from './pages/TamaKaDetail';
 import ElBimboDetail from './pages/ElBimboDetail';
+import ElBimboCollection from './pages/ElBimboCollection';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
@@ -22,6 +23,7 @@ import ManageProfile from './pages/ManageProfile';
 import EditProfile from './pages/EditProfile';
 import IconPicker from './pages/IconPicker';
 import Auth from './pages/Auth';
+import Downloads from './pages/Downloads';
 import CreateProfile from './pages/CreateProfile';
 import ProfileLock from './pages/ProfileLock';
 import './App.css';
@@ -77,16 +79,18 @@ function App() {
         <Route path="/browse" element={<Home />} />
         <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
         <Route path="/minsan" element={<MinsanDetail />} />
-        <Route path="/tindahan" element={<TindahanDetail />} />
-        <Route path="/alapaap" element={<AlapaapDetail />} />
-        <Route path="/spoliarium" element={<SpoliariumDetail />} />
+        <Route path="/tindahan-ni-aling-nena" element={<TindahanDetail />} />
+        <Route path="/alapaap-overdrive" element={<AlapaapDetail />} />
+        <Route path="/spoliarium-graduation" element={<SpoliariumDetail />} />
         <Route path="/pare-ko" element={<PareKoDetail />} />
-        <Route path="/tama-ka" element={<TamaKaDetail />} />
-        <Route path="/el-bimbo" element={<ElBimboDetail />} />
+        <Route path="/tama-ka-ligaya" element={<TamaKaDetail />} />
+        <Route path="/ang-huling-el-bimbo" element={<ElBimboDetail />} />
+        <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
 
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
-        <Route path="/:movieSlug/clip/:clipId" element={session ? <ClipPlayer /> : <Navigate to="/login" replace />} />
+        <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
+        <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
       </Routes>
 
       {showNavAndFooter && (

@@ -40,12 +40,12 @@ export interface Movie {
 
 export const featuredMovies: Movie[] = [
   {
-    id: "f1",
+    id: "ang-huling-el-bimbo-play",
     title: "Ang Huling El Bimbo Play",
     logo: "/images/el-bimbo-logo.webp",
     thumbnail: "/images/el-bimbo.webp",
     banner: "/images/el-bimbo-banner.jpg",
-    cardBanner: "/images/el-bimbo-detail.webp",
+    cardBanner: "/images/el-bimbo.webp",
     mobileCardBanner: "/images/el-bimbo.webp",
     mobileBanner: "/images/el-bimbo-mobile-carousel.jpg",
     description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
@@ -81,7 +81,7 @@ export const featuredMovies: Movie[] = [
     }
   },
   {
-    id: "f2",
+    id: "minsan",
     title: "Minsan",
     logo: "/images/minsan-logo.webp",
     thumbnail: "/images/minsan.webp",
@@ -99,7 +99,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TRAILER.vtt",
   },
   {
-    id: "f3",
+    id: "11-stem-a-sy-2025-2026",
     title: "11 STEM A SY 2025-2026",
     logo: "/images/stem-a-logo.webp",
     thumbnail: "/images/stem-a-archive-banner.webp",
@@ -114,7 +114,7 @@ export const featuredMovies: Movie[] = [
     isOriginal: true,
   },
   {
-    id: "f4",
+    id: "tindahan-ni-aling-nena",
     title: "Tindahan ni Aling Nena",
     logo: "/images/tindahan-logo.webp",
     thumbnail: "/images/tindahan.webp",
@@ -129,7 +129,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Tindahan_TRAILER_MOBILE.vtt",
   },
   {
-    id: "f5",
+    id: "alapaap-overdrive",
     title: "Alapaap/Overdrive",
     logo: "/images/alapaap-logo.webp",
     thumbnail: "/images/alapaap.webp",
@@ -144,7 +144,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Alapaap_TRAILER_MOBILE.vtt",
   },
   {
-    id: "f6",
+    id: "spoliarium-graduation",
     title: "Spoliarium/Graduation",
     logo: "/images/spoliarium-logo.webp",
     thumbnail: "/images/spoliarium.webp",
@@ -159,7 +159,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Spoliarium_TRAILER_MOBILE.vtt",
   },
   {
-    id: "f7",
+    id: "pare-ko",
     title: "Pare Ko",
     logo: "/images/pare-ko-logo.webp",
     thumbnail: "/images/pare-ko.webp",
@@ -177,7 +177,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/PareKo_TRAILER_MOBILE.vtt",
   },
   {
-    id: "f8",
+    id: "tama-ka-ligaya",
     title: "Tama Ka/Ligaya",
     logo: "/images/tama-ka-logo.webp",
     thumbnail: "/images/tama-ka.webp",
@@ -196,7 +196,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TamaKa_TRAILER_MOBILE.vtt",
   },
   {
-    id: "f9",
+    id: "ang-huling-el-bimbo",
     title: "Ang Huling El Bimbo",
     logo: "/images/huling-el-bimbo-logo.webp",
     thumbnail: "/images/huling-el-bimbo.webp",
@@ -215,7 +215,7 @@ export const featuredMovies: Movie[] = [
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.vtt",
   },
   {
-    id: "f10",
+    id: "stellar-drift",
     title: "Stellar Drift",
     thumbnail: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?q=80&w=2070&auto=format&fit=crop",
     banner: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop",
@@ -228,7 +228,7 @@ export const featuredMovies: Movie[] = [
     isOriginal: true,
   },
   {
-    id: "f11",
+    id: "the-iron-throne",
     title: "The Iron Throne",
     thumbnail: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop",
     banner: "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?q=80&w=2070&auto=format&fit=crop",
@@ -334,11 +334,14 @@ export const trendingMovies: Movie[] = [
 ];
 
 export const elBimboFeatured: Movie = {
-  id: "eb1",
+  id: "ang-huling-el-bimbo-play",
   title: "Ang Huling El Bimbo Play",
   logo: "/images/el-bimbo-logo.webp",
   thumbnail: "/images/el-bimbo.webp",
-  banner: "/images/el-bimbo.webp",
+  banner: "/images/el-bimbo-banner.jpg",
+  cardBanner: "/images/el-bimbo.webp",
+  mobileCardBanner: "/images/el-bimbo.webp",
+  mobileBanner: "/images/el-bimbo-mobile-carousel.jpg",
   description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
   rating: "9.8",
   year: "2026",
@@ -351,4 +354,14 @@ export const elBimboFeatured: Movie = {
   videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
   trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
 };
-
+export const elBimboCollections: Movie[] = [
+  elBimboFeatured,
+  featuredMovies[1], // Minsan
+  featuredMovies[3], // Tindahan
+  featuredMovies[4], // Alapaap
+  featuredMovies[5], // Spoliarium
+  featuredMovies[6], // Pare Ko
+  featuredMovies[7], // Tama Ka
+  featuredMovies[8], // Ang Huling El Bimbo
+  ...[...trendingMovies].reverse().slice(7)
+];

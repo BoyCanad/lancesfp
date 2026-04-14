@@ -170,12 +170,20 @@
   text-decoration: underline;
 }
 
-.navbar__dropdown-avatar-wrapper.navbar__dropdown-avatar-plus {
-  background-color: transparent;
+.navbar__dropdown-avatar-wrapper, .navbar__dropdown-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.navbar__dropdown-avatar-wrapper.navbar__dropdown-avatar-plus {
+  background-color: transparent;
+  border: 1px solid rgba(255,255,255,0.4);
 }
 
 .navbar__dropdown-avatar-wrapper.navbar__dropdown-avatar-plus:hover {
