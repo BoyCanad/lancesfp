@@ -97,3 +97,12 @@ export async function updateWatchProgress(
   
   if (error) throw error;
 }
+export async function deleteWatchProgress(profileId: string, movieId: string): Promise<void> {
+  const { error } = await supabase
+    .from('watch_progress')
+    .delete()
+    .eq('profile_id', profileId)
+    .eq('movie_id', movieId);
+  
+  if (error) throw error;
+}

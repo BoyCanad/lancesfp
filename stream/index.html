@@ -13,37 +13,21 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Nuclear Reset for stuck Service Workers
-      async function resetPWA() {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let registration of registrations) {
-          await registration.unregister();
-        }
-        const cacheNames = await caches.keys();
-        for (let cacheName of cacheNames) {
-          if (cacheName !== 'lsfplus-movies') { // Keep movies, clear logic
-             await caches.delete(cacheName);
-          }
-        }
-      }
-
+      // Force Unregister all Service Workers to eliminate playback interference
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', async () => {
-          // Check if we need to force a reset (v6 update)
-          const swVersion = localStorage.getItem('sw_version');
-          if (swVersion !== '6') {
-            console.log('Forcing PWA cache reset to v6...');
-            await resetPWA();
-            localStorage.setItem('sw_version', '6');
-            window.location.reload();
-            return;
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (let registration of registrations) {
+            registration.unregister().then(() => {
+              console.log('Service Worker unregistered successfully.');
+            });
           }
-
-          navigator.serviceWorker.register('/sw.js?v=6')
-            .then(reg => console.log('Service Worker registered:', reg.scope))
-            .catch(err => console.log('Service Worker registration failed:', err));
         });
       }
+      
+      // Clear legacy caches that might slow down the filesystem
+      window.caches.keys().then(names => {
+        for (let name of names) window.caches.delete(name);
+      });
     </script>
   </body>
 </html>

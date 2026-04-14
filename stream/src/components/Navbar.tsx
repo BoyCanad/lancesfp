@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus } from 'lucide-react';
+import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus, Download } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
 import './Navbar.css';
@@ -77,7 +77,8 @@ export default function Navbar() {
 
   return (
     <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
-      <div className="navbar__inner">
+      {/* --- DESKTOP NAVBAR --- */}
+      <div className="navbar__inner desktop-only">
         <div className="navbar__left">
           <div
             className="navbar__logo"
@@ -219,6 +220,25 @@ export default function Navbar() {
               Sign In
             </button>
           )}
+        </div>
+      </div>
+
+      {/* --- MOBILE NAVBAR (Matches Netflix exactly) --- */}
+      <div className="navbar__mobile-inner mobile-only">
+        <div className="navbar__mobile-top">
+          <div className="navbar__mobile-branding">
+            <span className="navbar__logo-text" style={{ fontSize: '24px' }}>LSFPlus</span>
+
+          </div>
+          <div className="navbar__mobile-actions">
+            <Download size={24} color="white" />
+            <Search size={24} color="white" />
+          </div>
+        </div>
+        <div className={`navbar__mobile-pills ${scrolled ? 'navbar__mobile-pills--hidden' : ''}`}>
+          <button className="navbar__mobile-pill">Shows</button>
+          <button className="navbar__mobile-pill">Movies</button>
+          <button className="navbar__mobile-pill">Categories <ChevronDown size={14} style={{ marginLeft: 4 }} /></button>
         </div>
       </div>
     </header>

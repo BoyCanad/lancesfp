@@ -34,9 +34,8 @@ export default function Home() {
             const movie = allMovies.find(m => m.id === wp.movie_id);
             if (!movie) return null;
             
-            // Only show if less than 95% finished
-            if (wp.progress_ms / wp.duration_ms > 0.95) return null;
-
+            // We no longer filter by 95% here because the VideoPlayer 
+            // now handles deletion at the specific 'Credits' timestamp.
             return {
               ...movie,
               progress: (wp.progress_ms / wp.duration_ms) * 100
@@ -48,6 +47,7 @@ export default function Home() {
       }
     });
   }, []);
+  
   return (
     <main className="app__main">
       {/* Hero Carousel */}

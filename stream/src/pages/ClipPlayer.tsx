@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, MessageSquareText, Check } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize, MessageSquareText, Check, FastForward, RotateCw, ArrowLeft, Flag, Minimize, Gauge } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
@@ -64,8 +64,26 @@ export default function ClipPlayer() {
   const [activeSubtitle, setActiveSubtitle] = useState('');
   const [activeSubIdx, setActiveSubIdx] = useState<number>(-1);
   const [showSubMenu, setShowSubMenu] = useState(false);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [session, setSession] = useState<any>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeIndicator, setActiveIndicator] = useState<{ type: 'play' | 'pause' | 'forward' | 'backward'; key: number } | null>(null);
+  const [ambientColor, setAmbientColor] = useState('rgba(0,0,0,0)');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [is2xPressing, setIs2xPressing] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const indicatorTimerRef = useRef<number | null>(null);
+  const lastTapRef = useRef<{ time: number; x: number } | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const isLongPressActiveRef = useRef(false);
+
+  const triggerIndicator = (type: 'play' | 'pause' | 'forward' | 'backward') => {
+    if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
+    setActiveIndicator({ type, key: Math.random() });
+    indicatorTimerRef.current = window.setTimeout(() => {
+      setActiveIndicator(null);
+    }, 700);
+  };
 
   // ── 1. Fetch clip row from Supabase ──────────────────────────────────────
   useEffect(() => {
@@ -95,6 +113,7 @@ export default function ClipPlayer() {
   // ── 2. Once we have the clip, load the video ─────────────────────────────
   useEffect(() => {
     if (!clipData || !videoRef.current) return;
+    let hls: any = null;
     const mid = clipData.movie_id;
     const movie = featuredMovies.find(
       m => m.id === mid || (mid && m.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(mid.replace(/[^a-z0-9]+/g, '-').slice(0, 8)))
@@ -109,7 +128,14 @@ export default function ClipPlayer() {
     };
 
     if (src.includes('.m3u8') && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true, maxBufferLength: 60 });
+      hls = new Hls({ 
+        enableWorker: true, 
+        maxBufferLength: 30,
+        fragLoadingTimeOut: 40000,
+        fragLoadingMaxRetry: 6,
+        fragLoadingRetryDelay: 1000,
+        enableSoftwareAES: true 
+      });
       hlsRef.current = hls;
       hls.attachMedia(video);
       hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(src));
@@ -183,30 +209,86 @@ export default function ClipPlayer() {
     return () => video.removeEventListener('timeupdate', onTimeUpdate);
   }, [clipData, subtitleCues]);
 
+  // ── 3b. Ambient Color Sync ──────────────────────────────────────────────
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !canvasRef.current) return;
+
+    const sample = () => {
+      if (video.paused || video.ended) return;
+      const ctx = canvasRef.current!.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        setAmbientColor(`rgba(${r}, ${g}, ${b}, 0.5)`);
+      }
+    };
+
+    let interval = setInterval(sample, 1500);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  // ── 3c. Fullscreen Change Handler ──────────────────────────────────────
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
   // ── 4. Controls auto-hide ─────────────────────────────────────────────────
   const resetControlsTimer = useCallback(() => {
     if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
     setShowControls(true);
     controlsTimerRef.current = window.setTimeout(() => {
-      if (!hasEnded) setShowControls(false);
+      if (!hasEnded && isPlaying) setShowControls(false);
     }, 3500);
-  }, [hasEnded]);
+  }, [hasEnded, isPlaying]);
 
   // ── 5. Playback helpers ───────────────────────────────────────────────────
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
     if (hasEnded) { replay(); return; }
-    if (isPlaying) { v.pause(); setIsPlaying(false); }
-    else { v.play().then(() => setIsPlaying(true)).catch(() => {}); }
+    if (isPlaying) { 
+      v.pause(); 
+      setIsPlaying(false); 
+      triggerIndicator('pause');
+    }
+    else { 
+      v.play().then(() => {
+        setIsPlaying(true);
+        triggerIndicator('play');
+      }).catch(() => {}); 
+    }
     resetControlsTimer();
+  };
+
+  const skipForward = () => {
+    if (videoRef.current && clipData) {
+      const newTime = Math.min(clipData.end_time, videoRef.current.currentTime + 10);
+      videoRef.current.currentTime = newTime;
+      triggerIndicator('forward');
+    }
+  };
+
+  const skipBackward = () => {
+    if (videoRef.current && clipData) {
+      const newTime = Math.max(clipData.start_time, videoRef.current.currentTime - 10);
+      videoRef.current.currentTime = newTime;
+      triggerIndicator('backward');
+    }
   };
 
   const replay = () => {
     const v = videoRef.current;
     if (!v || !clipData) return;
     v.currentTime = clipData.start_time;
-    v.play().then(() => { setIsPlaying(true); setHasEnded(false); setElapsed(0); }).catch(() => {});
+    v.play().then(() => { 
+      setIsPlaying(true); 
+      setHasEnded(false); 
+      setElapsed(0); 
+      triggerIndicator('play');
+    }).catch(() => {});
     resetControlsTimer();
   };
 
@@ -215,37 +297,23 @@ export default function ClipPlayer() {
     setIsMuted(p => !p);
   };
 
+  const handleSpeedChange = (speed: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+      setPlaybackSpeed(speed);
+      setShowSpeedMenu(false);
+    }
+  };
+
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) containerRef.current?.requestFullscreen();
-    else document.exitFullscreen();
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
   };
 
-  // Seek within clip boundaries from progress bar interaction
-  const seekFromPct = (pct: number) => {
-    if (!clipData || !videoRef.current) return;
-    const clamped = Math.max(0, Math.min(1, pct));
-    const newTime = clipData.start_time + clamped * clipDuration;
-    videoRef.current.currentTime = newTime;
-    setElapsed(clamped * clipDuration);
-    setHasEnded(false);
-  };
 
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (!progressBarRef.current) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    seekFromPct((e.clientX - rect.left) / rect.width);
-  };
-
-  const handleProgressTouch = (e: React.TouchEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (!progressBarRef.current) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const touch = e.touches[0];
-    seekFromPct((touch.clientX - rect.left) / rect.width);
-  };
-
-  const progress = clipDuration > 0 ? Math.min(1, elapsed / clipDuration) : 0;
   const movie = clipData ? featuredMovies.find(m => {
     const mid = clipData.movie_id;
     return m.id === mid || m.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(mid.replace(/[^a-z0-9]+/g, '-').slice(0, 8));
@@ -273,11 +341,87 @@ export default function ClipPlayer() {
       ref={containerRef}
       className={`cp-container ${showControls ? "show-controls" : ""}`}
       onMouseMove={resetControlsTimer}
-      onClick={() => {
-        if (showControls) setShowControls(false);
-        else resetControlsTimer();
+      onClick={(e) => {
+        const isMobile = window.innerWidth <= 896;
+        if (isMobile) {
+          const now = Date.now();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          
+          if (lastTapRef.current && (now - lastTapRef.current.time) < 300) {
+            const width = rect.width;
+            if (x < width * 0.4) {
+              skipBackward();
+              lastTapRef.current = null;
+              return;
+            } else if (x > width * 0.6) {
+              skipForward();
+              lastTapRef.current = null;
+              return;
+            }
+          }
+          lastTapRef.current = { time: now, x };
+
+          if (showControls) {
+            setShowControls(false);
+            if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+          } else {
+            resetControlsTimer();
+          }
+        } else {
+          togglePlay();
+        }
+      }}
+      onTouchStart={() => {
+        if (window.innerWidth > 896) return;
+        longPressTimerRef.current = window.setTimeout(() => {
+          if (videoRef.current && isPlaying) {
+            isLongPressActiveRef.current = true;
+            videoRef.current.playbackRate = 2;
+            setIs2xPressing(true);
+            if ('vibrate' in navigator) navigator.vibrate(50);
+          }
+        }, 500);
+      }}
+      onTouchEnd={(e) => {
+        if (longPressTimerRef.current) {
+          window.clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        if (isLongPressActiveRef.current) {
+          isLongPressActiveRef.current = false;
+          if (videoRef.current) {
+            videoRef.current.playbackRate = playbackSpeed;
+            setIs2xPressing(false);
+          }
+          e.preventDefault();
+        }
       }}
     >
+      {/* GPU Accelerated Ambient Glow */}
+      <div 
+        className="cp-ambient-glow"
+        style={{ backgroundColor: ambientColor }}
+      />
+      
+      <canvas ref={canvasRef} width="1" height="1" style={{ display: 'none' }} />
+
+      {/* Visual Indicators (Centered bubble) */}
+      {activeIndicator && (activeIndicator.type === 'play' || activeIndicator.type === 'pause') && (
+        <div key={activeIndicator.key} className={`cp-indicator cp-indicator--${activeIndicator.type}`}>
+          {activeIndicator.type === 'play' && <Play fill="white" size={64} />}
+          {activeIndicator.type === 'pause' && <Pause fill="white" size={64} />}
+        </div>
+      )}
+
+      {is2xPressing && (
+        <div className="cp-2x-indicator">
+          <div className="cp-2x-pill">
+            <FastForward size={16} fill="white" strokeWidth={0} />
+            <span>2X Speed</span>
+          </div>
+        </div>
+      )}
       {/* Video element — no native controls */}
       <video
         ref={videoRef}
@@ -305,23 +449,66 @@ export default function ClipPlayer() {
       {/* Paused Gradient Overlay */}
       <div className={`cp-paused-gradient ${!isPlaying && !hasEnded && !showLogo ? 'visible' : ''}`} />
 
-      {/* Top bar — movie info */}
+      {/* Top bar — redesigned like VideoPlayer */}
       <div 
         className={`cp-top-bar ${showControls ? 'visible' : ''}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="cp-movie-info">
+        <button className="cp-back-btn" onClick={() => navigate(-1)}>
+          <ArrowLeft size={32} />
+        </button>
+
+        <div className="cp-movie-info desktop-only">
           {movie?.logo
             ? <img src={movie.logo} className="cp-movie-logo" alt={movie.title} />
             : <span className="cp-movie-title">{movie?.title}</span>
           }
           <span className="cp-clip-badge">Shared Moment</span>
         </div>
-        <button
-          className="cp-watch-full-btn"
-          onClick={e => { e.stopPropagation(); navigate(session ? `/watch/${clipData?.movie_id}` : '/login'); }}
+
+        <div className="cp-mobile-top-title mobile-only">
+          {movie?.title}
+        </div>
+
+        <div className="cp-top-actions">
+          <button className="cp-top-btn desktop-only">
+            <Flag size={24} />
+          </button>
+          <button
+            className="cp-watch-full-btn"
+            onClick={e => { e.stopPropagation(); navigate(session ? `/watch/${clipData?.movie_id}` : '/login'); }}
+          >
+            {session ? 'Watch Full Movie' : 'Sign In to Watch'}
+          </button>
+        </div>
+      </div>
+
+      {/* Center Mobile Controls (Replicated from VideoPlayer) */}
+      <div className={`cp-center-controls mobile-only ${showControls && !loading && !hasEnded ? 'show' : ''}`}>
+        <button 
+          className={`cp-center-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
+          onClick={(e) => { e.stopPropagation(); skipBackward(); }}
+          key={`back-${activeIndicator?.type === 'backward' ? activeIndicator.key : 'idle'}`}
         >
-          {session ? 'Watch Full Movie' : 'Sign In to Watch'}
+          <RotateCcw size={36} />
+          <span className="cp-skip-label">10</span>
+        </button>
+        
+        <button 
+          className={`cp-center-btn cp-center-play ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
+          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+          key={`play-${activeIndicator?.type === 'play' || activeIndicator?.type === 'pause' ? activeIndicator.key : 'idle'}`}
+        >
+          {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
+        </button>
+        
+        <button 
+          className={`cp-center-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
+          onClick={(e) => { e.stopPropagation(); skipForward(); }}
+          key={`fwd-${activeIndicator?.type === 'forward' ? activeIndicator.key : 'idle'}`}
+        >
+          <RotateCw size={36} />
+          <span className="cp-skip-label">10</span>
         </button>
       </div>
 
@@ -374,99 +561,152 @@ export default function ClipPlayer() {
         className={`cp-controls ${showControls || hasEnded ? 'visible' : ''}`}
         onClick={e => e.stopPropagation()}
       >
-        {/* Seekable progress bar */}
-        <div
-          className="cp-progress-wrap"
-          ref={progressBarRef}
-          onClick={handleProgressClick}
-          onTouchMove={handleProgressTouch}
-          onTouchStart={handleProgressTouch}
-        >
-          <div className="cp-progress-bg">
-            <div className="cp-progress-fill" style={{ width: `${progress * 100}%` }} />
-            <div className="cp-progress-thumb" style={{ left: `${progress * 100}%` }} />
-          </div>
-          <span className="cp-time">{fmt(elapsed)}</span>
-          <span className="cp-time cp-time-total">−{fmt(clipDuration - elapsed)}</span>
+        {/* Seekable progress bar — Netflix style */}
+        <div className="cp-timeline-container">
+          <input
+            type="range"
+            min="0"
+            max={clipDuration || 100}
+            step="0.01"
+            value={elapsed}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              if (videoRef.current && clipData) {
+                videoRef.current.currentTime = clipData.start_time + val;
+                setElapsed(val);
+                setHasEnded(false);
+              }
+            }}
+            className="cp-timeline-slider"
+            style={{ 
+              backgroundSize: `${(elapsed / Math.max(clipDuration, 1)) * 100}% 100%` 
+            }}
+          />
+          <span className="cp-time-remaining">−{fmt(clipDuration - elapsed)}</span>
         </div>
 
         {/* Button row */}
         <div className="cp-btn-row">
-          <button className="cp-btn" onClick={e => { e.stopPropagation(); togglePlay(); }}>
-            {hasEnded
-              ? <RotateCcw size={24} />
-              : isPlaying
-                ? <Pause size={24} fill="white" strokeWidth={0} />
-                : <Play size={24} fill="white" strokeWidth={0} />
-            }
-          </button>
-          <button className="cp-btn" onClick={e => { e.stopPropagation(); replay(); }}>
-            <RotateCcw size={20} />
-          </button>
-          <span className="cp-time-label">
-            {fmt(elapsed)} / {fmt(clipDuration)}
-          </span>
-          <div style={{ flex: 1 }} />
-          
-          {/* Subtitles Menu Button */}
-          <div className="cp-sub-wrapper">
-            <button 
-              className={`cp-btn ${showSubMenu ? 'active' : ''}`} 
-              onClick={e => { e.stopPropagation(); setShowSubMenu(!showSubMenu); }}
-            >
-              <MessageSquareText size={22} />
+          <div className="cp-controls-left desktop-only">
+            <button className="cp-btn" onClick={e => { e.stopPropagation(); togglePlay(); }}>
+              {hasEnded
+                ? <RotateCcw size={42} />
+                : isPlaying
+                  ? <Pause size={42} fill="white" strokeWidth={0} />
+                  : <Play size={42} fill="white" strokeWidth={0} />
+              }
             </button>
-            
-            {showSubMenu && movie?.subtitles && (
-              <div className="cp-sub-menu" onClick={e => e.stopPropagation()}>
-                <div className="cp-menu-column">
-                  <div className="cp-menu-header">Audio</div>
-                  <div className="cp-menu-list">
-                    <div className="cp-menu-item active">
-                      <Check size={16} />
-                      <span>Filipino [Original]</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="cp-menu-divider-v" />
-
-                <div className="cp-menu-column">
-                  <div className="cp-menu-header">Subtitles</div>
-                  <div className="cp-menu-list">
-                    <div 
-                      className={`cp-menu-item ${activeSubIdx === -1 ? 'active' : ''}`}
-                      onClick={() => { setActiveSubIdx(-1); setShowSubMenu(false); }}
-                    >
-                      {activeSubIdx === -1 && <Check size={16} />}
-                      {activeSubIdx !== -1 && <div style={{ width: 16 }} />}
-                      <span>Off</span>
-                    </div>
-                    {movie.subtitles.map((sub, idx) => (
-                      <div 
-                        key={idx}
-                        className={`cp-menu-item ${activeSubIdx === idx ? 'active' : ''}`}
-                        onClick={() => { setActiveSubIdx(idx); setShowSubMenu(false); }}
-                      >
-                        {activeSubIdx === idx && <Check size={16} />}
-                        {activeSubIdx !== idx && <div style={{ width: 16 }} />}
-                        <span>{sub.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            <button className="cp-btn" onClick={e => { e.stopPropagation(); skipBackward(); }}>
+              <RotateCcw size={38} />
+              <span className="cp-skip-inner-text">10</span>
+            </button>
+            <button className="cp-btn" onClick={e => { e.stopPropagation(); skipForward(); }}>
+              <RotateCw size={38} />
+              <span className="cp-skip-inner-text">10</span>
+            </button>
+            <button className="cp-btn" onClick={e => { e.stopPropagation(); toggleMute(); }}>
+              {isMuted ? <VolumeX size={38} /> : <Volume2 size={38} />}
+            </button>
           </div>
 
-          <button className="cp-btn" onClick={e => { e.stopPropagation(); toggleMute(); }}>
-            {isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />}
-          </button>
-          <button className="cp-btn" onClick={e => { e.stopPropagation(); toggleFullscreen(); }}>
-            <Maximize size={22} />
-          </button>
+          <div className="cp-controls-center desktop-only">
+            <span className="cp-active-title">{movie?.title}</span>
+            <span className="cp-active-badge">Shared Moment</span>
+          </div>
+
+          <div className="cp-controls-right desktop-only">
+            {/* Subtitles Menu Button */}
+            <div className="cp-sub-wrapper">
+              <button 
+                className={`cp-btn ${showSubMenu ? 'active' : ''}`} 
+                onClick={e => { e.stopPropagation(); setShowSubMenu(!showSubMenu); }}
+              >
+                <MessageSquareText size={28} />
+              </button>
+              
+              {showSubMenu && movie?.subtitles && (
+                <div className="cp-sub-menu" onClick={e => e.stopPropagation()}>
+                  <div className="cp-menu-column">
+                    <div className="cp-menu-header">Audio</div>
+                    <div className="cp-menu-list">
+                      <div className="cp-menu-item active">
+                        <Check size={16} />
+                        <span>Filipino [Original]</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="cp-menu-divider-v" />
+
+                  <div className="cp-menu-column">
+                    <div className="cp-menu-header">Subtitles</div>
+                    <div className="cp-menu-list">
+                      <div 
+                        className={`cp-menu-item ${activeSubIdx === -1 ? 'active' : ''}`}
+                        onClick={() => { setActiveSubIdx(-1); setShowSubMenu(false); }}
+                      >
+                        {activeSubIdx === -1 && <Check size={16} />}
+                        {activeSubIdx !== -1 && <div style={{ width: 16 }} />}
+                        <span>Off</span>
+                      </div>
+                      {movie.subtitles.map((sub, idx) => (
+                        <div 
+                          key={idx}
+                          className={`cp-menu-item ${activeSubIdx === idx ? 'active' : ''}`}
+                          onClick={() => { setActiveSubIdx(idx); setShowSubMenu(false); }}
+                        >
+                          {activeSubIdx === idx && <Check size={16} />}
+                          {activeSubIdx !== idx && <div style={{ width: 16 }} />}
+                          <span>{sub.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button className="cp-btn desktop-only" onClick={e => { e.stopPropagation(); toggleFullscreen(); }}>
+              {isFullscreen ? <Minimize size={28} /> : <Maximize size={28} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Bottom Row — Replicated from VideoPlayer */}
+        <div className="cp-mobile-bottom-row mobile-only">
+          <div className="cp-mobile-bottom-btn" onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(true); setShowSubMenu(false); }}>
+            <Gauge size={20} />
+            <span>Speed ({playbackSpeed}x)</span>
+          </div>
+          <div className="cp-mobile-bottom-btn" onClick={(e) => { e.stopPropagation(); setShowSubMenu(true); setShowSpeedMenu(false); }}>
+            <MessageSquareText size={20} />
+            <span>Audio & Subtitles</span>
+          </div>
         </div>
       </div>
+
+      {/* Speed Menu Bottom Sheet for Mobile */}
+      {showSpeedMenu && (
+        <div className="cp-mobile-sheet-overlay" onClick={() => setShowSpeedMenu(false)}>
+          <div className="cp-mobile-sheet" onClick={e => e.stopPropagation()}>
+            <div className="cp-mobile-sheet-header">
+              <div className="cp-mobile-sheet-title">Playback Speed</div>
+            </div>
+            <div className="cp-speed-options">
+              {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                <div 
+                  key={speed} 
+                  className={`cp-speed-option ${playbackSpeed === speed ? 'active' : ''}`}
+                  onClick={() => handleSpeedChange(speed)}
+                >
+                  <span>{speed === 1 ? 'Normal' : `${speed}x`}</span>
+                  {playbackSpeed === speed && <Check size={20} />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

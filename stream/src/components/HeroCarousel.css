@@ -369,7 +369,7 @@
 
 @media (max-width: 960px) {
   .hero__peek { width: 120px; height: 280px; }
-  .hero__card-viewport { height: 360px; width: calc(100vw - 280px); }
+  .hero__card-viewport { height: 360px; width: calc(100% - 280px); }
 }
 
 /* ── Mobile: crossfade + zoom ───────────────────────────────── */

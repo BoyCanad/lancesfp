@@ -29,8 +29,7 @@ import {
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../supabaseClient';
-import { updateWatchProgress, getWatchProgress } from '../services/profileService';
-import { downloadService } from '../services/downloadService';
+import { updateWatchProgress, getWatchProgress, deleteWatchProgress } from '../services/profileService';
 import './VideoPlayer.css';
 
 interface ParsedCue {
@@ -126,6 +125,7 @@ export default function VideoPlayer() {
     const { error } = await supabase.from('clips').insert({
       id: clipId,
       movie_id: movieSlug,
+      profile_id: activeProfileId,
       start_time: Math.round(clipStart),
       end_time: Math.round(clipEnd),
     });
@@ -435,7 +435,7 @@ export default function VideoPlayer() {
   
   // Determine if it's a movie or series
   // For now, let's assume if it has 'h' in duration or is one of the featured musicals, it's a movie
-  const isMovie = movie?.duration?.includes('h') || movie?.id?.startsWith('f') || movie?.id === 'eb1';
+  const isMovie = movie?.duration?.includes('h') || movie?.id?.startsWith('f') || movie?.id?.includes('el-bimbo') || movie?.duration?.includes('m');
   
   const seasonAndEpisode = isMovie ? "" : "S1:E1";
   const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
@@ -458,43 +458,6 @@ export default function VideoPlayer() {
     // PRIORITY 2: Check standard source
     setActiveSource(videoSrc);
     setIsUsingOfflineSource(false);
-
-    const checkOfflineCache = async () => {
-      if (!movie) return;
-      
-      // Check IndexedDB first (the new service)
-      const downloaded = await downloadService.getDownloadedMovie(movie.id);
-      if (downloaded) {
-        console.log('[Player] Playing from IndexedDB storage');
-        if (downloaded.blob) {
-          setActiveSource(URL.createObjectURL(downloaded.blob));
-        } else {
-          // If no blob (e.g. HLS), use the original URL which is served by Cache API
-          setActiveSource(downloaded.url);
-        }
-        setIsUsingOfflineSource(true);
-        return;
-      }
-
-      // Fallback: Check standard Cache API (legacy method)
-      const target = movie.downloadUrl || movie.videoUrl;
-      if (!target) return;
-
-      try {
-        const cache = await caches.open('lsfplus-movies');
-        const match = await cache.match(target);
-        if (match) {
-          console.log('[Player] Playing from legacy offline cache:', target);
-          const blob = await match.blob();
-          setActiveSource(URL.createObjectURL(blob));
-          setIsUsingOfflineSource(true);
-        }
-      } catch (e) {
-        console.error('Cache check failed', e);
-      }
-    };
-
-    checkOfflineCache();
 
     return () => {
       // Clean up blob URLs to prevent memory leaks
@@ -521,12 +484,34 @@ export default function VideoPlayer() {
 
   const saveProgress = async () => {
     if (activeProfileId && id && latestDurationRef.current > 0) {
+      const time = latestTimeRef.current;
+      const duration = latestDurationRef.current;
+
+      // Sync "Mark as Done" with the same logic used for recommendation triggers
+      let isAtCredits = false;
+      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'f1' || movie?.id === 'eb1') {
+        isAtCredits = time >= 2910;
+      } else if (duration > 0 && (duration - time) <= 15) {
+        // Default: 15 seconds before the end
+        isAtCredits = true;
+      }
+      
+      // If reached end credits / recommendation timestamp, delete progress
+      if (isAtCredits) {
+        try {
+          await deleteWatchProgress(activeProfileId, id);
+        } catch (e) {
+          console.error('Failed to clear finished progress', e);
+        }
+        return;
+      }
+
       try {
         await updateWatchProgress(
           activeProfileId,
           id,
-          Math.floor(latestTimeRef.current * 1000),
-          Math.floor(latestDurationRef.current * 1000)
+          Math.floor(time * 1000),
+          Math.floor(duration * 1000)
         );
       } catch (e) {
         console.error('Final progress save failed', e);
@@ -832,6 +817,16 @@ export default function VideoPlayer() {
           lowLatencyMode: false,
           maxBufferLength: 60,
           maxMaxBufferLength: 90,
+          fragLoadingTimeOut: 45000,
+          manifestLoadingTimeOut: 30000,
+          levelLoadingTimeOut: 30000,
+          fragLoadingMaxRetry: 10,
+          fragLoadingRetryDelay: 1500,
+          startLevel: 0,
+          levelLoadingRetryDelay: 1000,
+          nudgeMaxRetry: 5,
+          nudgeOffset: 0.1,
+          enableSoftwareAES: true
         });
 
         hlsRef.current = hls;
@@ -1216,7 +1211,7 @@ export default function VideoPlayer() {
       
       // Determine when to trigger the credits mode
       let shouldShowRecommendation = false;
-      if (movie?.id === 'f1' || movie?.id === 'eb1') {
+      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'f1' || movie?.id === 'eb1') {
         const floorTime = Math.floor(time);
         
         // Age Rating Timestamps trigger
@@ -2083,7 +2078,7 @@ export default function VideoPlayer() {
                 )}
               </div>
 
-              <div style={{ flex: 1 }}></div>
+
 
               <button className="control-btn" onClick={toggleFullscreen}>
                 {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}

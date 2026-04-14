@@ -27,6 +27,7 @@ import Downloads from './pages/Downloads';
 import CreateProfile from './pages/CreateProfile';
 import ProfileLock from './pages/ProfileLock';
 import Account from './pages/Account';
+import MyNetflix from './pages/MyNetflix';
 import './App.css';
 
 function App() {
@@ -39,7 +40,8 @@ function App() {
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
   const isAccount = pathname === '/account';
-  const showNavAndFooter = !isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isAccount;
+  const isMyNetflix = pathname === '/my-netflix';
+  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isAccount) || isMyNetflix;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
@@ -69,7 +71,7 @@ function App() {
 
   return (
     <div className="app">
-      {showNavAndFooter && <Navbar />}
+      {showNavAndFooter && !isMyNetflix && <Navbar />}
 
       <Routes>
         <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
@@ -91,25 +93,26 @@ function App() {
         <Route path="/tama-ka-ligaya" element={<TamaKaDetail />} />
         <Route path="/ang-huling-el-bimbo" element={<ElBimboDetail />} />
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
-
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
         <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
+        <Route path="/my-netflix" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
       </Routes>
 
       {showNavAndFooter && (
         <>
-          <footer className="app__footer">
-            <div className="app__footer-logo">
-              LSFPlus
-            </div>
-            <p className="app__footer-text">
-              © 2025 LSFPlus, Inc. All rights reserved.
-            </p>
-          </footer>
-          {/* Bottom Navigation for Mobile */}
+          {!isMyNetflix && (
+            <footer className="app__footer">
+              <div className="app__footer-logo">
+                LSFPlus
+              </div>
+              <p className="app__footer-text">
+                © 2025 LSFPlus, Inc. All rights reserved.
+              </p>
+            </footer>
+          )}
           <MobileNav />
         </>
       )}

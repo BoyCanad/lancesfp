@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, X, Lock } from 'lucide-react';
+import { ArrowLeft, X, Lock, Pencil, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { getProfiles, updateProfile } from '../services/profileService';
 import { supabase } from '../supabaseClient';
@@ -18,6 +18,13 @@ export default function ProfileLock() {
   const [verifying, setVerifying] = useState(false);
   const [pin, setPin] = useState(['', '', '', '']);
   const [saving, setSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const pinRefs = [
     useRef<HTMLInputElement>(null),
@@ -156,39 +163,70 @@ export default function ProfileLock() {
     </div>
   );
 
-  const renderManage = () => (
-    <div className="pl-content">
-      <h1 className="pl-title">Manage Profile Lock</h1>
+  const renderManage = () => {
+    if (isMobile) {
+      return (
+        <div className="pl-mobile-manage">
+          <header className="pl-mobile-header">
+            <button className="pl-mobile-back" onClick={() => navigate(`/EditProfile/${id}`)}>
+              <ArrowLeft size={28} color="white" />
+            </button>
+            <h1 className="pl-mobile-title">Profile Lock</h1>
+          </header>
 
-      <div className="pl-profile-info">
-        <span className="pl-for-text">For {profile.name}</span>
-        <img src={profile.image} alt={profile.name} className="pl-avatar" />
-      </div>
+          <main className="pl-mobile-content">
+            <div className="pl-mobile-row" onClick={handleCreateClick}>
+              <div className="pl-mobile-row-left">
+                <Pencil size={24} color="white" />
+                <span>Edit PIN</span>
+              </div>
+            </div>
 
-      <div className="pl-lock-status-card">
-        <Lock size={24} className="pl-lock-icon" />
-        <div className="pl-lock-text">
-          <span className="pl-lock-label">Profile Lock</span>
-          <span className="pl-lock-value">On</span>
+            <div className="pl-mobile-delete-section">
+              <button className="pl-mobile-delete-btn" onClick={handleDeleteClick}>
+                <Trash2 size={24} color="#a3a3a3" />
+                <span>Delete Profile Lock</span>
+              </button>
+            </div>
+          </main>
         </div>
+      );
+    }
+
+    return (
+      <div className="pl-content">
+        <h1 className="pl-title">Manage Profile Lock</h1>
+
+        <div className="pl-profile-info">
+          <span className="pl-for-text">For {profile.name}</span>
+          <img src={profile.image} alt={profile.name} className="pl-avatar" />
+        </div>
+
+        <div className="pl-lock-status-card">
+          <Lock size={24} className="pl-lock-icon" />
+          <div className="pl-lock-text">
+            <span className="pl-lock-label">Profile Lock</span>
+            <span className="pl-lock-value">On</span>
+          </div>
+        </div>
+
+        <div className="pl-manage-divider" />
+
+        <div className="pl-manage-actions">
+          <button className="pl-edit-pin-btn" onClick={handleCreateClick}>
+            Edit PIN
+          </button>
+          <button className="pl-delete-lock-btn" onClick={handleDeleteClick}>
+            Delete Profile Lock
+          </button>
+        </div>
+
+        <p className="pl-footer-note" style={{ marginTop: '2rem' }}>
+          Note: You'll be asked to enter the account password when making changes to Profile Lock.
+        </p>
       </div>
-
-      <div className="pl-manage-divider" />
-
-      <div className="pl-manage-actions">
-        <button className="pl-edit-pin-btn" onClick={handleCreateClick}>
-          Edit PIN
-        </button>
-        <button className="pl-delete-lock-btn" onClick={handleDeleteClick}>
-          Delete Profile Lock
-        </button>
-      </div>
-
-      <p className="pl-footer-note" style={{ marginTop: '2rem' }}>
-        Note: You'll be asked to enter the account password when making changes to Profile Lock.
-      </p>
-    </div>
-  );
+    );
+  };
 
   const renderPin = () => (
     <div className="pl-content pl-pin-content">
@@ -239,9 +277,11 @@ export default function ProfileLock() {
       </header>
 
       <main className="pl-main">
-        <button className="pl-back-btn" onClick={() => navigate(`/ManageProfile/${id}`)}>
-          <ArrowLeft size={24} />
-        </button>
+        {step !== 'manage' || !isMobile ? (
+          <button className="pl-back-btn" onClick={() => navigate(`/EditProfile/${id}`)}>
+            <ArrowLeft size={24} />
+          </button>
+        ) : null}
 
         {step === 'intro' ? renderIntro() : step === 'pin' ? renderPin() : renderManage()}
       </main>

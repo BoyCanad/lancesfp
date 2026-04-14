@@ -1,0 +1,285 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Search, 
+  Menu, 
+  ChevronDown, 
+  Download, 
+  ChevronRight, 
+  Share2,
+  Bell,
+  X,
+  Pencil,
+  Lock,
+  Plus,
+  Scissors,
+  Play,
+  Settings,
+  User,
+  HelpCircle,
+  LogOut
+} from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import { featuredMovies, trendingMovies } from '../data/movies';
+import { getProfiles } from '../services/profileService';
+import type { Profile } from '../services/profileService';
+import './MyNetflix.css';
+
+export default function MyNetflix() {
+  const navigate = useNavigate();
+  const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [moments, setMoments] = useState<any[]>([]);
+
+  const [showMenu, setShowMenu] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('activeProfile');
+    if (stored) {
+      setActiveProfile(JSON.parse(stored));
+    }
+    
+    getProfiles().then(setProfiles).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (activeProfile?.id) {
+      supabase.from('clips')
+        .select('*')
+        .eq('profile_id', activeProfile.id)
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.warn('[MyNetflix] Failed to fetch moments. Ensure the "clips" table has "profile_id" and "created_at" columns.', error);
+            setMoments([]);
+            return;
+          }
+          if (data) setMoments(data);
+        });
+    }
+  }, [activeProfile]);
+
+  const handleProfileSwitch = (profile: any) => {
+    if (profile.locked) {
+      navigate(`/ProfileLock/${profile.id}`);
+      return;
+    }
+    localStorage.setItem('activeProfile', JSON.stringify(profile));
+    setActiveProfile(profile);
+    setIsSwitching(false);
+    window.location.reload(); // Refresh to update all data context
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem('activeProfile');
+    navigate('/Auth');
+  };
+
+  const likedMovies = featuredMovies.slice(0, 4);
+  const myListMovies = [...trendingMovies].reverse().slice(0, 4);
+
+  return (
+    <div className="my-netflix">
+      {/* Header */}
+      <header className="mn-header">
+        <h1 className="mn-header__title">My Netflix</h1>
+        <div className="mn-header__actions">
+          <Search size={26} color="white" />
+          <button className="mn-menu-trigger" onClick={() => setShowMenu(true)}>
+            <Menu size={26} color="white" />
+          </button>
+        </div>
+      </header>
+
+      {/* Profile Section */}
+      <section className="mn-profile">
+        <div className="mn-profile__avatar-wrapper">
+          <img 
+            src={activeProfile?.image || "/images/avatar-1.png"} 
+            alt="Profile" 
+            className="mn-profile__avatar" 
+          />
+        </div>
+        <div className="mn-profile__name-group" onClick={() => setIsSwitching(true)}>
+          <div className="mn-profile__name-row">
+            <h2 className="mn-profile__name">{activeProfile?.name || 'User'}</h2>
+            <ChevronDown size={24} color="white" />
+          </div>
+        </div>
+      </section>
+
+      {/* Switch Profiles Modal (Bottom Sheet) */}
+      {isSwitching && (
+        <div className="mn-modal-overlay" onClick={() => setIsSwitching(false)}>
+          <div className="mn-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mn-modal__header">
+              <h2 className="mn-modal__title">Switch Profiles</h2>
+              <button className="mn-modal__close" onClick={() => setIsSwitching(false)}>
+                <X size={24} color="white" />
+              </button>
+            </div>
+            
+            <div className="mn-profiles-grid">
+              {profiles.map((p: Profile) => (
+                <div 
+                  key={p.id} 
+                  className={`mn-profile-item ${p.id === activeProfile?.id ? 'mn-profile-item--active' : ''}`}
+                  onClick={() => handleProfileSwitch(p)}
+                >
+                  <div className="mn-profile-item__avatar-container">
+                    <img src={p.image} alt={p.name} className="mn-profile-item__avatar" />
+                    {p.id === activeProfile?.id && <div className="mn-profile-item__active-border" />}
+                  </div>
+                  <span className="mn-profile-item__name">{p.name}</span>
+                  {p.locked && <Lock size={12} color="#a3a3a3" style={{ marginTop: 2 }} />}
+                </div>
+              ))}
+              {profiles.length < 5 && (
+                <div className="mn-profile-item" onClick={() => navigate('/CreateProfile')}>
+                  <div className="mn-profile-item__avatar-container mn-profile-item__add-container">
+                    <Plus size={32} color="#a3a3a3" />
+                  </div>
+                  <span className="mn-profile-item__name">Add Profile</span>
+                </div>
+              )}
+            </div>
+
+            <button className="mn-manage-profiles" onClick={() => navigate('/?manage=true')}>
+              <Pencil size={20} />
+              <span>Manage Profiles</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Notifications/Downloads Shortcuts */}
+      <section className="mn-shortcuts">
+        <div className="mn-card mn-card--notifications">
+            <div className="mn-card__icon-circle red">
+                <Bell size={24} color="white" fill="white" />
+            </div>
+            <div className="mn-card__content">
+                <h3 className="mn-card__title">Notifications</h3>
+            </div>
+            <ChevronRight size={24} color="#666" />
+        </div>
+
+        <div className="mn-card" onClick={() => navigate('/downloads')}>
+          <div className="mn-card__icon-circle blur">
+            <Download size={24} color="white" />
+          </div>
+          <div className="mn-card__content">
+            <h3 className="mn-card__title">Downloads</h3>
+            <p className="mn-card__desc">Movies and shows that you download appear here.</p>
+          </div>
+          <ChevronRight size={24} color="#666" />
+        </div>
+      </section>
+
+      {/* Rows */}
+      <div className="mn-rows">
+        <section className="mn-row">
+          <h2 className="mn-row__title">TV Shows & Movies You've Liked</h2>
+          <div className="mn-row__track">
+            {likedMovies.map((movie) => (
+              <div key={movie.id} className="mn-liked-card" onClick={() => navigate(`/watch/${movie.id}`)}>
+                <img src={movie.thumbnail} alt={movie.title} className="mn-liked-card__img" />
+                <div className="mn-liked-card__footer">
+                  <Share2 size={18} color="white" />
+                  <span>Share</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mn-row">
+          <h2 className="mn-row__title">Moments You've Created & Shared</h2>
+          <div className="mn-row__track">
+            {moments.length > 0 ? moments.map((clip) => {
+              const movie = featuredMovies.find(m => m.id === clip.movie_id);
+              return (
+                <div key={clip.id} className="mn-moment-card" onClick={() => navigate(`/${clip.movie_id}/clip/${clip.id}`)}>
+                   <div className="mn-moment-thumbnail-wrapper">
+                      <img src={movie?.thumbnail || movie?.banner} alt="Moment" className="mn-moment-img" />
+                      <div className="mn-moment-play-overlay">
+                         <Play size={24} fill="white" color="white" />
+                      </div>
+                      <div className="mn-moment-tag">
+                        <Scissors size={12} />
+                        <span>Moment</span>
+                      </div>
+                   </div>
+                   <div className="mn-moment-info">
+                      <p className="mn-moment-title">{movie?.title || 'Unknown Movie'}</p>
+                      <p className="mn-moment-time">{Math.floor(clip.start_time / 60)}:{String(clip.start_time % 60).padStart(2, '0')}</p>
+                   </div>
+                </div>
+              );
+            }) : (
+              <div className="mn-empty-moments">
+                 <Scissors size={24} color="#666" />
+                 <p>Clip your favorite moments to see them here.</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mn-row">
+          <div className="mn-row__header">
+            <h2 className="mn-row__title">My List</h2>
+            <button className="mn-row__see-all">
+              See All <ChevronRight size={18} />
+            </button>
+          </div>
+          <div className="mn-row__track">
+            {myListMovies.map((movie) => (
+              <div key={movie.id} className="mn-list-card" onClick={() => navigate(`/watch/${movie.id}`)}>
+                <img src={movie.thumbnail} alt={movie.title} className="mn-list-card__img" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+      
+      {/* Bottom Sheet Menu */}
+      {showMenu && (
+        <div className="mn-menu-overlay" onClick={() => setShowMenu(false)}>
+          <div className="mn-menu-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="mn-menu-content">
+              <button className="mn-menu-item" onClick={() => { navigate('/?manage=true'); setShowMenu(false); }}>
+                <Pencil size={24} />
+                <span>Manage Profiles</span>
+              </button>
+              
+              <button className="mn-menu-item">
+                <Settings size={24} />
+                <span>App Settings</span>
+              </button>
+              
+              <button className="mn-menu-item" onClick={() => { navigate('/account'); setShowMenu(false); }}>
+                <User size={24} />
+                <span>Account</span>
+              </button>
+              
+              <button className="mn-menu-item">
+                <HelpCircle size={24} />
+                <span>Help</span>
+              </button>
+              
+              <button className="mn-menu-item" onClick={handleSignOut}>
+                <LogOut size={24} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+            <div className="mn-menu-version">
+              Version: 9.60.0 build 4
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

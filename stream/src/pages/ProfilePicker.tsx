@@ -9,6 +9,14 @@ import './ProfilePicker.css';
 export default function ProfilePicker() {
   const navigate = useNavigate();
   const [isManaging, setIsManaging] = useState(false);
+
+  useEffect(() => {
+    // Check if we should start in managing mode (e.g., from My Netflix)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('manage') === 'true') {
+      setIsManaging(true);
+    }
+  }, []);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -44,7 +52,11 @@ export default function ProfilePicker() {
 
   const handleProfileClick = (profile: Profile) => {
     if (isManaging) {
-      navigate(`/ManageProfile/${profile.id}`);
+      if (isMobile) {
+        navigate(`/EditProfile/${profile.id}`);
+      } else {
+        navigate(`/ManageProfile/${profile.id}`);
+      }
     } else {
       if (profile.locked) {
         setSelectedProfile(profile);
@@ -97,10 +109,13 @@ export default function ProfilePicker() {
   }
 
   return (
-    <div 
-      className={`profile-picker-container ${isMobile ? 'profile-picker--mobile' : ''}`}
-      style={isMobile && elBimboFeatured ? { backgroundImage: `url(${elBimboFeatured.mobileBanner})` } : {}}
-    >
+    <div className={`profile-picker-container ${isMobile ? 'profile-picker--mobile' : ''}`}>
+      {isMobile && elBimboFeatured && (
+        <div 
+          className="profile-picker__hero-bg" 
+          style={{ backgroundImage: `url(${elBimboFeatured.mobileBanner})` }} 
+        />
+      )}
       {isMobile && <div className="profile-picker__mobile-bg-gradient" />}
       
       <div className="profile-picker__inner">
@@ -145,7 +160,7 @@ export default function ProfilePicker() {
                 </div>
                 <div className="profile-picker__info">
                   <span className="profile-picker__name">{profile.name}</span>
-                  {!isMobile && profile.locked && !isManaging && (
+                  {profile.locked && isManaging && (
                     <Lock size={16} className="profile-picker__lock" />
                   )}
                 </div>
