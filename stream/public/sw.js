@@ -74,14 +74,17 @@ self.addEventListener('fetch', (event) => {
         const isStaticAsset = 
           urlString.includes('/images/') || 
           urlString.includes('.js') || 
+          urlString.includes('.ts') || 
+          urlString.includes('.jsx') || 
           urlString.includes('.css') || 
           urlString.includes('.woff') || 
           urlString.includes('.vtt') ||
           urlString.includes('.tsx') || 
           urlString.includes('/src/') || 
-          urlString.includes('node_modules/.vite') || 
+          urlString.includes('node_modules/') || 
           urlString.includes('/@vite/') || 
-          urlString.includes('/@id/'); 
+          urlString.includes('/@react-refresh') || 
+          urlString.includes('/@id/');
 
         const isHlsSegment = urlString.includes('.m3u8') || urlString.includes('.ts');
 

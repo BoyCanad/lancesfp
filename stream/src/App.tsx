@@ -45,6 +45,9 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session);
       setCheckingAuth(false);
+    }).catch((error) => {
+      console.error("Error getting session:", error);
+      setCheckingAuth(false);
     });
 
     const {
