@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lsfplus-v4';
+const CACHE_NAME = 'lsfplus-v6';
 const MOVIE_CACHE = 'lsfplus-movies';
 const ASSETS_TO_CACHE = [
   '/',
@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           // Fallback to cache if offline
-          return caches.match('/index.html').then((cachedResponse) => {
+          return caches.match('/index.html', { ignoreSearch: true }).then((cachedResponse) => {
             return cachedResponse || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
           });
         })
@@ -61,7 +61,7 @@ self.addEventListener('fetch', (event) => {
   // CACHE FIRST STRATEGY for static assets and media
   // Fallback to network if not in cache
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
