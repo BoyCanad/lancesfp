@@ -118,6 +118,18 @@ export default function BeyondLastDanceDetail() {
     }
   }, [trailerActive]);
 
+  // Fetch subtitles on mount
+  useEffect(() => {
+    if (!movie?.trailerVttUrl) return;
+    fetch(movie.trailerVttUrl)
+      .then(res => res.text())
+      .then(data => {
+        const parsed = parseVTT(data);
+        setCues(parsed);
+      })
+      .catch(err => console.error('Failed to load subtitles:', err));
+  }, [movie]);
+
   const handleTimeUpdate = () => {
     if (!videoRef.current || !trailerActive) return;
     const time = videoRef.current.currentTime;
