@@ -6,7 +6,21 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Nav */
+/* Visibility Toggles */
+.mobile-account {
+  display: none;
+}
+
+@media (max-width: 896px) {
+  .desktop-account-layout {
+    display: none;
+  }
+  .mobile-account {
+    min-height: 100dvh;
+  }
+}
+
+/* --- DESKTOP VIEW STYLES (Original) --- */
 .account-nav {
   height: 64px;
   display: flex;
@@ -47,7 +61,6 @@
   color: #333;
 }
 
-/* Layout */
 .account-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -62,7 +75,6 @@
   padding-top: 60px;
 }
 
-/* Sidebar */
 .account-sidebar {
   display: flex;
   flex-direction: column;
@@ -122,7 +134,6 @@
   font-size: 15px;
 }
 
-/* Main */
 .account-main {
   max-width: 720px;
 }
@@ -152,7 +163,6 @@
   margin: 40px 0 16px;
 }
 
-/* Cards */
 .account-card, .account-quick-links-card {
   border: 1px solid #e6e6e6;
   border-radius: 16px;
@@ -244,7 +254,6 @@
   background: #fafafa;
 }
 
-/* Quick Links List */
 .account-link-item {
   width: 100%;
   display: flex;
@@ -335,77 +344,252 @@
   padding: 100px 20px;
 }
 
-/* Responsive */
-@media (max-width: 896px) {
-  .account-layout {
-    grid-template-columns: 1fr;
-    padding: 20px;
-    gap: 20px;
-  }
-  
-  .account-sidebar {
-    gap: 20px;
-  }
-  
-  .account-menu {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-  
-  .account-menu-item {
-    white-space: nowrap;
-    width: auto;
-  }
-  
-  .account-title {
-    font-size: 32px;
-  }
+/* --- MOBILE VIEW STYLES (New) --- */
+.mobile-account-header {
+  height: 56px;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-/* Change Password View Styles */
-.change-password-container {
+.mobile-account-back {
+  background: none;
+  border: none;
+  padding: 8px;
+  margin-left: -8px;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  animation: fadeIn 0.3s ease-out;
+  align-items: center;
 }
 
-.password-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 24px;
+.mobile-account-logo {
+  flex: 1;
+  text-align: center;
+  color: #e50914;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-right: 40px;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.mobile-account-content {
+  padding: 24px 16px;
+}
+
+.mobile-account-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #000;
+  margin-bottom: 20px;
+}
+
+.mobile-account-intro {
+  font-size: 15px;
+  line-height: 1.4;
+  color: #333;
+  margin-bottom: 24px;
+}
+
+.mobile-account-section {
+  margin-bottom: 32px;
+}
+
+.mobile-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #666;
   margin-bottom: 12px;
 }
 
-.password-back-icon {
+.mobile-card {
+  border: 1.5px solid #e6e6e6;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mobile-card-badge {
+  display: inline-block;
+  background: linear-gradient(90deg, #2a1b5d 0%, #d80c16 100%);
+  color: white;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom-right-radius: 20px;
+}
+
+.mobile-card-main {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-plan-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #000;
+  margin-bottom: 4px;
+}
+
+.mobile-payment-info {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.mobile-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.mobile-provider-logo {
+  background: #f0f7ff;
+  border: 1px solid #e1eefc;
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+}
+
+.mobile-card-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-card-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
   background: none;
   border: none;
-  padding: 0;
-  cursor: pointer;
-  color: #333;
-  margin-top: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+  transition: background 0.1s;
 }
 
-.password-title {
-  font-size: 32px;
+.mobile-card-link:last-child {
+  border-bottom: none;
+}
+
+.mobile-card-link:active {
+  background-color: #f5f5f5;
+}
+
+.mobile-card-link span {
+  font-size: 15px;
   font-weight: 700;
-  margin: 0 0 8px 0;
-  color: #333;
+  color: #000;
 }
 
-.password-desc {
-  font-size: 16px;
-  color: #333;
+.mobile-card-link-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-tag-new {
+  background: #ccdcf2;
+  color: #005cc8;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mobile-card-link--large {
+  padding: 22px 20px;
+}
+
+.mobile-link-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-link-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.mobile-account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding-bottom: 40px;
+}
+
+.mobile-action-btn {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #000;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mobile-action-btn:active {
+  background-color: #f5f5f5;
+}
+
+/* Mobile Password View */
+.mobile-password-view {
+  min-height: 100dvh;
+  background: #fff;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.mobile-password-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.mobile-password-header button {
+  background: none;
+  border: none;
+  padding: 8px;
+  margin-left: -8px;
+}
+
+.mobile-password-header h1 {
+  font-size: 20px;
+  font-weight: 700;
   margin: 0;
 }
 
+.mobile-password-content {
+  padding: 24px 16px;
+}
+
+/* SHARED / FORM STYLES */
 .password-form {
   max-width: 500px;
-  margin-left: 48px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.desktop-account-layout .password-form {
+  margin-left: 48px;
 }
 
 .password-input-group {

@@ -1,5 +1,5 @@
 .app {
-  min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--bg-primary);
   display: flex;
   flex-direction: column;
@@ -10,9 +10,9 @@
 @media (max-width: 768px) {
   .app {
     overflow-x: hidden;
+    padding-bottom: 0; /* Removed excessive blank space */
   }
 }
-
 
 .app__main {
   flex: 1;
@@ -26,7 +26,6 @@
     overflow-x: hidden;
   }
 }
-
 
 .app__rows {
   display: flex;
@@ -46,12 +45,6 @@
   margin: 0 auto;
   flex-wrap: wrap;
   gap: 12px;
-}
-
-@media (max-width: 768px) {
-  .app {
-    padding-bottom: 90px; /* Offset for Mobile Bottom Nav */
-  }
 }
 
 .app__footer-logo {

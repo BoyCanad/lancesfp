@@ -193,7 +193,11 @@ export default function Navbar() {
                     <div className="navbar__dropdown-footer">
                       <button 
                         className="navbar__signout-btn" 
-                        onClick={() => supabase.auth.signOut()}
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          localStorage.removeItem('activeProfile');
+                          window.location.href = '/login';
+                        }}
                       >
                         Sign out of LSFPlus
                       </button>

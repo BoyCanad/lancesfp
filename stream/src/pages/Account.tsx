@@ -13,7 +13,10 @@ import {
   Zap,
   Lock,
   Check,
-  MonitorSmartphone
+  MonitorSmartphone,
+  Download,
+  ShieldAlert,
+  Users
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import './Account.css';
@@ -32,6 +35,7 @@ export default function Account() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [signOutAll, setSignOutAll] = useState(true);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -91,6 +95,16 @@ export default function Account() {
       setNewPassword('');
       setConfirmPassword('');
       
+      if (signOutAll) {
+        setPasswordStatus({ type: 'success', message: 'Password updated. Signing out all devices...' });
+        setTimeout(async () => {
+          await supabase.auth.signOut({ scope: 'global' });
+          localStorage.removeItem('activeProfile');
+          window.location.href = '/login';
+        }, 2000);
+        return;
+      }
+
       // Auto-close after success
       setTimeout(() => setIsChangingPassword(false), 2000);
     } catch (error: any) {
@@ -100,10 +114,219 @@ export default function Account() {
     }
   };
 
+  const MobileAccountView = () => (
+    <div className={`mobile-account ${isChangingPassword ? 'password-active' : ''}`}>
+      {!isChangingPassword ? (
+        <>
+          <header className="mobile-account-header">
+            <button className="mobile-account-back" onClick={() => navigate('/browse')}>
+              <ArrowLeft size={24} color="white" />
+            </button>
+            <div className="mobile-account-logo">LSFPlus</div>
+          </header>
+
+          <div className="mobile-account-content">
+            <h1 className="mobile-account-title">Account</h1>
+            <p className="mobile-account-intro">
+              Visit your Account on lsfplus.com to update your payment details, change your plan and other account management features.
+            </p>
+
+            <section className="mobile-account-section">
+              <h2 className="mobile-section-title">Membership Details</h2>
+              <div className="mobile-card">
+                <div className="mobile-card-badge">Member since April 2020</div>
+                <div className="mobile-card-main">
+                  <h3 className="mobile-plan-name">Premium plan</h3>
+                  <p className="mobile-payment-info">Next payment: May 4, 2026</p>
+                  <div className="mobile-payment-method">
+                    <div className="mobile-provider-logo">
+                        <Zap size={14} fill="#0d68b1" color="#0d68b1" />
+                    </div>
+                    <span>Celcom *** *** ***0499</span>
+                  </div>
+                </div>
+                
+                <div className="mobile-card-links">
+                  <button className="mobile-card-link">
+                    <div className="mobile-card-link-left">
+                      <span>Buy an extra member slot</span>
+                      <span className="mobile-tag-new">New</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                  </button>
+                  <button className="mobile-card-link">
+                    <span>View payment history</span>
+                    <ChevronRight size={20} color="#333" />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="mobile-account-section">
+              <h2 className="mobile-section-title">Security</h2>
+              <div className="mobile-card">
+                <button className="mobile-card-link mobile-card-link--large" onClick={() => setIsChangingPassword(true)}>
+                    <div className="mobile-card-link-left">
+                      <Lock size={22} color="#333" />
+                      <span>Password</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <Mail size={22} color="#333" />
+                      <div className="mobile-link-text">
+                        <span>Email</span>
+                        <p>{userEmail || 'zedsmash154@gmail.com'}</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <Smartphone size={22} color="#333" />
+                      <div className="mobile-link-text">
+                        <span>Mobile phone</span>
+                        <p>016-742 8352</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+              </div>
+            </section>
+
+            <section className="mobile-account-section">
+              <h2 className="mobile-section-title">Devices</h2>
+              <div className="mobile-card">
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <MonitorSmartphone size={22} color="#333" />
+                      <span>Access and devices</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <Download size={22} color="#333" />
+                      <span>Mobile download devices</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+              </div>
+            </section>
+
+            <section className="mobile-account-section">
+              <h2 className="mobile-section-title">Profiles</h2>
+              <div className="mobile-card">
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <ShieldAlert size={22} color="#333" />
+                      <span>Adjust parental controls</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <ShieldCheck size={22} color="#333" />
+                      <span>Privacy and data settings</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+                <button className="mobile-card-link mobile-card-link--large">
+                    <div className="mobile-card-link-left">
+                      <Users size={22} color="#333" />
+                      <span>Profile Transfer</span>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                </button>
+              </div>
+            </section>
+
+            <div className="mobile-account-actions">
+              <button className="mobile-action-btn">Cancel Membership</button>
+              <button className="mobile-action-btn">Delete Account</button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="mobile-password-view">
+           <header className="mobile-password-header">
+              <button onClick={() => setIsChangingPassword(false)}>
+                <ArrowLeft size={24} />
+              </button>
+              <h1>Change password</h1>
+           </header>
+           <div className="mobile-password-content">
+             <form className="password-form" onSubmit={handlePasswordUpdate}>
+                {!location.state?.recover && (
+                  <div className="password-input-group">
+                    <input 
+                      type="password" 
+                      placeholder="Current Password" 
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                    />
+                    <button type="button" className="forgot-link" onClick={() => navigate('/forgot-password')}>Forgot Password?</button>
+                  </div>
+                )}
+
+                <div className="password-input-group">
+                  <input 
+                    type="password" 
+                    placeholder="New password (6-60 characters)" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="password-input-group">
+                  <input 
+                    type="password" 
+                    placeholder="Re-enter new password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {passwordStatus && (
+                  <div className={`password-status-msg ${passwordStatus.type}`}>
+                    {passwordStatus.message}
+                  </div>
+                )}
+
+                <label className="password-checkbox-container">
+                  <input 
+                    type="checkbox" 
+                    checked={signOutAll} 
+                    onChange={(e) => setSignOutAll(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-label">Sign out all devices</span>
+                </label>
+
+                <div className="password-actions">
+                  <button type="submit" className="password-save-btn" disabled={passwordLoading}>
+                    {passwordLoading ? 'Saving...' : 'Save'}
+                  </button>
+                  <button type="button" className="password-cancel-btn" onClick={() => setIsChangingPassword(false)}>Cancel</button>
+                </div>
+              </form>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="account-page">
-      {/* Top Navbar */}
-      <nav className="account-nav">
+      <MobileAccountView />
+      
+      <div className="desktop-account-layout">
+        {/* Top Navbar */}
+        <nav className="account-nav">
         <div className="account-nav__left">
           <div className="account-nav__logo" onClick={() => navigate('/browse')}>
             LSFPlus
@@ -225,7 +448,11 @@ export default function Account() {
                 )}
 
                 <label className="password-checkbox-container">
-                  <input type="checkbox" defaultChecked />
+                  <input 
+                    type="checkbox" 
+                    checked={signOutAll} 
+                    onChange={(e) => setSignOutAll(e.target.checked)}
+                  />
                   <span className="checkmark"></span>
                   <span className="checkbox-label">Sign out all devices</span>
                 </label>
@@ -398,5 +625,6 @@ export default function Account() {
         </main>
       </div>
     </div>
+  </div>
   );
 }

@@ -66,7 +66,11 @@ export default function ForgotPassword() {
         <div className="auth-logo" onClick={() => navigate('/browse')}>
           LSFPlus
         </div>
-        <button className="auth-signout-btn" onClick={() => supabase.auth.signOut().then(() => navigate('/login'))}>
+        <button className="auth-signout-btn" onClick={async () => {
+          await supabase.auth.signOut();
+          localStorage.removeItem('activeProfile');
+          window.location.href = '/login';
+        }}>
           Sign Out
         </button>
       </header>

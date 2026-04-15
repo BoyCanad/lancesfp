@@ -109,7 +109,7 @@ export default function MyNetflix() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('activeProfile');
-    navigate('/Auth');
+    window.location.href = '/login';
   };
 
   const likedMovies = featuredMovies.slice(0, 4);
