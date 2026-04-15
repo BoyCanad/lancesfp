@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, ChevronLeft } from 'lucide-react';
-import { elBimboCollections } from '../data/movies';
-import ContentRow from '../components/ContentRow';
+import { ChevronLeft } from 'lucide-react';
+import { elBimboCollections, type Movie } from '../data/movies';
+import { MovieCard } from '../components/ContentRow';
 import './ElBimboCollection.css';
 
 export default function ElBimboCollection() {
@@ -17,6 +17,11 @@ export default function ElBimboCollection() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleMovieClick = (movie: Movie) => {
+    // Navigate to the detail page route (matching the movie ID)
+    navigate(`/${movie.id}`);
+  };
 
   return (
     <div className="collection-page">
@@ -44,47 +49,32 @@ export default function ElBimboCollection() {
             />
             <div className="collection-hero__meta">
               <span className="collection-hero__year">2026</span>
+              <span className="collection-hero__dot">•</span>
               <span className="collection-hero__age">PG-13</span>
-              <span className="collection-hero__quality">4K Ultra HD</span>
+              <span className="collection-hero__dot">•</span>
+              <span className="collection-hero__quality">Teatro Bonifacio Winner</span>
             </div>
             <p className="collection-hero__description">
               Relive the multi-awarded Philippine musical masterpiece. A nostalgic journey through friendship, love, and the bittersweet passage of time, set to the timeless songs of the Eraserheads.
             </p>
             
-            <div className="collection-hero__actions">
-              <button 
-                className="collection-hero__btn collection-hero__btn--play"
-                onClick={() => navigate('/ang-huling-el-bimbo-play')}
-              >
-                <Play size={24} fill="currentColor" />
-                Play Now
-              </button>
-              <button 
-                className="collection-hero__btn collection-hero__btn--info"
-                onClick={() => navigate('/ang-huling-el-bimbo')}
-              >
-                <Info size={24} />
-                More Info
-              </button>
-            </div>
+
           </div>
         </div>
       </section>
 
-      {/* Collection Content */}
+      {/* Collection Content - Grid Layout */}
       <section className="collection-content">
-        <div className="collection-section">
-          <ContentRow 
-            title="The Musical Scenes" 
-            movies={elBimboCollections.filter(m => m.id !== 'ang-huling-el-bimbo-play')} 
-          />
-        </div>
-        
-        <div className="collection-section">
-          <ContentRow 
-            title="Archives & Specials" 
-            movies={elBimboCollections.filter(m => m.id.includes('sy-2025'))} 
-          />
+        <h2 className="collection-grid__title">The Complete Collection</h2>
+        <div className="collection-grid">
+          {elBimboCollections.map(movie => (
+            <div key={movie.id} className="collection-grid__item">
+              <MovieCard 
+                movie={movie} 
+                onClick={handleMovieClick}
+              />
+            </div>
+          ))}
         </div>
       </section>
     </div>

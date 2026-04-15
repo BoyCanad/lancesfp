@@ -19,6 +19,14 @@ export interface WatchProgress {
   last_watched: string;
 }
 
+export interface RecentlyWatched {
+  id: string;
+  profile_id: string;
+  movie_id: string;
+  watched_at: string;
+  episode_info?: string;
+}
+
 export async function getProfiles(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
@@ -105,4 +113,49 @@ export async function deleteWatchProgress(profileId: string, movieId: string): P
     .eq('movie_id', movieId);
   
   if (error) throw error;
+}
+
+export async function getRecentlyWatched(profileId: string): Promise<RecentlyWatched[]> {
+  try {
+    const { data, error } = await supabase
+      .from('recently_watched')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('watched_at', { ascending: false });
+    
+    if (error) {
+      if (error.code === 'PGRST204' || error.code === 'PGRST205') {
+        console.warn('recently_watched table not found. Please create it in Supabase.');
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('Recently watched fetch failed:', err);
+    return [];
+  }
+}
+
+export async function addToRecentlyWatched(profileId: string, movieId: string, episodeInfo?: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('recently_watched')
+      .upsert({
+        profile_id: profileId,
+        movie_id: movieId,
+        episode_info: episodeInfo,
+        watched_at: new Date().toISOString()
+      }, { onConflict: 'profile_id,movie_id' });
+    
+    if (error) {
+        if (error.code === 'PGRST204' || error.code === 'PGRST205') {
+            console.warn('recently_watched table not found. Cannot save history.');
+            return;
+        }
+        throw error;
+    }
+  } catch (err) {
+    console.warn('Could not add to recently watched:', err);
+  }
 }

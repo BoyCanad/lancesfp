@@ -20,9 +20,10 @@ import {
   LogOut
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies } from '../data/movies';
-import { getProfiles } from '../services/profileService';
+import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
+import { getProfiles, getWatchProgress, getRecentlyWatched } from '../services/profileService';
 import type { Profile } from '../services/profileService';
+import { MoreVertical } from 'lucide-react';
 import './MyNetflix.css';
 
 export default function MyNetflix() {
@@ -31,6 +32,8 @@ export default function MyNetflix() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isSwitching, setIsSwitching] = useState(false);
   const [moments, setMoments] = useState<any[]>([]);
+  const [continueWatching, setContinueWatching] = useState<any[]>([]);
+  const [recentlyWatched, setRecentlyWatched] = useState<any[]>([]);
 
   const [showMenu, setShowMenu] = useState(false);
 
@@ -57,6 +60,38 @@ export default function MyNetflix() {
           }
           if (data) setMoments(data);
         });
+
+      // Fetch Continue Watching
+      getWatchProgress(activeProfile.id).then(progress => {
+        const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured];
+        const watchedItems = progress
+          .map(wp => {
+            const movie = allMovies.find(m => m.id === wp.movie_id);
+            if (!movie) return null;
+            return {
+              ...movie,
+              progress: (wp.progress_ms / wp.duration_ms) * 100
+            };
+          })
+          .filter(Boolean);
+        setContinueWatching(watchedItems);
+      }).catch(console.error);
+
+      // Fetch Recently Watched
+      getRecentlyWatched(activeProfile.id).then(history => {
+        const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured];
+        const historyItems = history
+          .map(item => {
+            const movie = allMovies.find(m => m.id === item.movie_id);
+            if (!movie) return null;
+            return {
+              ...movie,
+              episode_info: item.episode_info
+            };
+          })
+          .filter(Boolean);
+        setRecentlyWatched(historyItems);
+      }).catch(console.error);
     }
   }, [activeProfile]);
 
@@ -84,7 +119,7 @@ export default function MyNetflix() {
     <div className="my-netflix">
       {/* Header */}
       <header className="mn-header">
-        <h1 className="mn-header__title">My Netflix</h1>
+        <h1 className="mn-header__title">My LSFPlus</h1>
         <div className="mn-header__actions">
           <Search size={26} color="white" />
           <button className="mn-menu-trigger" onClick={() => setShowMenu(true)}>
@@ -242,6 +277,70 @@ export default function MyNetflix() {
             ))}
           </div>
         </section>
+
+        {continueWatching.length > 0 && (
+          <section className="mn-row">
+            <h2 className="mn-row__title">Continue Watching</h2>
+            <div className="mn-row__track">
+              {continueWatching.map((movie) => (
+                <div key={movie.id} className="mn-continue-card" onClick={() => navigate(`/watch/${movie.id}`)}>
+                  <div className="mn-continue-card__img-wrapper">
+                    <img 
+                      src={movie.mobileThumbnail || movie.thumbnail || movie.banner} 
+                      alt={movie.title} 
+                      className="mn-continue-card__img" 
+                    />
+                  </div>
+                  
+                  <div className="mn-continue-card__progress-container">
+                    <div className="mn-continue-card__progress-bar-bg">
+                      <div className="mn-continue-card__progress-fill" style={{ width: `${movie.progress}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="mn-continue-card__info">
+                     <p className="mn-continue-card__title">{movie.title}</p>
+                     <div className="mn-continue-card__meta">
+                        <span className="mn-continue-card__year">{movie.year}</span>
+                        <span className="mn-continue-card__dot">·</span>
+                        <span className="mn-continue-card__genre">{movie.genre[0]}</span>
+                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {recentlyWatched.length > 0 && (
+          <section className="mn-row">
+            <h2 className="mn-row__title">Recently Watched</h2>
+            <div className="mn-row__track">
+              {recentlyWatched.map((movie) => (
+                <div key={movie.id} className="mn-history-card" onClick={() => navigate(`/watch/${movie.id}`)}>
+                  <div className="mn-history-card__img-wrapper">
+                    <img 
+                      src={movie.id === 'ang-huling-el-bimbo-play' ? '/images/el-bimbo.webp' : (movie.mobileThumbnail || movie.thumbnail || movie.banner)} 
+                      alt={movie.title} 
+                      className="mn-history-card__img" 
+                    />
+                    <div className="mn-history-card__overlay">
+                      <div className="mn-history-card__actions">
+                        <Share2 size={24} color="white" />
+                        <MoreVertical size={24} color="white" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mn-history-card__info">
+                     <p className="mn-history-card__title">
+                       {movie.episode_info ? `${movie.episode_info} ` : ''}{movie.title}
+                     </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
       
       {/* Bottom Sheet Menu */}

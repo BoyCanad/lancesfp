@@ -25,7 +25,7 @@ export default function MobileNav() {
     { id: 'home', label: 'Home', icon: Home },
     { id: 'clips', label: 'Clips', icon: PlaySquare },
     { id: 'games', label: 'Games', icon: Gamepad2 },
-    { id: 'my-netflix', label: 'My Netflix', isAvatar: true },
+    { id: 'my-lsfplus', label: 'My LSFPlus', isAvatar: true },
   ];
 
   return (
@@ -42,7 +42,7 @@ export default function MobileNav() {
               onClick={() => {
                 setActive(item.id);
                 if (item.id === 'home') navigate('/browse');
-                else if (item.id === 'my-netflix') navigate('/my-netflix');
+                else if (item.id === 'my-lsfplus') navigate('/my-lsfplus');
               }}
             >
               <div className="mobile-nav__icon-wrapper">

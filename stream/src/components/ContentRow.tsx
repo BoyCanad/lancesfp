@@ -23,7 +23,7 @@ const parseDurationToMin = (dur: string) => {
   return total || parseInt(dur) || 120;
 };
 
-const MovieCard = memo(({ 
+export const MovieCard = memo(({ 
   movie, 
   showProgress, 
   onClick 
@@ -321,6 +321,8 @@ export default function ContentRow({
       navigate('/tama-ka-ligaya', navOptions);
     } else if (movie.id === 'ang-huling-el-bimbo') {
       navigate('/ang-huling-el-bimbo', navOptions);
+    } else if (movie.id === 'beyond-the-last-dance') {
+      navigate('/beyond-the-last-dance', navOptions);
     } else {
       // Fallback or generic detail page
       navigate(`/browse`, navOptions);

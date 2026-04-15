@@ -38,6 +38,27 @@ export interface Movie {
   downloadUrl?: string;
 }
 
+export const makingOfLegacy: Movie = {
+  id: "beyond-the-last-dance",
+  title: "Beyond The Last Dance",
+  logo: "/images/BTLD-logo.webp",
+  thumbnail: "/images/BTLD.webp",
+  mobileThumbnail: "/images/BTLD-mobile.webp",
+  cardBanner: "/images/BTLD.webp",
+  mobileCardBanner: "/images/BTLD-mobile.webp",
+  banner: "/images/BTLD-banner.webp", 
+  mobileBanner: "/images/BTLD-mobile-banner.webp", 
+  description: "A behind-the-scenes look at the creative journey, the challenges, and the heart that went into crafting the multi-awarded musical masterpiece, Ang Huling El Bimbo.",
+  rating: "10.0",
+  year: "2026",
+  duration: "1h 15m",
+  genre: ["Documentary", "Behind the Scenes"],
+  ageRating: "G",
+  isOriginal: true,
+  videoUrl: "", // Need video URL
+  trailerUrl: "", // Need trailer URL
+};
+
 export const featuredMovies: Movie[] = [
   {
     id: "ang-huling-el-bimbo-play",
@@ -56,6 +77,7 @@ export const featuredMovies: Movie[] = [
     ageRating: "PG-13",
     contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
     isOriginal: true,
+    mobileThumbnail: "/images/el-bimbo-mobile.webp",
     videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
     downloadUrl: "https://video-proxy.booran-special.workers.dev/",
     trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
@@ -136,7 +158,7 @@ export const featuredMovies: Movie[] = [
     banner: "/images/alapaap-detail.webp",
     mobileBanner: "/images/alapaap-detail-mobile.webp",
     cardBanner: "/images/alapaap.webp",
-    description: "An electrifying performance of “Alapaap / Overdrive” from Ang Huling El Bimbo, this scene captures the characters’ youthful rebellion and desire for freedom. Fueled by high energy and raw emotion, it reflects their escape from reality and the thrill of living in the moment—while hinting at the impulsive choices and inner conflicts that will shape their journey as the story unfolds.",
+    description: "This high-octane performance of “Alapaap / Overdrive” captures the raw rebellion and fleeting freedom of youth. It’s an emotional escape fueled by the reckless energy that ultimately shapes the characters' journey.",
     rating: "9.8",
     year: "2026",
     duration: "20m",
@@ -153,7 +175,7 @@ export const featuredMovies: Movie[] = [
     banner: "/images/spoliarium-detail.webp",
     mobileBanner: "/images/spoliarium-detail-mobile.webp",
     cardBanner: "/images/spoliarium.webp",
-    description: "The Spoliarium/Graduation sequence is a haunting shift from trauma to irony. It begins with the visceral \u201cSpoliarium\u201d tableau, symbolizing Joy\u2019s violation and the death of her innocence, before cutting to the bittersweet Graduation ceremony. Amidst the celebration, Marko finally confesses his love to Joy, a heartbreaking declaration of a future already shattered by the darkness that preceded it.",
+    description: "The “Spoliarium/Graduation” sequence moves from the visceral trauma of Joy’s stolen innocence to the bitter irony of celebration. Marko’s ill-timed confession of love serves as a heartbreaking reminder of a future already shattered by the darkness preceding it.",
     rating: "9.9",
     year: "2026",
     duration: "25m",
@@ -170,7 +192,7 @@ export const featuredMovies: Movie[] = [
     banner: "/images/pare-ko-detail.webp",
     mobileBanner: "/images/pare-ko-detail-mobile.webp",
     cardBanner: "/images/pare-ko.webp",
-    description: "The \"Pare Ko\" performance is a high-energy, fan-favorite sequence that captures the chaotic brotherhood of ROTC training. Set to the Eraserheads' iconic anthem of heartbreak and camaraderie, the scene features the boys—Marco, Edrian, Xian—navigating the rigors of military drills while lamenting a \"friendzone\" romance. The choreography is sharp and rhythmic, using wooden rifles and marching formations to turn military discipline into a vibrant musical spectacle. It perfectly balances comedic relief with the raw, relatable angst of young love, solidifying the deep bond between the three lead characters.",
+    description: "This high-energy ROTC sequence transforms military drills into a vibrant spectacle of brotherhood. Set to the iconic **“Pare Ko,”** it balances sharp choreography with the raw “friendzone” angst that defines the bond between the three leads.",
     rating: "9.6",
 
     year: "2026",
@@ -190,7 +212,7 @@ export const featuredMovies: Movie[] = [
     mobileBanner: "/images/tama-ka-detail-mobile.webp",
     cardBanner: "/images/tama-ka.webp",
     mobileCardBanner: "/images/tama-ka-mobile.webp",
-    description: "The \"Tama Ka / Ligaya\" mashup masterfully contrasts the cold finality of a breakup with the haunting warmth of happier memories. By weaving the somber acceptance of \"Tama Ka\" into the upbeat nostalgia of \"Ligaya,\" the performance captures the bittersweet irony of finding oneself at the end of a relationship while still clinging to the \"happiness\" that used to be.",
+    description: "The “Tama Ka / Ligaya” mashup contrasts the finality of a breakup with the warmth of nostalgia. It masterfully captures the bittersweet irony of moving on while still clinging to a lost happiness.",
     rating: "9.8",
     year: "2026",
     duration: "22m",
@@ -209,7 +231,7 @@ export const featuredMovies: Movie[] = [
     mobileBanner: "/images/huling-el-bimbo-detail-mobile.webp",
     cardBanner: "/images/huling-el-bimbo.webp",
     mobileCardBanner: "/images/huling-el-bimbo-mobile.webp",
-    description: "The \"Ang Huling El Bimbo\" performance is a heart-wrenching finale that mirrors the grace of a lost past against the tragedy of the present. It serves as a nostalgic tribute to Joy, the \"Paraluman\" of their youth, capturing the painful regret of a friendship and a dance that ended too soon. This iconic sequence brings the story full circle, leaving the audience with the haunting beauty of a dream that can never be reclaimed.",
+    description: "The heart-wrenching “Ang Huling El Bimbo” finale mirrors a graceful past against a tragic present. As a tribute to Joy, it captures the regret of a friendship ended too soon, closing the story with the haunting beauty of a dream that can never be reclaimed.",
     rating: "9.9",
     year: "2026",
     duration: "30m",
@@ -360,6 +382,7 @@ export const elBimboFeatured: Movie = {
 };
 export const elBimboCollections: Movie[] = [
   elBimboFeatured,
+  makingOfLegacy,
   featuredMovies[1], // Minsan
   featuredMovies[3], // Tindahan
   featuredMovies[4], // Alapaap

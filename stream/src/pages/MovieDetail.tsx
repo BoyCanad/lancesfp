@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Play, Bookmark, Download, Library, VolumeX, Volume2, X, Trash2 } from 'lucide-react';
+import { Play, Plus, ThumbsUp, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
-import { downloadService } from '../services/downloadService';
 import './MovieDetail.css';
 import './MinsanDetail.css'; // Reuse Minsan's cinematic detail styles
 
@@ -78,11 +77,7 @@ export default function MovieDetail() {
   const [isMuted, setIsMuted]             = useState(false);
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
-  const [isDownloading, setIsDownloading]   = useState(false);
-  const [isCached, setIsCached]            = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -90,11 +85,7 @@ export default function MovieDetail() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Check if movie is already offline
-  useEffect(() => {
-    if (!movie) return;
-    downloadService.isDownloaded(movie.id).then(setIsCached);
-  }, [movie]);
+
 
   // Start trailer once after 3s upon landing (or immediately if from thumbnail)
   useEffect(() => {
@@ -168,70 +159,7 @@ export default function MovieDetail() {
 
   const toggleMute = () => setIsMuted(m => !m);
 
-  const handleCancelDownload = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsDownloading(false);
-      setDownloadProgress(0);
-    }
-  };
 
-
-
-  const handleDeleteDownload = async () => {
-    if (!movie) return;
-    const confirmDelete = window.confirm(`Remove "${movie.title}" from your offline downloads?`);
-    if (!confirmDelete) return;
-
-    try {
-      await downloadService.deleteDownload(movie.id);
-      setIsCached(false);
-      alert('Movie removed from offline storage.');
-    } catch (err) {
-      console.error('Delete failed:', err);
-      alert('Failed to delete movie.');
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!movie || isDownloading) return;
-    
-    setIsDownloading(true);
-    setDownloadProgress(0);
-    
-    // Create new abort controller
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      await downloadService.downloadAndStore(
-        movie.id,
-        movie.videoUrl || '',
-        {
-          title: movie.title,
-          thumbnail: movie.thumbnail,
-          duration: movie.duration
-        },
-        (progress) => setDownloadProgress(progress),
-        controller.signal
-      );
-      
-      setIsCached(true);
-      alert(`"${movie.title}" is now available offline!`);
-    } catch (err: any) {
-      if (err.name === 'AbortError' || err.message === 'AbortError') {
-        console.log('Download cancelled by user');
-      } else {
-        console.error(err);
-        alert('Failed to save for offline viewing. Please check your connection and storage space.');
-      }
-    } finally {
-      setIsDownloading(false);
-      setDownloadProgress(0);
-      abortControllerRef.current = null;
-    }
-  };
 
   const handlePlayClick = async () => {
     if (!movie) return;
@@ -240,13 +168,7 @@ export default function MovieDetail() {
       navigate('/login');
       return;
     }
-
-    const downloaded = await downloadService.getDownloadedMovie(movie.id);
-    if (downloaded) {
-      navigate(`/watch/${movie.id}?src=offline`, { state: { offlineUrl: downloaded.url } });
-    } else {
-      navigate(`/watch/${movie.id}`);
-    }
+    navigate(`/watch/${movie.id}`);
   };
 
   const isMobile = windowWidth < 768;
@@ -261,6 +183,9 @@ export default function MovieDetail() {
 
   return (
     <div className="mdetail-page-wrapper">
+      <button className="mdetail-back-btn" onClick={() => navigate(-1)}>
+        <ArrowLeft size={28} />
+      </button>
       <div className="mdetail-container">
 
         {/* Static background — fades out when trailer starts */}
@@ -352,41 +277,19 @@ export default function MovieDetail() {
               <Play size={18} fill="black" strokeWidth={0} /> Play
             </button>
 
-            <div className="mdetail-actions-row">
-              <button className="mdetail-btn mdetail-btn-secondary">
-                <Bookmark size={18} /> Save to Vault
+            <div className="mdetail-quick-actions">
+              <button className="mdetail-quick-btn">
+                <Plus size={28} color="white" strokeWidth={1.5} />
+                <span>My List</span>
               </button>
-              {isDownloading ? (
-                <button 
-                  className="mdetail-btn mdetail-btn-secondary pulse cancel-mode"
-                  onClick={handleCancelDownload}
-                >
-                  <X size={18} /> Cancel {downloadProgress}%
-                </button>
-              ) : isCached ? (
-                <div className="mdetail-downloaded-wrapper">
-                  <button 
-                    className="mdetail-btn mdetail-btn-secondary cached"
-                    disabled
-                  >
-                    <Download size={18} /> Downloaded
-                  </button>
-                  <button 
-                    className="mdetail-delete-btn"
-                    onClick={handleDeleteDownload}
-                    title="Delete Download"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  className="mdetail-btn mdetail-btn-secondary"
-                  onClick={handleDownload}
-                >
-                  <Download size={18} /> Download
-                </button>
-              )}
+              <button className="mdetail-quick-btn">
+                <ThumbsUp size={24} color="white" strokeWidth={1.5} />
+                <span>Rate</span>
+              </button>
+              <button className="mdetail-quick-btn">
+                <Share2 size={24} color="white" strokeWidth={1.5} />
+                <span>Share</span>
+              </button>
             </div>
           </div>
 

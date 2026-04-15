@@ -29,7 +29,7 @@ import {
 import { featuredMovies } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../supabaseClient';
-import { updateWatchProgress, getWatchProgress, deleteWatchProgress } from '../services/profileService';
+import { updateWatchProgress, getWatchProgress, deleteWatchProgress, addToRecentlyWatched } from '../services/profileService';
 import './VideoPlayer.css';
 
 interface ParsedCue {
@@ -496,12 +496,13 @@ export default function VideoPlayer() {
         isAtCredits = true;
       }
       
-      // If reached end credits / recommendation timestamp, delete progress
+      // If reached end credits / recommendation timestamp, delete progress and add to recently watched
       if (isAtCredits) {
         try {
           await deleteWatchProgress(activeProfileId, id);
+          await addToRecentlyWatched(activeProfileId, id, seasonAndEpisode);
         } catch (e) {
-          console.error('Failed to clear finished progress', e);
+          console.error('Failed to update watch history', e);
         }
         return;
       }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Play, Plus, ThumbsUp, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
+import { featuredMovies, trendingMovies, makingOfLegacy, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
 import './MovieDetail.css';
 import './MinsanDetail.css';
@@ -53,6 +53,7 @@ const parseVTT = (vttData: string): ParsedCue[] => {
 
 const elBimboCollections = [
   elBimboFeatured,
+  makingOfLegacy,
   featuredMovies[1],
   featuredMovies[3],
   featuredMovies[4],
@@ -63,8 +64,8 @@ const elBimboCollections = [
   ...[...trendingMovies].reverse().slice(7)
 ];
 
-export default function AlapaapDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'alapaap-overdrive');
+export default function BeyondLastDanceDetail() {
+  const movie = makingOfLegacy;
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
@@ -85,9 +86,14 @@ export default function AlapaapDetail() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Sync muted state to video element
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
-
-  // Start trailer once after 3s upon landing (or immediately if from thumbnail)
+  // Handle trailer activation
   useEffect(() => {
     if (hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
 
@@ -105,48 +111,13 @@ export default function AlapaapDetail() {
     return () => clearTimeout(timer);
   }, [stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
 
-  // Set initial time if provided from navigation
-  useEffect(() => {
-    if (trailerActive && stateStartTime !== undefined && videoRef.current) {
-      videoRef.current.currentTime = stateStartTime;
-    }
-  }, [trailerActive, stateStartTime]);
-
-  // Sync subtitles
-  useEffect(() => {
-    if (!trailerActive) {
-      setCurrentSubtitle('');
-    }
-  }, [trailerActive]);
-
-  // Fetch subtitles on mount
-  useEffect(() => {
-    if (!movie?.trailerVttUrl) return;
-    fetch(movie.trailerVttUrl)
-      .then(res => res.text())
-      .then(data => {
-        const parsed = parseVTT(data);
-        setCues(parsed);
-      })
-      .catch(err => console.error('Failed to load subtitles:', err));
-  }, [movie]);
-
-  // Sync muted state to video element
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
-
   // Start playing when trailer becomes active
   useEffect(() => {
     if (trailerActive && videoRef.current) {
-      videoRef.current.muted = isMuted;
       videoRef.current.play().catch(() => { });
     }
   }, [trailerActive]);
 
-  // Update subtitles as video plays
   const handleTimeUpdate = () => {
     if (!videoRef.current || !trailerActive) return;
     const time = videoRef.current.currentTime;
@@ -165,7 +136,7 @@ export default function AlapaapDetail() {
     if (!session) {
       navigate('/login');
     } else {
-      navigate('/watch/alapaap-overdrive');
+      navigate(`/watch/${movie.id}`);
     }
   };
 
@@ -279,7 +250,7 @@ export default function AlapaapDetail() {
               <Library size={24} color="#e50914" /> Ang Huling El Bimbo Collections
             </div>
           }
-          movies={elBimboCollections.filter(m => m.title !== movie?.title)}
+          movies={elBimboCollections.filter(m => m.id !== movie?.id)}
         />
       </div>
     </div>

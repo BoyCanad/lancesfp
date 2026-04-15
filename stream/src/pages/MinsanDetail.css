@@ -105,7 +105,7 @@
 /* ── Mobile adjustments ──────────────────────────────────── */
 @media (max-width: 768px) {
   .mdetail-subtitle-overlay {
-    top: calc(64px + 45vw); 
+    top: calc(0px + 45vw); 
     bottom: auto;
     left: 50%; /* Reset to center on mobile */
     width: 90%; /* Reset width on mobile */
@@ -132,7 +132,7 @@
     bottom: auto;
     /* On mobile the banner is viewport-width × 56.25vw tall (16:9).
        Place the button near the bottom-right of that banner area. */
-    top: calc(64px + 56.25vw - 52px); /* navbar gap + banner height − button height */
+    top: calc(0px + 56.25vw - 52px); /* navbar gap + banner height − button height */
     right: 16px;
     width: 36px;
     height: 36px;
@@ -140,7 +140,7 @@
 
   /* ensure the video also covers the mobile banner slot */
   .mdetail-trailer-video {
-    top: 64px;
+    top: 0;
     bottom: auto;
     height: 56.25vw;
     width: 100%;
@@ -173,7 +173,7 @@
 
 @media (max-width: 768px) {
     .mdetail-trailer-branding {
-        top: calc(64px + 56.25vw / 2);
+        top: calc(0px + 56.25vw / 2);
         left: 20px;
     }
     .mdetail-trailer-logo-overlay {

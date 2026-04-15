@@ -17,7 +17,7 @@
   justify-content: space-between;
   margin-bottom: 2px; /* Closer to the track like Netflix */
   position: relative;
-  z-index: 1; /* Below the track content so expanded cards can go over it */
+  z-index: 10; /* Lower than track when expanding, but accessible via pointer-events trick */
 }
 
 /* Individual elements should be clickable, not the whole header overlaying the cards */
@@ -123,11 +123,10 @@
   padding: 120px 0;
   margin: -120px 0;
   
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
   -ms-overflow-style: none;
   position: relative;
-  z-index: 2; /* ABOVE the header */
+  z-index: 15; /* ABOVE the header to prevent overlap when cards expand */
+  pointer-events: none; /* Allow clicks to pass through padding to the header/See All */
 }
 .row__track::-webkit-scrollbar { display: none; }
 
@@ -177,6 +176,7 @@
     transition: transform 0.3s ease;
     z-index: 1;
     will-change: z-index;
+    pointer-events: auto; /* Re-enable pointer events for the cards */
   }
 
   .card:hover {
@@ -678,11 +678,13 @@
     margin: 0 !important;
     cursor: pointer !important;
     transition: transform 0.2s ease !important; /* Smooth interaction */
+    pointer-events: auto !important; /* Enable clicks on mobile */
   }
 
   .card:active {
     transform: scale(1.04) !important;
     z-index: 50 !important;
+    pointer-events: auto !important;
   }
   
   .card__thumb { 

@@ -3,16 +3,30 @@
   background-color: var(--bg-primary);
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: visible;
   width: 100%;
 }
+
+@media (max-width: 768px) {
+  .app {
+    overflow-x: hidden;
+  }
+}
+
 
 .app__main {
   flex: 1;
   padding-bottom: 40px;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: visible;
 }
+
+@media (max-width: 768px) {
+  .app__main {
+    overflow-x: hidden;
+  }
+}
+
 
 .app__rows {
   display: flex;

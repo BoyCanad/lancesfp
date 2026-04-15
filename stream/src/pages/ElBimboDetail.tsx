@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Play, Bookmark, Download, Library, VolumeX, Volume2, X, Trash2 } from 'lucide-react';
+import { Play, Plus, ThumbsUp, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
@@ -77,11 +77,7 @@ export default function ElBimboDetail() {
   const [isMuted, setIsMuted] = useState(false);
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isCached, setIsCached] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -89,16 +85,7 @@ export default function ElBimboDetail() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Check if movie is already offline
-  useEffect(() => {
-    const checkTarget = movie?.downloadUrl || movie?.videoUrl;
-    if (!checkTarget) return;
-    caches.open('lsfplus-movies').then(cache => {
-      cache.match(checkTarget).then(match => {
-        if (match) setIsCached(true);
-      });
-    });
-  }, [movie]);
+
 
   // Start trailer once after 3s upon landing (or immediately if from thumbnail)
   useEffect(() => {
@@ -173,105 +160,6 @@ export default function ElBimboDetail() {
 
   const toggleMute = () => setIsMuted(m => !m);
 
-  const handleCancelDownload = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsDownloading(false);
-      setDownloadProgress(0);
-    }
-  };
-
-  const handleDeleteDownload = async () => {
-    if (!movie) return;
-    const confirmDelete = window.confirm(`Remove "${movie.title}" from your offline downloads?`);
-    if (!confirmDelete) return;
-
-    try {
-      const cache = await caches.open('lsfplus-movies');
-      
-      if (movie.videoUrl) await cache.delete(movie.videoUrl);
-      if (movie.downloadUrl) await cache.delete(movie.downloadUrl);
-      
-      if (movie.subtitles) {
-        for (const sub of movie.subtitles) {
-          await cache.delete(sub.url);
-        }
-      }
-      
-      if (movie.spriteUrl) await cache.delete(movie.spriteUrl);
-
-      setIsCached(false);
-      alert('Movie removed from offline storage.');
-    } catch (err) {
-      console.error('Delete failed:', err);
-      alert('Failed to delete movie.');
-    }
-  };
-
-  const handleDownload = async () => {
-    const targetUrl = movie?.downloadUrl || movie?.videoUrl;
-    if (!targetUrl || isDownloading) return;
-    
-    setIsDownloading(true);
-    setDownloadProgress(0);
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      const resp = await fetch(targetUrl, { signal: controller.signal });
-      if (!resp.ok) throw new Error('Download failed');
-      const contentLength = resp.headers.get('content-length');
-      const total = contentLength ? parseInt(contentLength, 10) : 0;
-      const reader = resp.body?.getReader();
-      if (!reader) throw new Error('No reader found');
-
-      let received = 0;
-      const chunks = [];
-      while(true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        received += value.length;
-        if (total) setDownloadProgress(Math.round((received / total) * 100));
-      }
-
-      const blob = new Blob(chunks);
-      const cache = await caches.open('lsfplus-movies');
-      await cache.put(targetUrl, new Response(blob, {
-        headers: { 'Content-Type': 'video/mp4', 'Content-Length': blob.size.toString() }
-      }));
-      
-      if (movie.subtitles) {
-        for (const sub of movie.subtitles) {
-          try {
-            const subResp = await fetch(sub.url);
-            if (subResp.ok) await cache.put(sub.url, subResp);
-          } catch (e) { console.error('Sub cache fail', e); }
-        }
-      }
-
-      if (movie.spriteUrl) {
-        try {
-          const spriteResp = await fetch(movie.spriteUrl);
-          if (spriteResp.ok) await cache.put(movie.spriteUrl, spriteResp);
-        } catch (e) { console.error('Sprite cache fail', e); }
-      }
-      
-      setIsCached(true);
-      alert(`"${movie.title}" and its data are now available offline!`);
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error(err);
-        alert('Failed to save for offline viewing.');
-      }
-    } finally {
-      setIsDownloading(false);
-      setDownloadProgress(0);
-      abortControllerRef.current = null;
-    }
-  };
-
   const handlePlayClick = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -293,6 +181,9 @@ export default function ElBimboDetail() {
 
   return (
     <div className="mdetail-page-wrapper">
+      <button className="mdetail-back-btn" onClick={() => navigate(-1)}>
+        <ArrowLeft size={28} />
+      </button>
       <div className="mdetail-container">
         <div
           className={`mdetail-bg mdetail-bg--static ${trailerActive ? 'mdetail-bg--hidden' : ''}`}
@@ -363,28 +254,19 @@ export default function ElBimboDetail() {
               <Play size={18} fill="black" strokeWidth={0} /> Play
             </button>
 
-            <div className="mdetail-actions-row">
-              <button className="mdetail-btn mdetail-btn-secondary">
-                <Bookmark size={18} /> Save to Vault
+            <div className="mdetail-quick-actions">
+              <button className="mdetail-quick-btn">
+                <Plus size={28} color="white" strokeWidth={1.5} />
+                <span>My List</span>
               </button>
-              {isDownloading ? (
-                <button className="mdetail-btn mdetail-btn-secondary pulse cancel-mode" onClick={handleCancelDownload}>
-                  <X size={18} /> Cancel {downloadProgress}%
-                </button>
-              ) : isCached ? (
-                <div className="mdetail-downloaded-wrapper">
-                  <button className="mdetail-btn mdetail-btn-secondary cached" disabled>
-                    <Download size={18} /> Downloaded
-                  </button>
-                  <button className="mdetail-delete-btn" onClick={handleDeleteDownload} title="Delete Download">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ) : (
-                <button className="mdetail-btn mdetail-btn-secondary" onClick={handleDownload}>
-                  <Download size={18} /> Download
-                </button>
-              )}
+              <button className="mdetail-quick-btn">
+                <ThumbsUp size={24} color="white" strokeWidth={1.5} />
+                <span>Rate</span>
+              </button>
+              <button className="mdetail-quick-btn">
+                <Share2 size={24} color="white" strokeWidth={1.5} />
+                <span>Share</span>
+              </button>
             </div>
           </div>
         </div>

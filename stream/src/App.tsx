@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import Navbar from './components/Navbar';
@@ -14,6 +14,7 @@ import PareKoDetail from './pages/PareKoDetail';
 import TamaKaDetail from './pages/TamaKaDetail';
 import ElBimboDetail from './pages/ElBimboDetail';
 import ElBimboCollection from './pages/ElBimboCollection';
+import BeyondLastDanceDetail from './pages/BeyondLastDanceDetail';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
@@ -28,10 +29,12 @@ import CreateProfile from './pages/CreateProfile';
 import ProfileLock from './pages/ProfileLock';
 import Account from './pages/Account';
 import MyNetflix from './pages/MyNetflix';
+import ForgotPassword from './pages/ForgotPassword';
 import './App.css';
 
 function App() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -39,9 +42,23 @@ function App() {
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
+  const isForgotPassword = pathname === '/forgot-password';
   const isAccount = pathname === '/account';
-  const isMyNetflix = pathname === '/my-netflix';
-  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isAccount) || isMyNetflix;
+  const isMyNetflix = pathname === '/my-lsfplus';
+  const isDetailPage = [
+    '/ang-huling-el-bimbo-play',
+    '/minsan',
+    '/tindahan-ni-aling-nena',
+    '/alapaap-overdrive',
+    '/spoliarium-graduation',
+    '/pare-ko',
+    '/tama-ka-ligaya',
+    '/ang-huling-el-bimbo',
+    '/collections/el-bimbo',
+    '/beyond-the-last-dance'
+  ].includes(pathname);
+
+  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
@@ -54,8 +71,13 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        // Redirect to account page with security tab active
+        navigate('/account', { state: { recover: true } });
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -92,13 +114,15 @@ function App() {
         <Route path="/pare-ko" element={<PareKoDetail />} />
         <Route path="/tama-ka-ligaya" element={<TamaKaDetail />} />
         <Route path="/ang-huling-el-bimbo" element={<ElBimboDetail />} />
+        <Route path="/beyond-the-last-dance" element={<BeyondLastDanceDetail />} />
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
         <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
-        <Route path="/my-netflix" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
+        <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
 
       {showNavAndFooter && (
