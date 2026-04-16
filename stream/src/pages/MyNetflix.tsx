@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Menu, 
   ChevronDown, 
-  Download, 
   ChevronRight, 
   Share2,
   Bell,
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
-import { getProfiles, getWatchProgress, getRecentlyWatched } from '../services/profileService';
+import { getProfiles, getWatchProgress, getRecentlyWatched, getLikedMovies } from '../services/profileService';
 import type { Profile } from '../services/profileService';
 import { MoreVertical } from 'lucide-react';
 import './MyNetflix.css';
@@ -34,8 +33,20 @@ export default function MyNetflix() {
   const [moments, setMoments] = useState<any[]>([]);
   const [continueWatching, setContinueWatching] = useState<any[]>([]);
   const [recentlyWatched, setRecentlyWatched] = useState<any[]>([]);
-
+  const [likedTitles, setLikedTitles] = useState<any[]>([]);
   const [showMenu, setShowMenu] = useState(false);
+
+  // PIN Modal states
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [pinEntry, setPinEntry] = useState(['', '', '', '']);
+  const [pinError, setPinError] = useState(false);
+  const pinRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
 
   useEffect(() => {
     const stored = localStorage.getItem('activeProfile');
@@ -92,18 +103,67 @@ export default function MyNetflix() {
           .filter(Boolean);
         setRecentlyWatched(historyItems);
       }).catch(console.error);
+
+      // Fetch Liked Movies
+      getLikedMovies(activeProfile.id).then((likedIds: string[]) => {
+        const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured];
+        const likedOnes = likedIds
+          .map((id: string) => allMovies.find(m => m.id === id))
+          .filter(Boolean);
+        setLikedTitles(likedOnes);
+      }).catch(console.error);
     }
   }, [activeProfile]);
 
   const handleProfileSwitch = (profile: any) => {
+    setSelectedProfile(profile);
     if (profile.locked) {
-      navigate(`/ProfileLock/${profile.id}`);
+      setPinEntry(['', '', '', '']);
+      setPinError(false);
+      setShowPinModal(true);
       return;
     }
     localStorage.setItem('activeProfile', JSON.stringify(profile));
-    setActiveProfile(profile);
     setIsSwitching(false);
-    window.location.reload(); // Refresh to update all data context
+    navigate('/browse', { state: { fromProfileSwap: true, profileImage: profile.image } });
+  };
+
+  const handlePinChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    
+    setPinError(false);
+    const newPin = [...pinEntry];
+    newPin[index] = value.substring(value.length - 1);
+    setPinEntry(newPin);
+
+    // Auto-advance
+    if (value && index < 3) {
+      pinRefs[index + 1].current?.focus();
+    } else if (index === 3 && value) {
+      // Validate
+      const fullTyped = newPin.join('');
+      if (fullTyped.length === 4) {
+        if (fullTyped === selectedProfile?.pin || selectedProfile?.pin === undefined) {
+           localStorage.setItem('activeProfile', JSON.stringify(selectedProfile));
+           setShowPinModal(false);
+           setIsSwitching(false);
+           // Brief delay before starting transition for better UX
+           setTimeout(() => {
+             navigate('/browse', { state: { fromProfileSwap: true, profileImage: selectedProfile?.image } });
+           }, 400);
+        } else {
+           setPinError(true);
+           setPinEntry(['', '', '', '']);
+           pinRefs[0].current?.focus();
+        }
+      }
+    }
+  };
+
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !pinEntry[index] && index > 0) {
+      pinRefs[index - 1].current?.focus();
+    }
   };
 
   const handleSignOut = async () => {
@@ -112,7 +172,6 @@ export default function MyNetflix() {
     window.location.href = '/login';
   };
 
-  const likedMovies = featuredMovies.slice(0, 4);
   const myListMovies = [...trendingMovies].reverse().slice(0, 4);
 
   return (
@@ -189,7 +248,7 @@ export default function MyNetflix() {
         </div>
       )}
 
-      {/* Notifications/Downloads Shortcuts */}
+      {/* Notifications Shortcut */}
       <section className="mn-shortcuts">
         <div className="mn-card mn-card--notifications">
             <div className="mn-card__icon-circle red">
@@ -200,35 +259,26 @@ export default function MyNetflix() {
             </div>
             <ChevronRight size={24} color="#666" />
         </div>
-
-        <div className="mn-card" onClick={() => navigate('/downloads')}>
-          <div className="mn-card__icon-circle blur">
-            <Download size={24} color="white" />
-          </div>
-          <div className="mn-card__content">
-            <h3 className="mn-card__title">Downloads</h3>
-            <p className="mn-card__desc">Movies and shows that you download appear here.</p>
-          </div>
-          <ChevronRight size={24} color="#666" />
-        </div>
       </section>
 
       {/* Rows */}
       <div className="mn-rows">
-        <section className="mn-row">
-          <h2 className="mn-row__title">TV Shows & Movies You've Liked</h2>
-          <div className="mn-row__track">
-            {likedMovies.map((movie) => (
-              <div key={movie.id} className="mn-liked-card" onClick={() => navigate(`/watch/${movie.id}`)}>
-                <img src={movie.thumbnail} alt={movie.title} className="mn-liked-card__img" />
-                <div className="mn-liked-card__footer">
-                  <Share2 size={18} color="white" />
-                  <span>Share</span>
+        {likedTitles.length > 0 && (
+          <section className="mn-row">
+            <h2 className="mn-row__title">TV Shows & Movies You've Liked</h2>
+            <div className="mn-row__track">
+              {likedTitles.map((movie) => (
+                <div key={movie.id} className="mn-liked-card" onClick={() => navigate(`/watch/${movie.id}`)}>
+                  <img src={movie.thumbnail} alt={movie.title} className="mn-liked-card__img" />
+                  <div className="mn-liked-card__footer">
+                    <Share2 size={18} color="white" />
+                    <span>Share</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mn-row">
           <h2 className="mn-row__title">Moments You've Created & Shared</h2>
@@ -376,6 +426,35 @@ export default function MyNetflix() {
             <div className="mn-menu-version">
               Version: 9.60.0 build 4
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PIN Modal Overlay */}
+      {showPinModal && selectedProfile && (
+        <div className="mn-pin-overlay">
+          <div className="mn-pin-modal">
+            <button className="mn-pin-close" onClick={() => setShowPinModal(false)}>
+              <X size={24} color="white" />
+            </button>
+            <h2 className="mn-pin-title">Profile Lock is on</h2>
+            <p className="mn-pin-subtitle">Enter your PIN to access this profile.</p>
+
+            <div className="mn-pin-boxes">
+              {pinEntry.map((digit: string, i: number) => (
+                <input
+                  key={i}
+                  ref={pinRefs[i]}
+                  type="password"
+                  className={`mn-pin-input ${pinError ? 'error' : ''}`}
+                  value={digit}
+                  onChange={(e) => handlePinChange(i, e.target.value)}
+                  onKeyDown={(e) => handlePinKeyDown(i, e)}
+                  autoFocus={i === 0}
+                />
+              ))}
+            </div>
+            {pinError && <p className="mn-pin-error">Incorrect PIN. Please try again.</p>}
           </div>
         </div>
       )}

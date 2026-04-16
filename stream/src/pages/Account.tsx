@@ -14,7 +14,6 @@ import {
   Lock,
   Check,
   MonitorSmartphone,
-  Download,
   ShieldAlert,
   Users
 } from 'lucide-react';
@@ -202,13 +201,6 @@ export default function Account() {
                     <div className="mobile-card-link-left">
                       <MonitorSmartphone size={22} color="#333" />
                       <span>Access and devices</span>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
-                </button>
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <Download size={22} color="#333" />
-                      <span>Mobile download devices</span>
                     </div>
                     <ChevronRight size={20} color="#333" />
                 </button>

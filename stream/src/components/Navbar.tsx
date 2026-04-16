@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus, Download } from 'lucide-react';
+import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
 import './Navbar.css';
@@ -95,7 +95,6 @@ export default function Navbar() {
             <li className="navbar__menu-item">Games</li>
             <li className="navbar__menu-item">New & Popular</li>
             <li className="navbar__menu-item">My List</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/downloads')}>My Downloads</li>
             <li className="navbar__menu-item">Browse by Languages</li>
           </ul>
         </div>
@@ -164,7 +163,7 @@ export default function Navbar() {
 
                     {/* Menu Actions */}
                     <div className="navbar__dropdown-menu">
-                      <div className="navbar__dropdown-item" onClick={() => navigate('/')}>
+                      <div className="navbar__dropdown-item" onClick={() => navigate('/?manage=true')}>
                         <div className="navbar__dropdown-icon-wrapper">
                           <Pencil size={20} color="#b3b3b3" />
                         </div>
@@ -235,7 +234,6 @@ export default function Navbar() {
 
           </div>
           <div className="navbar__mobile-actions">
-            <Download size={24} color="white" />
             <Search size={24} color="white" />
           </div>
         </div>

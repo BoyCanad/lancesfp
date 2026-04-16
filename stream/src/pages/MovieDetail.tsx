@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Play, Plus, ThumbsUp, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
+import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
+import RateButton from '../components/RateButton';
+import BarkadaSection from '../components/BarkadaSection';
+import BehindTheScenesSection from '../components/BehindTheScenesSection';
 import './MovieDetail.css';
 import './MinsanDetail.css'; // Reuse Minsan's cinematic detail styles
 
@@ -68,13 +71,13 @@ export default function MovieDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const stateStartTime = location.state?.startTime as number | undefined;
-  
+
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Trailer preview states
   const [trailerActive, setTrailerActive] = useState(false);
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
-  const [isMuted, setIsMuted]             = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -142,7 +145,7 @@ export default function MovieDetail() {
   useEffect(() => {
     if (trailerActive && videoRef.current) {
       videoRef.current.muted = isMuted;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
     }
   }, [trailerActive]);
 
@@ -269,9 +272,9 @@ export default function MovieDetail() {
 
           {/* Action Buttons */}
           <div className="mdetail-actions">
-            <button 
-              onClick={handlePlayClick} 
-              className="mdetail-btn mdetail-btn-play" 
+            <button
+              onClick={handlePlayClick}
+              className="mdetail-btn mdetail-btn-play"
               style={{ textDecoration: 'none', border: 'none', cursor: 'pointer' }}
             >
               <Play size={18} fill="black" strokeWidth={0} /> Play
@@ -282,10 +285,7 @@ export default function MovieDetail() {
                 <Plus size={28} color="white" strokeWidth={1.5} />
                 <span>My List</span>
               </button>
-              <button className="mdetail-quick-btn">
-                <ThumbsUp size={24} color="white" strokeWidth={1.5} />
-                <span>Rate</span>
-              </button>
+              <RateButton movieId={movie.id} />
               <button className="mdetail-quick-btn">
                 <Share2 size={24} color="white" strokeWidth={1.5} />
                 <span>Share</span>
@@ -295,7 +295,10 @@ export default function MovieDetail() {
 
         </div>
       </div>
-      
+
+      <BarkadaSection />
+      <BehindTheScenesSection />
+
       <div className="mdetail-collections-wrapper">
         <ContentRow
           title={

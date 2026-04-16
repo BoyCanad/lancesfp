@@ -101,16 +101,18 @@ export default function IconPicker() {
       const found = profiles.find((p) => p.id === id);
       setProfile(found || null);
 
-      // Build history: all unique images used across user's profiles
-      const seen = new Set<string>();
-      const icons: string[] = [];
-      profiles.forEach((p) => {
-        if (p.image && !seen.has(p.image)) {
-          seen.add(p.image);
-          icons.push(p.image);
-        }
-      });
-      setHistoryIcons(icons);
+      if (found) {
+        // Build history: prioritized from the profile's own icon_history
+        const dbHistory = found.icon_history || [];
+        
+        // As a secondary fallback for this browser, check localStorage
+        const localHistoryStr = localStorage.getItem(`icon_history_${id}`);
+        const localHistory = localHistoryStr ? JSON.parse(localHistoryStr) : [];
+        
+        // Ensure the current image is at least in the list
+        const combined = Array.from(new Set([found.image, ...dbHistory, ...localHistory]));
+        setHistoryIcons(combined.filter(Boolean));
+      }
     });
   }, [id]);
 

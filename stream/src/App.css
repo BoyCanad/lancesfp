@@ -24,6 +24,7 @@
 @media (max-width: 768px) {
   .app__main {
     overflow-x: hidden;
+    padding-bottom: 110px; /* Space for mobile nav */
   }
 }
 

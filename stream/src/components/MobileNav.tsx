@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, PlaySquare, Gamepad2 } from 'lucide-react';
 import { getProfiles } from '../services/profileService';
 import './MobileNav.css';
 
 export default function MobileNav() {
-  const [active, setActive] = useState('home');
+  const { pathname } = useLocation();
   const [activeProfile, setActiveProfile] = useState<any>(null);
   const navigate = useNavigate();
+
+  // Highlight based on current pathname
+  const activeId = pathname.includes('/my-lsfplus') ? 'my-lsfplus' : 'home';
 
   useEffect(() => {
     // Attempt to load the active profile specifically for the "My Netflix" avatar
@@ -32,7 +35,7 @@ export default function MobileNav() {
     <nav className="mobile-nav">
       <div className="mobile-nav__inner">
         {navItems.map((item) => {
-          const isActive = active === item.id;
+          const isActive = activeId === item.id;
           const Icon = item.icon;
           
           return (
@@ -40,7 +43,6 @@ export default function MobileNav() {
               key={item.id}
               className={`mobile-nav__btn ${isActive ? 'mobile-nav__btn--active' : ''}`}
               onClick={() => {
-                setActive(item.id);
                 if (item.id === 'home') navigate('/browse');
                 else if (item.id === 'my-lsfplus') navigate('/my-lsfplus');
               }}

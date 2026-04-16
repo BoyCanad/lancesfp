@@ -3,7 +3,14 @@
   min-height: 100vh;
   color: white;
   padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom);
   font-family: 'Inter', sans-serif;
+}
+
+@media (max-width: 768px) {
+  .my-netflix {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  }
 }
 
 /* Header */
@@ -253,6 +260,7 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
+  padding-bottom: 20px;
 }
 
 .mn-row__title {
@@ -608,6 +616,83 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* PIN Modal Overlay */
+.mn-pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  animation: fadeInPin 0.2s ease-out;
+}
+
+.mn-pin-modal {
+  text-align: center;
+  position: relative;
+  max-width: 400px;
+  width: 100%;
+  padding: 20px;
+}
+
+.mn-pin-close {
+  position: absolute;
+  top: -40px;
+  right: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.mn-pin-title {
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.mn-pin-subtitle {
+  color: #a3a3a3;
+  margin-bottom: 2rem;
+}
+
+.mn-pin-boxes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.mn-pin-input {
+  width: 56px;
+  height: 64px;
+  background: transparent;
+  border: 1px solid #737373;
+  border-radius: 4px;
+  color: white;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.mn-pin-input:focus {
+  outline: none;
+  border-color: white;
+}
+
+.mn-pin-input.error {
+  border-color: #e50914;
+}
+
+.mn-pin-error {
+  color: #e50914;
+  margin-top: 1.5rem;
+  font-size: 14px;
+}
+
+@keyframes fadeInPin {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 

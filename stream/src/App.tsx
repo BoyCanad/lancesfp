@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
+import LoadingSpinner from './components/LoadingSpinner';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
 import MinsanDetail from './pages/MinsanDetail';
@@ -24,7 +25,6 @@ import ManageProfile from './pages/ManageProfile';
 import EditProfile from './pages/EditProfile';
 import IconPicker from './pages/IconPicker';
 import Auth from './pages/Auth';
-import Downloads from './pages/Downloads';
 import CreateProfile from './pages/CreateProfile';
 import ProfileLock from './pages/ProfileLock';
 import Account from './pages/Account';
@@ -33,10 +33,12 @@ import ForgotPassword from './pages/ForgotPassword';
 import './App.css';
 
 function App() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname);
   const isProfilePicker = pathname === '/';
@@ -75,7 +77,6 @@ function App() {
       setSession(session);
       
       if (event === 'PASSWORD_RECOVERY') {
-        // Redirect to account page with security tab active
         navigate('/account', { state: { recover: true } });
       }
     });
@@ -83,16 +84,56 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const [prevPath, setPrevPath] = useState(pathname);
+  const [transitionProfile, setTransitionProfile] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Clean transition profile on mount to ensure fresh starts are generic
+    setTransitionProfile(null);
+  }, []);
+
+  if (pathname !== prevPath) {
+    setPrevPath(pathname);
+    
+    const locState = (location as any).state;
+    // Only show profile icon if specifically transitioning FROM a profile selection TO a browse/content page
+    const isProfileSwap = (prevPath === '/' || locState?.fromProfileSwap) && pathname === '/browse';
+    
+    if (isProfileSwap) {
+      const stored = localStorage.getItem('activeProfile');
+      const img = locState?.profileImage || (stored ? JSON.parse(stored!)?.image : null);
+      setTransitionProfile(img);
+    } else {
+      setTransitionProfile(null);
+    }
+    
+    setPageLoading(true);
+  }
+
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [pathname]);
+    
+    // Auto-dismiss loading spinner
+    const locState = (location as any).state;
+    const isProfileTransition = transitionProfile !== null || locState?.fromProfileSwap;
+    const isInit = prevPath === pathname;
+    const delay = isProfileTransition ? 1400 : (isInit ? 1500 : 800);
+
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, delay); 
+    
+    return () => clearTimeout(timer);
+  }, [pathname, transitionProfile, location]);
 
   if (checkingAuth) {
-    return <div style={{ backgroundColor: '#141414', height: '100vh' }}></div>;
+    // Show spinner during auth check too
+    return <LoadingSpinner visible={true} />;
   }
 
   return (
     <div className="app">
+      <LoadingSpinner visible={pageLoading} profileImage={transitionProfile} />
       {showNavAndFooter && !isMyNetflix && <Navbar />}
 
       <Routes>
@@ -119,7 +160,6 @@ function App() {
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
-        <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
         <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

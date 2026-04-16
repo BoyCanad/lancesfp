@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play, Plus, Check, X, ThumbsUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import type { Movie } from '../data/movies';
+import { supabase } from '../supabaseClient';
 import './ContentRow.css';
 
 interface ContentRowProps {
@@ -93,6 +94,46 @@ export const MovieCard = memo(({
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/watch/${movie.id}`, { state: { startTime: videoElemRef.current?.currentTime } });
+  };
+
+  const [isLiked, setIsLiked] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Initial check (could be optimized by parent passing it down)
+    const stored = localStorage.getItem('activeProfile');
+    if (stored) {
+      const profile = JSON.parse(stored);
+      supabase.from('liked_movies')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('movie_id', movie.id)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error) {
+            if (error.code === 'PGRST204' || error.code === '42P01') return;
+          }
+          setIsLiked(!!data);
+        });
+    }
+  }, [movie.id]);
+
+  const handleLikeToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const stored = localStorage.getItem('activeProfile');
+    if (!stored) return;
+    const profile = JSON.parse(stored);
+    
+    // Optimistic update
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+
+    try {
+      const { toggleLike } = await import('../services/profileService');
+      await toggleLike(profile.id, movie.id);
+    } catch (err) {
+      console.error('Failed to toggle like', err);
+      setIsLiked(!newLiked); // Rollback
+    }
   };
 
   return (
@@ -202,8 +243,8 @@ export const MovieCard = memo(({
                     <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
                       <X size={18} color="white" />
                     </button>
-                    <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
-                      <ThumbsUp size={16} color="white" />
+                    <button className="card__btn card__btn--circle" onClick={handleLikeToggle}>
+                      <ThumbsUp size={16} color={isLiked ? "#46d369" : "white"} fill={isLiked ? "#46d369" : "transparent"} />
                     </button>
                   </>
                 ) : (
@@ -214,14 +255,24 @@ export const MovieCard = memo(({
                     <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
                       <Plus size={14} color="white" />
                     </button>
-                    <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
-                      <ThumbsUp size={12} color="white" />
+                    <button className="card__btn card__btn--icon" onClick={handleLikeToggle}>
+                      <ThumbsUp size={12} color={isLiked ? "#46d369" : "white"} fill={isLiked ? "#46d369" : "transparent"} />
                     </button>
                   </>
                 )}
               </div>
               <div className="card__controls-right">
-                <button className="card__btn card__btn--circle-small" onClick={(e) => { e.stopPropagation(); onClick(movie, videoElemRef.current?.currentTime); }}>
+                <button 
+                  className="card__btn card__btn--circle-small" 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (showProgress) {
+                      navigate(`/watch/${movie.id}`, { state: { startTime: videoElemRef.current?.currentTime } });
+                    } else {
+                      onClick(movie, videoElemRef.current?.currentTime); 
+                    }
+                  }}
+                >
                   <ChevronDown size={showProgress ? 20 : 16} color="white" />
                 </button>
               </div>
@@ -304,7 +355,13 @@ export default function ContentRow({
   const handleMovieClick = useCallback((movie: Movie, startTime?: number) => {
     const navOptions = { state: { startTime } };
     
-    // Use movie.id (The slug) to navigate
+    // If we are in "Continue Watching" mode, go directly to the player
+    if (showProgress) {
+      navigate(`/watch/${movie.id}`, navOptions);
+      return;
+    }
+
+    // Use movie.id (The slug) to navigate to details
     if (movie.id === 'ang-huling-el-bimbo-play') {
       navigate('/ang-huling-el-bimbo-play', navOptions);
     } else if (movie.id === 'minsan') {
@@ -328,7 +385,7 @@ export default function ContentRow({
       navigate(`/browse`, navOptions);
     }
 
-  }, [navigate]);
+  }, [navigate, showProgress]);
 
   return (
     <section className="row">

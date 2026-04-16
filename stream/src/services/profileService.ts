@@ -7,6 +7,7 @@ export interface Profile {
   image: string;
   locked: boolean;
   pin?: string;
+  icon_history?: string[];
   display_order: number;
 }
 
@@ -50,6 +51,7 @@ export async function createProfile(name: string, image: string): Promise<Profil
       image,
       locked: false,
       display_order: existing.length,
+      icon_history: [image]
     })
     .select()
     .single();
@@ -60,8 +62,24 @@ export async function createProfile(name: string, image: string): Promise<Profil
 
 export async function updateProfile(
   id: string,
-  updates: Partial<Pick<Profile, 'name' | 'image' | 'locked' | 'pin'>>
+  updates: Partial<Pick<Profile, 'name' | 'image' | 'locked' | 'pin' | 'icon_history'>>
 ): Promise<Profile> {
+  // If updating image, handle history
+  if (updates.image) {
+    const { data: current } = await supabase
+      .from('profiles')
+      .select('icon_history, image')
+      .eq('id', id)
+      .single();
+    
+    if (current) {
+      const history = current.icon_history || (current.image ? [current.image] : []);
+      if (!history.includes(updates.image)) {
+        updates.icon_history = [...history, updates.image];
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
@@ -157,5 +175,61 @@ export async function addToRecentlyWatched(profileId: string, movieId: string, e
     }
   } catch (err) {
     console.warn('Could not add to recently watched:', err);
+  }
+}
+
+export async function getLikedMovies(profileId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('liked_movies')
+      .select('movie_id')
+      .eq('profile_id', profileId);
+    
+    if (error) {
+      if (error.code === 'PGRST204' || error.code === '42P01') {
+        console.warn('liked_movies table not found. Please create it in Supabase.');
+        return [];
+      }
+      throw error;
+    }
+    return (data || []).map(item => item.movie_id);
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function toggleLike(profileId: string, movieId: string): Promise<boolean> {
+  try {
+    const { data: existing, error: fetchError } = await supabase
+      .from('liked_movies')
+      .select('*')
+      .eq('profile_id', profileId)
+      .eq('movie_id', movieId)
+      .maybeSingle();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST204' || fetchError.code === '42P01') {
+        console.error('liked_movies table not found. Please create it in your Supabase dashboard.');
+        return false;
+      }
+      throw fetchError;
+    }
+
+    if (existing) {
+      await supabase
+        .from('liked_movies')
+        .delete()
+        .eq('profile_id', profileId)
+        .eq('movie_id', movieId);
+      return false;
+    } else {
+      await supabase
+        .from('liked_movies')
+        .insert({ profile_id: profileId, movie_id: movieId });
+      return true;
+    }
+  } catch (err) {
+    console.warn('Toggle like failed:', err);
+    return false;
   }
 }

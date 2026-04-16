@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Play, Plus, ThumbsUp, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
+import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
 import ContentRow from '../components/ContentRow';
+import RateButton from '../components/RateButton';
 import './MovieDetail.css';
 import './MinsanDetail.css';
 
@@ -259,10 +260,7 @@ export default function TamaKaDetail() {
                 <Plus size={28} color="white" strokeWidth={1.5} />
                 <span>My List</span>
               </button>
-              <button className="mdetail-quick-btn">
-                <ThumbsUp size={24} color="white" strokeWidth={1.5} />
-                <span>Rate</span>
-              </button>
+              <RateButton movieId={movie.id} />
               <button className="mdetail-quick-btn">
                 <Share2 size={24} color="white" strokeWidth={1.5} />
                 <span>Share</span>

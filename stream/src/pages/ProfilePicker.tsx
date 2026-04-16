@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Pencil, X, Plus } from 'lucide-react';
 import { getProfiles } from '../services/profileService';
 import type { Profile } from '../services/profileService';
@@ -8,10 +8,10 @@ import './ProfilePicker.css';
 
 export default function ProfilePicker() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isManaging, setIsManaging] = useState(false);
 
   useEffect(() => {
-    // Check if we should start in managing mode (e.g., from My Netflix)
     const params = new URLSearchParams(window.location.search);
     if (params.get('manage') === 'true') {
       setIsManaging(true);
@@ -50,6 +50,15 @@ export default function ProfilePicker() {
     return () => window.removeEventListener('resize', handleResize);
   }, [navigate]);
 
+  useEffect(() => {
+    if (profiles.length > 0 && location.state?.autoSelect) {
+      const target = profiles.find(p => p.id === location.state.autoSelect);
+      if (target) {
+        handleProfileClick(target);
+      }
+    }
+  }, [profiles, location.state]);
+
   const handleProfileClick = (profile: Profile) => {
     if (isManaging) {
       if (isMobile) {
@@ -58,14 +67,15 @@ export default function ProfilePicker() {
         navigate(`/ManageProfile/${profile.id}`);
       }
     } else {
+      setSelectedProfile(profile);
       if (profile.locked) {
-        setSelectedProfile(profile);
         setPinEntry(['', '', '', '']);
         setPinError(false);
         setShowPinModal(true);
       } else {
         localStorage.setItem('activeProfile', JSON.stringify(profile));
-        navigate('/browse');
+        // Small delay for visual feedback before navigation starts
+        setTimeout(() => navigate('/browse', { state: { fromProfileSwap: true, profileImage: profile.image } }), 400);
       }
     }
   };
@@ -88,7 +98,9 @@ export default function ProfilePicker() {
         if (fullTyped === selectedProfile?.pin || selectedProfile?.pin === undefined) {
            localStorage.setItem('activeProfile', JSON.stringify(selectedProfile));
            setShowPinModal(false);
-           navigate('/browse');
+           setTimeout(() => {
+             navigate('/browse', { state: { fromProfileSwap: true, profileImage: selectedProfile?.image } });
+           }, 400);
         } else {
            setPinError(true);
            setPinEntry(['', '', '', '']);

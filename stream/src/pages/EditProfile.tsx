@@ -52,6 +52,14 @@ export default function EditProfile() {
     setLoading(true);
     try {
       await updateProfile(id, { name, image });
+      
+      // Update local fallback history for immediate feedback
+      const localHistoryStr = localStorage.getItem(`icon_history_${id}`);
+      const history = localHistoryStr ? JSON.parse(localHistoryStr) : [];
+      if (!history.includes(image)) {
+        localStorage.setItem(`icon_history_${id}`, JSON.stringify([...history, image]));
+      }
+
       navigate('/?manage=true');
     } catch (err) {
       console.error('Failed to save profile', err);
