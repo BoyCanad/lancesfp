@@ -16,7 +16,9 @@
     display: none;
   }
   .mobile-account {
+    display: block;
     min-height: 100dvh;
+    background-color: #fff;
   }
 }
 
