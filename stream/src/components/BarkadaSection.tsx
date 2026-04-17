@@ -8,7 +8,7 @@ const characters = [
     description: 'A dreamer and a musician, Marco is the heart of the barkada, driven by passion and a deep loyalty to his friends. His journey takes him through the highs of college life and the sobering realities of adulthood.',
     thumbnail: '/images/icon/1.webp',
     image: '/images/characters/marco-large.webp',
-    portrait: '/images/marco.png'
+    portrait: '/images/marco.webp'
   },
   {
     id: 'joy',
@@ -16,7 +16,7 @@ const characters = [
     description: 'Strong, resilient, and full of life, Joy brings light to the barkada. Despite the challenges she faces, her unwavering spirit and infectious laughter leave a lasting impact on everyone she meets.',
     thumbnail: '/images/icon/2.webp',
     image: '/images/characters/joy-large.webp',
-    portrait: '/images/joy.png'
+    portrait: '/images/joy.webp'
   },
   {
     id: 'pok',
@@ -24,7 +24,7 @@ const characters = [
     description: 'The pragmatic and sensible one, Pok provides a grounding presence. As he navigates career ambitions and personal expectations, his bond with his friends remains a vital part of his identity.',
     thumbnail: '/images/icon/3.webp',
     image: '/images/characters/pok-large.webp',
-    portrait: '/images/pok.png'
+    portrait: '/images/pok.webp'
   },
   {
     id: 'nena',
@@ -32,7 +32,7 @@ const characters = [
     description: 'With a quiet wisdom and steadfast dedication, Aling Nena is the supportive pillar of the group. Her sense of justice and commitment to doing what is right guide her through turbulent times.',
     thumbnail: '/images/icon/4.webp',
     image: '/images/characters/nena-large.webp',
-    portrait: '/images/icon/nena.png'
+    portrait: '/images/icon/nena.webp'
   },
   {
     id: 'xian',
@@ -40,7 +40,7 @@ const characters = [
     description: 'Energetic and always ready for an adventure, Xian brings a youthful intensity to the group. His ambition and drive to succeed push the barkada to reach for their dreams, no matter how distant they seem.',
     thumbnail: '/images/icon/5.webp',
     image: '/images/characters/xian-large.webp',
-    portrait: '/images/icon/xian.png'
+    portrait: '/images/icon/xian.webp'
   },
   {
     id: 'edrian',
@@ -48,7 +48,7 @@ const characters = [
     description: 'The creative visionary of the circle, Edrian’s imagination knows no bounds. His ability to see the world differently often provides the barkada with the fresh perspective they need to overcome any obstacle.',
     thumbnail: '/images/icon/6.webp',
     image: '/images/characters/edrian-large.webp',
-    portrait: '/images/icon/edrian.png'
+    portrait: '/images/icon/edrian.webp'
   },
   {
     id: 'jazzy',
@@ -56,7 +56,7 @@ const characters = [
     description: 'Vibrant and full of charisma, Jazzy is the social glue that keeps the group together. Her wit and charm can brighten even the darkest days, making her an indispensable part of the barkada.',
     thumbnail: '/images/icon/7.webp',
     image: '/images/characters/jazzy-large.webp',
-    portrait: '/images/icon/jazzy.png'
+    portrait: '/images/icon/jazzy.webp'
   },
   {
     id: 'aisha',
@@ -64,7 +64,7 @@ const characters = [
     description: 'Thoughtful and observant, Aisha is the groups quiet strength. Her empathy and deep understanding of her friends makes her the person they turn to when they need someone who truly listens.',
     thumbnail: '/images/icon/8.webp',
     image: '/images/characters/aisha-large.webp',
-    portrait: '/images/icon/aisha.png'
+    portrait: '/images/icon/aisha.webp'
   }
 ];
 ;

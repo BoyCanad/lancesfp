@@ -16,6 +16,7 @@ import TamaKaDetail from './pages/TamaKaDetail';
 import ElBimboDetail from './pages/ElBimboDetail';
 import ElBimboCollection from './pages/ElBimboCollection';
 import BeyondLastDanceDetail from './pages/BeyondLastDanceDetail';
+import MusicPlayer from './pages/MusicPlayer';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
@@ -40,7 +41,7 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname);
+  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music');
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
@@ -160,6 +161,8 @@ function App() {
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
+        <Route path="/music/:id" element={<MusicPlayer />} />
+        <Route path="/music" element={<MusicPlayer />} />
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
         <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
