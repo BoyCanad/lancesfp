@@ -243,6 +243,34 @@ const MemoizedLyricLine = memo(({ lyric, isActive, isPast, currentTime, onSeek }
   );
 });
 
+const MarqueeText = ({ children, className }: { children: React.ReactNode, className?: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  useEffect(() => {
+    const checkWidth = () => {
+      if (containerRef.current && textRef.current) {
+        setShouldAnimate(textRef.current.offsetWidth > containerRef.current.offsetWidth);
+      }
+    };
+    checkWidth();
+    // Re-check after a small delay in case fonts are loading
+    setTimeout(checkWidth, 100);
+    window.addEventListener('resize', checkWidth);
+    return () => window.removeEventListener('resize', checkWidth);
+  }, [children]);
+
+  return (
+    <div className={`marquee-container ${className || ''}`} ref={containerRef}>
+      <div className={`marquee-content ${shouldAnimate ? 'animate' : ''}`}>
+        <span ref={textRef} className="marquee-part">{children}</span>
+        {shouldAnimate && <span className="marquee-part duplicated">{children}</span>}
+      </div>
+    </div>
+  );
+};
+
 export default function MusicPlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -278,6 +306,10 @@ export default function MusicPlayer() {
   );
 
   const song = id && mockSongs[id] ? mockSongs[id] : mockSongs['el-bimbo'];
+
+  const effectiveArtwork = (song.id === 'minsan' && !showLyrics)
+    ? 'https://boycanad.github.io/music-storage-1/minsan-tall.mp4'
+    : song.artwork;
 
   const computedLyrics = useMemo<ComputedLyric[]>(() => {
     const extended: ComputedLyric[] = [];
@@ -547,9 +579,9 @@ export default function MusicPlayer() {
           </button>
           
           <div className="mobile-now-playing">
-            {song.artwork.endsWith('.mp4') ? (
+            {effectiveArtwork.endsWith('.mp4') ? (
               <video
-                src={song.artwork}
+                src={effectiveArtwork}
                 className="mobile-artwork-thumb"
                 autoPlay
                 loop
@@ -557,11 +589,11 @@ export default function MusicPlayer() {
                 playsInline
               />
             ) : (
-              <img src={song.artwork} alt={song.title} className="mobile-artwork-thumb" />
+              <img src={effectiveArtwork} alt={song.title} className="mobile-artwork-thumb" />
             )}
             <div className="mobile-song-text">
-              <span className="mobile-title">{song.title}</span>
-              <span className="mobile-artist">{song.artist}</span>
+              <MarqueeText className="mobile-title">{song.title}</MarqueeText>
+              <MarqueeText className="mobile-artist">{song.artist}</MarqueeText>
             </div>
           </div>
 
@@ -582,9 +614,9 @@ export default function MusicPlayer() {
         {/* Artwork Section */}
         <div className="artwork-section">
           <div className={`artwork-wrapper ${isPlaying ? 'playing' : ''}`}>
-            {song.artwork.endsWith('.mp4') ? (
+            {effectiveArtwork.endsWith('.mp4') ? (
               <video
-                src={song.artwork}
+                src={effectiveArtwork}
                 className="artwork-img"
                 autoPlay
                 loop
@@ -592,16 +624,16 @@ export default function MusicPlayer() {
                 playsInline
               />
             ) : (
-              <img src={song.artwork} alt={song.title} className="artwork-img" />
+              <img src={effectiveArtwork} alt={song.title} className="artwork-img" />
             )}
           </div>
 
           {/* Controls Section now natively stacked under artwork */}
           <div className="music-player-footer">
             <div className="song-info">
-              <div>
-                <h2 className="song-title">{song.title}</h2>
-                <p className="song-artist">{song.artist} — {song.album}</p>
+              <div className="song-info-text-wrapper">
+                <MarqueeText className="song-title">{song.title}</MarqueeText>
+                <MarqueeText className="song-artist">{song.artist} — {song.album}</MarqueeText>
               </div>
               <div className="song-actions">
                 <button className="icon-btn small">

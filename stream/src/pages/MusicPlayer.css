@@ -588,6 +588,14 @@
   gap: 0.5rem;
 }
 
+.song-info-text-wrapper {
+  overflow: hidden;
+  flex: 1;
+  margin-right: 1rem;
+  mask-image: linear-gradient(to right, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
+}
+
 .song-title {
   font-size: 1.25rem;
   font-weight: 700;
@@ -598,6 +606,36 @@
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.7);
   margin: 0.2rem 0 0 0;
+}
+
+/* Marquee Utilities */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+}
+
+.marquee-content {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.marquee-content.animate {
+  /* 3s pause + 10s scroll = 13s total duration */
+  animation: marquee-scroll 13s linear infinite;
+}
+
+.marquee-part {
+  display: inline-flex;
+  padding-right: 3rem; /* Space between loops */
+}
+
+@keyframes marquee-scroll {
+  /* Wait 3 seconds (3 / 13 = ~23.08%) */
+  0%, 23.08% { transform: translateX(0); }
+  /* Scroll until the duplicated text perfectly replaces the original at 50% */
+  100% { transform: translateX(-50%); } 
 }
 
 /* Progress bar */
@@ -802,12 +840,24 @@ input[type="range"]:hover::-webkit-slider-thumb {
   }
 
   .artwork-wrapper {
-    display: none;
+    display: block;
+    position: fixed;
+    top: 1.5rem;
+    left: 1rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 100;
+    mask-image: none;
+    -webkit-mask-image: none;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* In lyrics mode, hide only the image — NOT the whole section (footer lives inside) */
   .music-player-content.with-lyrics .artwork-wrapper {
-    display: none !important;
+    /* Instead of display: none, it shrinks to the thumbnail position and fades out */
+    opacity: 0; 
   }
 
   .music-player-header {
@@ -854,6 +904,10 @@ input[type="range"]:hover::-webkit-slider-thumb {
     display: flex;
     flex-direction: column;
     text-align: left;
+    overflow: hidden;
+    flex: 1;
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 
   .mobile-title {
@@ -1062,20 +1116,18 @@ input[type="range"]:hover::-webkit-slider-thumb {
   }
 
   .music-player-content:not(.with-lyrics) .artwork-wrapper {
-    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 65vh; /* Move height constraint to the wrapper itself */
-    border-radius: 0; /* So the bottom corner is not cut */
+    height: 65vh;
+    border-radius: 0;
     box-shadow: none;
-    animation: artworkReveal 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+    opacity: 1;
+    pointer-events: auto;
     /* Seamless fade into the ambient background! */
     mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
-  }
-
-  @keyframes artworkReveal {
-    from { opacity: 0; transform: scale(1.06); }
-    to   { opacity: 1; transform: scale(1); }
   }
 
   .music-player-content:not(.with-lyrics) .artwork-img {

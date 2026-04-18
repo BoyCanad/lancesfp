@@ -704,7 +704,7 @@
   }
   
   .barkada-bg--static {
-    background-image: url('/images/icon/bg-mobile.png') !important;
+    background-image: url('/images/icon/bg-mobile.webp') !important;
     background-position: center;
   }
 

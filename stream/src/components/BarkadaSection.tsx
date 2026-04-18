@@ -132,7 +132,7 @@ export default function BarkadaSection() {
       {/* Static Base Background */}
       <div 
         className="barkada-bg barkada-bg--static"
-        style={{ backgroundImage: "url('/images/bg.png')" }}
+        style={{ backgroundImage: "url('/images/bg.webp')" }}
       />
 
       <div className="barkada-bg-gradient"></div>
