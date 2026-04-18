@@ -398,7 +398,45 @@ export default function MusicPlayer() {
         setIsPlaying(false);
       });
     }
-  }, [song.id]);
+
+    // Set Media Session metadata for OS integration (Lock screen, Control Center, etc.)
+    if ('mediaSession' in navigator) {
+      const mediaArtwork = song.id === 'minsan' || song.artwork.endsWith('.mp4') 
+        ? `${window.location.origin}/images/bts-minsan.webp` 
+        : `${window.location.origin}${song.artwork}`;
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        artwork: [
+          { src: mediaArtwork, sizes: '96x96', type: 'image/webp' },
+          { src: mediaArtwork, sizes: '128x128', type: 'image/webp' },
+          { src: mediaArtwork, sizes: '192x192', type: 'image/webp' },
+          { src: mediaArtwork, sizes: '256x256', type: 'image/webp' },
+          { src: mediaArtwork, sizes: '384x384', type: 'image/webp' },
+          { src: mediaArtwork, sizes: '512x512', type: 'image/webp' },
+        ]
+      });
+
+      // Hook up OS media controls to our app state
+      navigator.mediaSession.setActionHandler('play', () => {
+        setIsPlaying(true);
+        audioRef.current?.play();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        setIsPlaying(false);
+        audioRef.current?.pause();
+      });
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime && audioRef.current) {
+          audioRef.current.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+        }
+      });
+    }
+
+  }, [song.id, song.title, song.artist, song.album, song.artwork]);
 
   useEffect(() => {
     let animationFrameId: number;
