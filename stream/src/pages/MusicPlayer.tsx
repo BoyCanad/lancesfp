@@ -402,6 +402,7 @@ export default function MusicPlayer() {
   }, [showLyrics]);
 
   const [activeLyricId, setActiveLyricId] = useState<string | null>(null);
+  const prevActiveLyricIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Auto-scroll to keep active lyric centered during playback
@@ -431,18 +432,42 @@ export default function MusicPlayer() {
   }, [currentTime, computedLyrics, activeLyricId]);
 
   useEffect(() => {
-    if (activeLyricId && !isUserScrolling && showLyrics) {
-      const container = lyricsContainerRef.current;
-      if (!container) return;
+    if (!showLyrics || isUserScrolling) return;
+    const container = lyricsContainerRef.current;
+    if (!container) return;
 
-      const activeEl = container.querySelector('.lyric-line.active') as HTMLElement;
-      if (activeEl) {
-        const scrollTarget = activeEl.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
-        container.scrollTo({
-          top: scrollTarget,
-          behavior: 'smooth'
-        });
+    // A new lyric just became active (including after a null gap)
+    if (activeLyricId && activeLyricId !== prevActiveLyricIdRef.current) {
+      const wasInstrumental =
+        prevActiveLyricIdRef.current?.startsWith('inst-') ||
+        prevActiveLyricIdRef.current === 'intro';
+
+      prevActiveLyricIdRef.current = activeLyricId;
+
+      const scrollToActive = (behavior: ScrollBehavior = 'smooth') => {
+        const activeEl = container.querySelector('.lyric-line.active') as HTMLElement;
+        if (activeEl) {
+          const scrollTarget = activeEl.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
+          container.scrollTo({ top: scrollTarget, behavior });
+        }
+      };
+
+      let raf: number | undefined;
+      let correctionTimer: number | undefined;
+
+      if (wasInstrumental) {
+        // Skip the premature rAF scroll — the layout is still collapsing.
+        // After the 0.8s collapse animation settles, jump instantly to center.
+        correctionTimer = window.setTimeout(() => scrollToActive('instant'), 850);
+      } else {
+        // Normal lyric transition — defer one frame for React to paint .active
+        raf = requestAnimationFrame(() => scrollToActive('smooth'));
       }
+
+      return () => {
+        if (raf !== undefined) cancelAnimationFrame(raf);
+        if (correctionTimer !== undefined) clearTimeout(correctionTimer);
+      };
     }
   }, [activeLyricId, isUserScrolling, showLyrics]);
 
@@ -499,33 +524,41 @@ export default function MusicPlayer() {
   };
 
   return (
-    <div className="music-player-container">
+    <div className={`music-player-container${!showLyrics ? ' no-lyrics-mode' : ''}`} style={{
+      '--c1': paletteColors[0],
+      '--c2': paletteColors[1],
+      '--c3': paletteColors[2],
+      '--c4': paletteColors[3],
+    } as React.CSSProperties}>
       {/* Hidden canvas for color extraction */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       {/* Apple Music-style animated ambient gradient background */}
-      <div className="music-player-ambient" style={{
-        '--c1': paletteColors[0],
-        '--c2': paletteColors[1],
-        '--c3': paletteColors[2],
-        '--c4': paletteColors[3],
-      } as React.CSSProperties}>
+      <div className="music-player-ambient">
         {/* Extra blobs (c3, c4) rendered via a child to bypass ::before/::after limit */}
-        <div className="music-player-ambient-extra" style={{
-          '--c3': paletteColors[2],
-          '--c4': paletteColors[3],
-        } as React.CSSProperties} />
+        <div className="music-player-ambient-extra" />
       </div>
       <div className="music-player-overlay" />
 
-      <div className="music-player-header">
+      <div className={`music-player-header${!showLyrics ? ' hidden-in-artwork' : ''}`}>
         <div className="mobile-header-bar">
           <button className="icon-btn close-btn" onClick={() => navigate(-1)}>
             <ChevronDown size={28} />
           </button>
           
           <div className="mobile-now-playing">
-            <img src={song.artwork} alt={song.title} className="mobile-artwork-thumb" />
+            {song.artwork.endsWith('.mp4') ? (
+              <video
+                src={song.artwork}
+                className="mobile-artwork-thumb"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+            ) : (
+              <img src={song.artwork} alt={song.title} className="mobile-artwork-thumb" />
+            )}
             <div className="mobile-song-text">
               <span className="mobile-title">{song.title}</span>
               <span className="mobile-artist">{song.artist}</span>
@@ -663,6 +696,23 @@ export default function MusicPlayer() {
                 </button>
               </div>
             </div>
+
+            {/* Mobile Bottom Bar Actions (Replaces volume and corner buttons on mobile) */}
+            <div className="mobile-bottom-bar">
+              <button className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`} onClick={() => setShowLyrics(!showLyrics)}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="9" y1="10" x2="15" y2="10" /><line x1="12" y1="7" x2="12" y2="13" /></svg>
+              </button>
+              <button
+                className={`icon-btn no-bg mic-toggle ${isKaraokeMode ? 'active-text' : ''}`}
+                onClick={toggleKaraoke}
+                title="Karaoke Mode"
+              >
+                <Mic size={24} color={isKaraokeMode ? "#fa2d48" : "currentColor"} fill={isKaraokeMode ? "#fa2d48" : "none"} />
+              </button>
+              <button className="icon-btn no-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -719,23 +769,6 @@ export default function MusicPlayer() {
         </button>
         <button className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`} onClick={() => setShowLyrics(!showLyrics)}>
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="9" y1="10" x2="15" y2="10" /><line x1="12" y1="7" x2="12" y2="13" /></svg>
-        </button>
-      </div>
-
-      {/* Mobile Bottom Bar Actions (Replaces volume and corner buttons on mobile) */}
-      <div className="mobile-bottom-bar">
-        <button className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`} onClick={() => setShowLyrics(!showLyrics)}>
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="9" y1="10" x2="15" y2="10" /><line x1="12" y1="7" x2="12" y2="13" /></svg>
-        </button>
-        <button
-          className={`icon-btn no-bg mic-toggle ${isKaraokeMode ? 'active-text' : ''}`}
-          onClick={toggleKaraoke}
-          title="Karaoke Mode"
-        >
-          <Mic size={24} color={isKaraokeMode ? "#fa2d48" : "currentColor"} fill={isKaraokeMode ? "#fa2d48" : "none"} />
-        </button>
-        <button className="icon-btn no-bg">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
         </button>
       </div>
 

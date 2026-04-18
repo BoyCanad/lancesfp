@@ -353,12 +353,12 @@
 
 .lyrics-padding-top {
   flex-shrink: 0;
-  height: 40%;
+  height: 40vh;
 }
 
 .lyrics-padding-bottom {
   flex-shrink: 0;
-  height: 50%;
+  height: 50vh;
 }
 
 .lyric-line {
@@ -786,32 +786,40 @@ input[type="range"]:hover::-webkit-slider-thumb {
     color: #f2f2f2; /* slightly softer white for mobile */
   }
 
-  .music-player-content {
-    padding: 0 1.5rem;
-    gap: 0;
-  }
-  
   .music-player-ambient::before,
   .music-player-ambient::after,
   .music-player-ambient-extra::before,
   .music-player-ambient-extra::after {
-    animation: none !important; /* Extremely heavy on mobile GPUs */
+    animation: none !important;
   }
-  
+
+  /* ============================================
+     LYRICS MODE (default mobile state)
+     ============================================ */
+  .music-player-content {
+    padding: 0 1.5rem 280px 1.5rem;
+    gap: 0;
+  }
+
   .artwork-wrapper {
     display: none;
   }
-  
-  .music-player-content.with-lyrics .artwork-section {
-    display: block;
-    margin: 0;
-    transform: none;
-    opacity: 1;
+
+  /* In lyrics mode, hide only the image — NOT the whole section (footer lives inside) */
+  .music-player-content.with-lyrics .artwork-wrapper {
+    display: none !important;
   }
 
   .music-player-header {
     padding: 1.5rem 1rem;
     justify-content: center;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  .music-player-header.hidden-in-artwork {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-12px);
   }
 
   .desktop-corner-btn {
@@ -824,7 +832,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   }
 
   .close-btn {
-    display: none; /* Hide standard close button to match UI */
+    display: none;
   }
 
   .mobile-now-playing {
@@ -876,7 +884,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
     align-items: flex-start;
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%);
-    padding-bottom: 50vh; /* Allow enough scroll space for the final lyric */
+    padding-bottom: 50vh;
   }
 
   .lyric-line {
@@ -885,7 +893,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
     margin-bottom: 2rem;
     color: rgba(255, 255, 255, 0.4);
     transform-origin: left center;
-    filter: none !important; /* Removes heavy blur on mobile */
+    filter: none !important;
   }
 
   .lyric-line.active {
@@ -896,19 +904,19 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
   .lyric-line.past {
     filter: none !important;
-    opacity: 0.4 !important; /* Keep past lines visible instead of full fade out */
-    transform: translateY(0) scale(1) !important; /* Prevent layout shift when active ends */
+    opacity: 0.4 !important;
+    transform: translateY(0) scale(1) !important;
   }
 
   .lyric-letter {
-    filter: none !important; /* Hides inline drop-shadow which is a major GPU drain */
-    will-change: auto; /* Prevent graphics layer explosion on mobile */
+    will-change: auto;
   }
 
   .lyric-letter.lifted {
-    transform: scale(1.02) translateY(-1px); /* More subtle lift for better perf */
+    transform: scale(1.02) translateY(-1px);
   }
 
+  /* Fixed footer in lyrics mode */
   .music-player-footer {
     position: fixed;
     bottom: 0;
@@ -916,7 +924,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
     width: 100%;
     max-width: none;
     transform: none;
-    background: transparent; /* Remove floating dark bg */
+    background: transparent;
     backdrop-filter: none;
     padding: 1.5rem;
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 1rem));
@@ -924,11 +932,30 @@ input[type="range"]:hover::-webkit-slider-thumb {
   }
 
   .song-info {
-    display: none; /* Hidden on mobile (moved to top header) */
+    display: none;
   }
 
   .progress-container {
+    flex-wrap: wrap;
+    gap: 0;
     margin-bottom: 0.5rem;
+  }
+
+  .progress-bar-wrapper {
+    width: 100%;
+    flex: 0 0 100%;
+    margin-bottom: 0.5rem;
+    order: 1;
+  }
+
+  .time.current-time {
+    margin-right: auto;
+    order: 2;
+  }
+
+  .time.total-time {
+    margin-left: auto;
+    order: 3;
   }
 
   .time {
@@ -941,10 +968,11 @@ input[type="range"]:hover::-webkit-slider-thumb {
     background: rgba(255, 255, 255, 0.15);
     height: 4px;
   }
+
   input[type="range"]::-webkit-slider-thumb {
     width: 8px;
     height: 8px;
-    opacity: 1; /* Always show small thumb on mobile */
+    opacity: 1;
   }
 
   .mobile-lossless-badge {
@@ -962,35 +990,36 @@ input[type="range"]:hover::-webkit-slider-thumb {
   }
 
   .volume-container {
-    display: none; /* Hide volume on mobile */
+    display: none !important;
   }
 
   .bottom-controls-row {
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
   }
 
   .playback-controls {
     width: 100%;
     justify-content: space-between;
     gap: 0;
-    padding: 0 1rem;
+    order: 1;
   }
 
   .control-btn.primary {
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
   }
-  
+
   .control-btn.secondary {
     width: 44px;
     height: 44px;
+    opacity: 0.8;
   }
-  
-  /* Hide the repetitive icons on ends (shuffle/repeat) inside playback controls to match design simpler row */
+
   .playback-controls .control-btn.secondary:first-child,
   .playback-controls .control-btn.secondary:last-child {
-    display: none;
+    display: flex;
   }
 
   .mobile-bottom-bar {
@@ -998,12 +1027,108 @@ input[type="range"]:hover::-webkit-slider-thumb {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 0 1.5rem;
-    margin-top: 1rem;
+    padding: 0 0.5rem;
+    margin-top: 2rem;
     opacity: 0.7;
   }
 
   .instrumental-dots {
     justify-content: flex-start;
+  }
+
+  /* ============================================
+     ARTWORK MODE (no lyrics) — full-bleed overlay
+     ============================================ */
+  .music-player-content:not(.with-lyrics) {
+    padding: 0;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 3;
+    max-width: 100%;
+    margin: 0;
+    overflow: visible; /* Prevent clipping */
+  }
+
+  /* Artwork fills the entire content area so children can reach the bottom */
+  .music-player-content:not(.with-lyrics) .artwork-section {
+    position: absolute;
+    inset: 0;
+    display: block;
+    padding: 0;
+    margin: 0;
+    z-index: 1;
+  }
+
+  .music-player-content:not(.with-lyrics) .artwork-wrapper {
+    display: block;
+    width: 100%;
+    height: 65vh; /* Move height constraint to the wrapper itself */
+    border-radius: 0; /* So the bottom corner is not cut */
+    box-shadow: none;
+    animation: artworkReveal 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+    /* Seamless fade into the ambient background! */
+    mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+  }
+
+  @keyframes artworkReveal {
+    from { opacity: 0; transform: scale(1.06); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .music-player-content:not(.with-lyrics) .artwork-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center; /* Artwork is in center */
+    border-radius: 0;
+  }
+
+  /* Remove the old dark gradient, mask-image + ambient background does this perfectly now */
+  .music-player-content:not(.with-lyrics) .artwork-section::after {
+    display: none;
+  }
+
+  /* Footer sits at the bottom, above the ambient background */
+  .music-player-content:not(.with-lyrics) .music-player-footer {
+    position: absolute !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0 1.5rem calc(env(safe-area-inset-bottom, 0.5rem) + 0.5rem);
+    z-index: 2;
+    animation: slideUpFade 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  /* Song info visible in artwork mode */
+  .music-player-content:not(.with-lyrics) .song-info {
+    display: flex;
+    padding: 1.25rem 0 0.5rem;
+    animation: slideUpFade 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  /* Only prev/play/next in artwork mode */
+  .music-player-content:not(.with-lyrics) .playback-controls .control-btn.secondary:first-child,
+  .music-player-content:not(.with-lyrics) .playback-controls .control-btn.secondary:last-child {
+    display: none;
+  }
+
+  .music-player-content:not(.with-lyrics) .mobile-bottom-bar {
+    display: flex;
+    margin-top: 1rem;
+  }
+
+  @keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 }
