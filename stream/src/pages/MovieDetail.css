@@ -829,3 +829,9 @@
     transform: translateX(-52%);
   }
 }
+
+.mdetail-collections-wrapper {
+  margin-top: 60px;
+  position: relative;
+  z-index: 5;
+}

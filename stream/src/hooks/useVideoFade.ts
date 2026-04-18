@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export function useVideoFade(videoRef: React.RefObject<HTMLVideoElement>, isMuted: boolean, isActive: boolean) {
+export function useVideoFade(videoRef: React.RefObject<HTMLVideoElement | null>, isMuted: boolean, isActive: boolean) {
   const fadeIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
