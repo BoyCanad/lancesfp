@@ -420,29 +420,35 @@
   inset: 0;
   background-size: cover;
   background-position: center 20%;
-  transition: opacity 1.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-  will-change: opacity, transform;
+  visibility: hidden;
+  transition: opacity 1.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1.2s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 1.2s;
 }
 
 .barkada-bg--static {
   z-index: 1;
   opacity: 1;
+  visibility: visible;
+  transition: none;
 }
 
 .barkada-bg--char {
   z-index: 2;
   opacity: 0;
   transform: scale(1.05);
+  visibility: hidden;
 }
 
 .barkada-bg--visible.barkada-bg--char {
   opacity: 1;
   transform: scale(1);
+  visibility: visible;
+  transition: opacity 1.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1.2s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
 }
 
 .barkada-bg--hidden.barkada-bg--char {
   opacity: 0;
   transform: scale(1.05);
+  visibility: hidden;
 }
 
 .barkada-bg-gradient {
@@ -564,8 +570,8 @@
   display: flex;
   align-items: center;
   gap: 40px;
-  transition: opacity 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
-  will-change: opacity, transform;
+  visibility: hidden;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0.8s;
 }
 
 .barkada-info-text {
@@ -576,12 +582,15 @@
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+  visibility: visible;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
 }
 
 .barkada-info--hidden {
   opacity: 0;
   pointer-events: none;
   transform: translateY(15px);
+  visibility: hidden;
 }
 
 .barkada-char-portrait {
@@ -594,25 +603,29 @@
   object-position: bottom;
   z-index: 5;
   filter: drop-shadow(-10px 10px 30px rgba(0,0,0,0.8));
-  transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: none;
-  will-change: opacity, transform;
+  visibility: hidden;
+  transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 1s;
 }
 
 .barkada-char-portrait--initial {
   opacity: 0;
   transform: translateX(100px);
-  transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+  visibility: hidden;
+  transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s, visibility 0s 1.2s;
 }
 
 .barkada-char-portrait--visible {
   opacity: 1;
   transform: translateX(0);
+  visibility: visible;
+  transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
 }
 
 .barkada-char-portrait--hidden {
   opacity: 0;
   transform: translateX(20px);
+  visibility: hidden;
 }
 
 .barkada-char-name {
@@ -809,24 +822,29 @@
     transform: translateX(-50%);
     z-index: 1;
     height: 90%;
-    transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+    visibility: hidden;
+    transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 1s;
     display: block;
   }
 
   .barkada-char-portrait--initial {
     opacity: 0;
     transform: translateX(-30%);
-    transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+    visibility: hidden;
+    transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s, visibility 0s 1.2s;
   }
 
   .barkada-char-portrait--visible {
     opacity: 1;
     transform: translateX(-50%);
+    visibility: visible;
+    transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
   }
 
   .barkada-char-portrait--hidden {
     opacity: 0;
     transform: translateX(-52%);
+    visibility: hidden;
   }
 }
 
