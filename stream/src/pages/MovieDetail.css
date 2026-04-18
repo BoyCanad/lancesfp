@@ -687,15 +687,16 @@
 }
 
 .barkada-thumb {
-  width: 120px;
-  height: 120px;
-  flex-shrink: 0;
-  border: 2px solid transparent;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid transparent;
   cursor: pointer;
   transition: all 0.3s ease;
-  overflow: hidden;
-  opacity: 0.6;
   position: relative;
+  opacity: 0.6;
+  touch-action: manipulation;
 }
 
 .barkada-thumb::after {
@@ -785,8 +786,22 @@
     justify-content: flex-end;
   }
 
+  /* Faster, snappier transitions on mobile so it doesn't feel delayed */
+  .barkada-bg--char {
+    transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0.6s;
+  }
+  
+  .barkada-bg--visible.barkada-bg--char {
+    transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
+  }
+
   .barkada-info {
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0.5s;
     margin-bottom: 10px;
+  }
+
+  .barkada-info--active {
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
   }
 
   .barkada-char-name {
@@ -823,7 +838,7 @@
     z-index: 1;
     height: 90%;
     visibility: hidden;
-    transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 1s;
+    transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0.6s;
     display: block;
   }
 
@@ -831,14 +846,14 @@
     opacity: 0;
     transform: translateX(-30%);
     visibility: hidden;
-    transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s, visibility 0s 1.2s;
+    transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s, visibility 0s 1.0s;
   }
 
   .barkada-char-portrait--visible {
     opacity: 1;
     transform: translateX(-50%);
     visibility: visible;
-    transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
+    transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s 0s;
   }
 
   .barkada-char-portrait--hidden {
