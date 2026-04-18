@@ -72,7 +72,6 @@ const characters = [
 export default function BarkadaSection() {
   const [started, setStarted] = useState(false);
   const [activeChar, setActiveChar] = useState(characters[0]);
-  const [changing, setChanging] = useState(false);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
 
@@ -94,11 +93,8 @@ export default function BarkadaSection() {
 
   const handleCharClick = (char: typeof characters[0]) => {
     if (char.id === activeChar.id) return;
-    setChanging(true);
-    setTimeout(() => {
-      setActiveChar(char);
-      setChanging(false);
-    }, 300); // Wait for fade out
+    // Instantly set new active character, CSS handles the crossfade
+    setActiveChar(char);
   };
 
   const scroll = (dir: 'left' | 'right') => {
@@ -123,11 +119,14 @@ export default function BarkadaSection() {
 
   return (
     <div className="barkada-section">
-      {/* Dynamic Character Background */}
-      <div 
-        className={`barkada-bg barkada-bg--char ${started ? 'barkada-bg--visible' : ''} ${changing ? 'barkada-bg--fade' : ''}`}
-        style={{ backgroundImage: `url(${activeChar.image})` }}
-      />
+      {/* Dynamic Character Backgrounds - Map all to fix image load flashing */}
+      {characters.map(char => (
+        <div 
+          key={`bg-${char.id}`}
+          className={`barkada-bg barkada-bg--char ${started && activeChar.id === char.id ? 'barkada-bg--visible' : 'barkada-bg--hidden'}`}
+          style={{ backgroundImage: `url(${char.image})` }}
+        />
+      ))}
       
       {/* Static Base Background */}
       <div 
@@ -139,13 +138,14 @@ export default function BarkadaSection() {
       <div className="barkada-bg-gradient-bottom"></div>
       <div className={`barkada-bg-gradient-top ${started ? 'barkada-bg-gradient-top--visible' : ''}`}></div>
 
-      {activeChar.portrait && (
+      {characters.map(char => char.portrait && (
         <img 
-          src={activeChar.portrait} 
-          alt={activeChar.name} 
-          className={`barkada-char-portrait ${started ? 'barkada-char-portrait--visible' : ''} ${changing ? 'barkada-char-portrait--fade' : ''}`} 
+          key={`portrait-${char.id}`}
+          src={char.portrait} 
+          alt={char.name} 
+          className={`barkada-char-portrait ${!started ? 'barkada-char-portrait--initial' : ''} ${started && activeChar.id === char.id ? 'barkada-char-portrait--visible' : 'barkada-char-portrait--hidden'}`} 
         />
-      )}
+      ))}
 
       <div className={`barkada-intro ${started ? 'barkada-intro--shrunk' : ''}`}>
         <h2 className="barkada-title">Meet The Barkada</h2>
@@ -157,11 +157,19 @@ export default function BarkadaSection() {
       </div>
 
       <div className={`barkada-content ${started ? 'barkada-content--visible' : ''}`}>
-         <div className={`barkada-info ${changing ? 'barkada-info--fade' : ''}`}>
-            <div className="barkada-info-text">
-               <h3 className="barkada-char-name">{activeChar.name}</h3>
-               <p className="barkada-char-desc">{activeChar.description}</p>
-            </div>
+         {/* Map all character info to crossfade text instantly too */}
+         <div className="barkada-info-container">
+            {characters.map(char => (
+              <div 
+                key={`info-${char.id}`}
+                className={`barkada-info ${activeChar.id === char.id ? 'barkada-info--active' : 'barkada-info--hidden'}`}
+              >
+                <div className="barkada-info-text">
+                   <h3 className="barkada-char-name">{char.name}</h3>
+                   <p className="barkada-char-desc">{char.description}</p>
+                </div>
+              </div>
+            ))}
          </div>
 
          <div className="barkada-thumbnails-container">

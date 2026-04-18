@@ -212,6 +212,33 @@
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  /* Performance: Disable expensive background filter blurs that cause lag */
+  .bts-bg,
+  .bts-bg--hidden,
+  .bts-bg--visible {
+    filter: none !important;
+    transition: opacity 1.2s ease, transform 1.2s ease !important;
+  }
+
+  /* Performance: Disable expensive text/element filter blurs that cause lag */
+  .bts-title,
+  .bts-desc,
+  .bts-actions {
+    filter: none !important;
+  }
+
+  /* Performance: Simpler mobile reveal without blur */
+  @keyframes btsReveal {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .bts-section {
     height: 100dvh;
     min-height: 700px;

@@ -291,20 +291,24 @@
   max-width: 1600px;
   margin: 0 auto;
   overflow: hidden;
-  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
   padding: 4rem 12rem 140px 12rem;
   /* Leave room for bottom controls */
   gap: 3rem;
+  justify-content: center; /* keep centered to allow smooth sliding */
+}
+
+.music-player-content:not(.with-lyrics) {
+  gap: 0;
 }
 
 .artwork-section {
   flex: 0 0 480px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  /* Align left */
+  align-items: center; /* Always centered, 20px gap on sides invisible visually */
   justify-content: center;
-  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
   padding-top: 4rem;
 }
 
@@ -315,13 +319,23 @@
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
   flex-shrink: 0;
+  transform-origin: center;
 }
 
 /* Shrink slightly when not playing */
 .artwork-wrapper:not(.playing) {
   transform: scale(0.9);
+}
+
+.music-player-content:not(.with-lyrics) .artwork-wrapper.playing {
+  transform: scale(1.1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+}
+
+.music-player-content:not(.with-lyrics) .artwork-wrapper:not(.playing) {
+  transform: scale(0.95);
 }
 
 .artwork-img {
@@ -345,6 +359,22 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+  opacity: 1;
+  max-width: 1000px;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+}
+
+.music-player-content:not(.with-lyrics) .lyrics-section {
+  flex: 0;
+  max-width: 0;
+  opacity: 0;
+  padding: 0;
+  margin: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(40px) scale(0.95);
 }
 
 .lyrics-section::-webkit-scrollbar {
@@ -839,25 +869,72 @@ input[type="range"]:hover::-webkit-slider-thumb {
     gap: 0;
   }
 
-  .artwork-wrapper {
-    display: block;
+
+  /* === MOBILE ARTWORK: always fixed full-bleed, scale down when lyrics shown === */
+  .artwork-section {
+    /* Non-participatory in flex layout — artwork is always outside flow */
     position: fixed;
-    top: 1.5rem;
-    left: 1rem;
-    width: 48px;
-    height: 48px;
-    border-radius: 6px;
-    opacity: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
     pointer-events: none;
-    z-index: 100;
-    mask-image: none;
-    -webkit-mask-image: none;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+    flex: none;
+  }
+
+  /* Footer lives inside artwork-section but must stay clickable */
+  .artwork-section .music-player-footer {
+    pointer-events: auto;
+  }
+
+  .artwork-wrapper {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 65vh;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+    /* Expanded (no-lyrics): full screen */
+    transform: scale(1);
+    transform-origin: top left;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 0;
+    will-change: transform, opacity;
+    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    transition:
+      transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Inner media fills the wrapper */
+  .artwork-wrapper .artwork-img,
+  .artwork-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+    border-radius: 0;
+  }
+
+  /* Lyrics mode: scale the full-bleed artwork down to thumbnail size in top-left */
+  /* Scale ≈ 48px / 100vw — we use a CSS variable fallback of 0.128 (48/375) */
+  .music-player-content.with-lyrics .artwork-section {
+    pointer-events: none;
   }
 
   .music-player-content.with-lyrics .artwork-wrapper {
-    /* Instead of display: none, it shrinks to the thumbnail position and fades out */
-    opacity: 0; 
+    transform: scale(0.13);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .music-player-header {
@@ -936,8 +1013,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
   .lyrics-section {
     align-items: flex-start;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%);
+    /* Increase top fade to prevent overlapping with the now-playing header */
+    mask-image: linear-gradient(to bottom, transparent 0%, transparent 12%, black 25%, black 75%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 12%, black 25%, black 75%, transparent 100%);
     padding-bottom: 50vh;
   }
 
@@ -970,19 +1048,24 @@ input[type="range"]:hover::-webkit-slider-thumb {
     transform: scale(1.02) translateY(-1px);
   }
 
-  /* Fixed footer in lyrics mode */
-  .music-player-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    max-width: none;
-    transform: none;
-    background: transparent;
-    backdrop-filter: none;
-    padding: 1.5rem;
-    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 1rem));
-    border-radius: 0;
+  /* Unified Fixed footer in both lyrics and artwork mode */
+  .music-player-footer,
+  .music-player-content:not(.with-lyrics) .music-player-footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    transform: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 1.5rem calc(env(safe-area-inset-bottom, 0.5rem) + 0.5rem) !important;
+    border-radius: 0 !important;
+    z-index: 10 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
   }
 
   .song-info {
@@ -1102,63 +1185,28 @@ input[type="range"]:hover::-webkit-slider-thumb {
     z-index: 3;
     max-width: 100%;
     margin: 0;
-    overflow: visible; /* Prevent clipping */
+    overflow: visible;
   }
 
-  /* Artwork fills the entire content area so children can reach the bottom */
-  .music-player-content:not(.with-lyrics) .artwork-section {
-    position: absolute;
-    inset: 0;
-    display: block;
-    padding: 0;
-    margin: 0;
-    z-index: 1;
+  .music-player-content:not(.with-lyrics) .lyrics-section {
+    display: none !important;
   }
 
+  /* Artwork section and wrapper already fixed full-bleed — just ensure visible */
   .music-player-content:not(.with-lyrics) .artwork-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 65vh;
-    border-radius: 0;
-    box-shadow: none;
-    opacity: 1;
-    pointer-events: auto;
-    /* Seamless fade into the ambient background! */
-    mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+    transform: scale(1) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
-  .music-player-content:not(.with-lyrics) .artwork-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center; /* Artwork is in center */
-    border-radius: 0;
-  }
-
-  /* Remove the old dark gradient, mask-image + ambient background does this perfectly now */
+  /* Remove the old dark gradient */
   .music-player-content:not(.with-lyrics) .artwork-section::after {
     display: none;
   }
 
-  /* Footer sits at the bottom, above the ambient background */
+  /* Footer is unified above */
   .music-player-content:not(.with-lyrics) .music-player-footer {
-    position: absolute !important;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: none;
-    background: transparent;
-    backdrop-filter: none;
-    padding: 0 1.5rem calc(env(safe-area-inset-bottom, 0.5rem) + 0.5rem);
-    z-index: 2;
     animation: slideUpFade 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
   }
 
   /* Song info visible in artwork mode */

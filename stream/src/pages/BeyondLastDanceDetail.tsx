@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useVideoFade } from '../hooks/useVideoFade';
 import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { featuredMovies, trendingMovies, makingOfLegacy, elBimboFeatured } from '../data/movies';
@@ -80,6 +81,7 @@ export default function BeyondLastDanceDetail() {
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  useVideoFade(videoRef, isMuted, trailerActive);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -115,7 +117,7 @@ export default function BeyondLastDanceDetail() {
   // Start playing when trailer becomes active
   useEffect(() => {
     if (trailerActive && videoRef.current) {
-      videoRef.current.play().catch(() => { });
+      // videoRef.current.play().catch(() => { });
     }
   }, [trailerActive]);
 

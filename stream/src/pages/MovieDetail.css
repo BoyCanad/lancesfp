@@ -228,7 +228,7 @@
   position: fixed;
   top: 25px;
   left: 25px;
-  z-index: 100;
+  z-index: 1001;
   background: rgba(0, 0, 0, 0.5);
   border: none;
   color: white;
@@ -420,7 +420,8 @@
   inset: 0;
   background-size: cover;
   background-position: center 20%;
-  transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+  transition: opacity 1.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: opacity, transform;
 }
 
 .barkada-bg--static {
@@ -439,8 +440,9 @@
   transform: scale(1);
 }
 
-.barkada-bg--fade {
+.barkada-bg--hidden.barkada-bg--char {
   opacity: 0;
+  transform: scale(1.05);
 }
 
 .barkada-bg-gradient {
@@ -548,16 +550,38 @@
   transform: translateX(0);
 }
 
-.barkada-info {
+.barkada-info-container {
+  position: relative;
+  min-height: 250px; /* Space for the text */
   margin-top: 20px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.barkada-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 40px;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: opacity, transform;
 }
 
 .barkada-info-text {
   flex: 1;
+}
+
+.barkada-info--active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.barkada-info--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(15px);
 }
 
 .barkada-char-portrait {
@@ -570,10 +594,15 @@
   object-position: bottom;
   z-index: 5;
   filter: drop-shadow(-10px 10px 30px rgba(0,0,0,0.8));
+  transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.barkada-char-portrait--initial {
   opacity: 0;
   transform: translateX(100px);
   transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
-  pointer-events: none;
 }
 
 .barkada-char-portrait--visible {
@@ -581,15 +610,9 @@
   transform: translateX(0);
 }
 
-.barkada-char-portrait--fade {
+.barkada-char-portrait--hidden {
   opacity: 0;
   transform: translateX(20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.barkada-info--fade {
-  opacity: 0;
-  transform: translateY(10px);
 }
 
 .barkada-char-name {
@@ -714,7 +737,11 @@
 
   .barkada-intro {
     top: 50%;
+    left: 0;
+    width: 100%;
     transform: translateY(-50%);
+    z-index: 20;
+    pointer-events: auto;
   }
 
   .barkada-title {
@@ -782,9 +809,14 @@
     transform: translateX(-50%);
     z-index: 1;
     height: 90%;
-    opacity: 0;
-    transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+    transition: opacity 1s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: block;
+  }
+
+  .barkada-char-portrait--initial {
+    opacity: 0;
+    transform: translateX(-30%);
+    transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
   }
 
   .barkada-char-portrait--visible {
@@ -792,9 +824,8 @@
     transform: translateX(-50%);
   }
 
-  .barkada-char-portrait--fade {
+  .barkada-char-portrait--hidden {
     opacity: 0;
     transform: translateX(-52%);
-    transition: opacity 0.3s ease, transform 0.3s ease;
   }
 }

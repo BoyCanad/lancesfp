@@ -283,6 +283,13 @@ export default function MusicPlayer() {
   const [isKaraokeMode, setIsKaraokeMode] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const scrollTimeoutRef = useRef<number | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLyricsScroll = () => {
     setIsUserScrolling(true);
@@ -307,9 +314,12 @@ export default function MusicPlayer() {
 
   const song = id && mockSongs[id] ? mockSongs[id] : mockSongs['el-bimbo'];
 
-  const effectiveArtwork = (song.id === 'minsan' && !showLyrics)
-    ? 'https://boycanad.github.io/music-storage-1/minsan-tall.mp4'
-    : song.artwork;
+  let effectiveArtwork = song.artwork;
+  if (isMobile && song.id === 'minsan') {
+    effectiveArtwork = showLyrics 
+      ? '/images/minsan-sq.webp' 
+      : 'https://boycanad.github.io/music-storage-1/minsan-tall.mp4';
+  }
 
   const computedLyrics = useMemo<ComputedLyric[]>(() => {
     const extended: ComputedLyric[] = [];
@@ -401,9 +411,15 @@ export default function MusicPlayer() {
 
     // Set Media Session metadata for OS integration (Lock screen, Control Center, etc.)
     if ('mediaSession' in navigator) {
-      const mediaArtwork = song.id === 'minsan' || song.artwork.endsWith('.mp4') 
-        ? `${window.location.origin}/images/bts-minsan.webp` 
-        : `${window.location.origin}${song.artwork}`;
+      const songArtworkMap: Record<string, string> = {
+        'minsan': '/images/minsan-sq.webp',
+        'tindahan': '/images/tindahan-sq.webp',
+      };
+      const mediaArtwork = song.id in songArtworkMap
+        ? `${window.location.origin}${songArtworkMap[song.id]}`
+        : song.artwork.endsWith('.mp4')
+          ? `${window.location.origin}/images/bts-minsan.webp`
+          : `${window.location.origin}${song.artwork}`;
 
       navigator.mediaSession.metadata = new MediaMetadata({
         title: song.title,
@@ -787,15 +803,14 @@ export default function MusicPlayer() {
         </div>
 
         {/* Lyrics Section */}
-        {showLyrics && (
-          <div
-            className={`lyrics-section${isUserScrolling ? ' user-scrolling' : ''}`}
-            ref={lyricsContainerRef}
-            onWheel={handleLyricsScroll}
-            onTouchMove={handleLyricsScroll}
-          >
-            <div className="lyrics-padding-top" />
-            {computedLyrics.map((lyric, idx) => {
+        <div
+          className={`lyrics-section${isUserScrolling ? ' user-scrolling' : ''}`}
+          ref={lyricsContainerRef}
+          onWheel={handleLyricsScroll}
+          onTouchMove={handleLyricsScroll}
+        >
+          <div className="lyrics-padding-top" />
+          {computedLyrics.map((lyric, idx) => {
               const isLastLyric = idx === computedLyrics.length - 1;
               const wordsEnd = lyric.words && lyric.words.length > 0
                 ? Math.max(...lyric.words.map((w: Word) => w.end))
@@ -824,9 +839,7 @@ export default function MusicPlayer() {
                 />
               );
             })}
-            <div className="lyrics-padding-bottom" />
           </div>
-        )}
       </div>
       {/* Desktop Top right actions (Hidden on mobile) */}
       <div className="desktop-corner-btn">

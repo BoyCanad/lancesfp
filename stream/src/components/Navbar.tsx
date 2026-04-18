@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
@@ -75,8 +75,22 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const location = useLocation();
+  const isDetailPage = [
+    '/ang-huling-el-bimbo-play',
+    '/minsan',
+    '/tindahan-ni-aling-nena',
+    '/alapaap-overdrive',
+    '/spoliarium-graduation',
+    '/pare-ko',
+    '/tama-ka-ligaya',
+    '/ang-huling-el-bimbo',
+    '/collections/el-bimbo',
+    '/beyond-the-last-dance'
+  ].some(path => location.pathname.includes(path));
+
   return (
-    <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
+    <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${isDetailPage ? 'navbar--detail-page' : ''}`}>
       {/* --- DESKTOP NAVBAR --- */}
       <div className="navbar__inner desktop-only">
         <div className="navbar__left">
@@ -237,11 +251,13 @@ export default function Navbar() {
             <Search size={24} color="white" />
           </div>
         </div>
-        <div className={`navbar__mobile-pills ${scrolled ? 'navbar__mobile-pills--hidden' : ''}`}>
-          <button className="navbar__mobile-pill">Shows</button>
-          <button className="navbar__mobile-pill">Movies</button>
-          <button className="navbar__mobile-pill">Categories <ChevronDown size={14} style={{ marginLeft: 4 }} /></button>
-        </div>
+        {!isDetailPage && (
+          <div className={`navbar__mobile-pills ${scrolled ? 'navbar__mobile-pills--hidden' : ''}`}>
+            <button className="navbar__mobile-pill">Shows</button>
+            <button className="navbar__mobile-pill">Movies</button>
+            <button className="navbar__mobile-pill">Categories <ChevronDown size={14} style={{ marginLeft: 4 }} /></button>
+          </div>
+        )}
       </div>
     </header>
   );
