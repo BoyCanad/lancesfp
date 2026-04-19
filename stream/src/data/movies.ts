@@ -75,7 +75,7 @@ export const afterHours: Movie = {
   genre: ["Live", "Documentary", "Classroom"],
   ageRating: "G",
   isOriginal: true,
-  streamStatus: 'scheduled',
+  streamStatus: 'live',
   videoUrl: "https://livepeercdn.studio/hls/f8a31biu1b7w4hzw/index.m3u8",
 };
 

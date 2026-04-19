@@ -82,17 +82,44 @@
 .upcoming-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: linear-gradient(135deg, #eab308 0%, #d97706 100%);
   color: white;
-  padding: 4px 12px;
+  padding: 4px 14px;
   border-radius: 50px;
   font-size: 10px;
   font-weight: 900;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin-bottom: 15px;
-  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
   text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.upcoming-badge::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(
+    45deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% { transform: translate(-30%, -30%); }
+  100% { transform: translate(30%, 30%); }
 }
 
 .vod-badge {

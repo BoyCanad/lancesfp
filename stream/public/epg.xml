@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="LSFPlus EPG Generator">
+  <channel id="after-hours">
+    <display-name>After Hours Live</display-name>
+  </channel>
+  <programme start="20260419090000 +0800" stop="20260419100000 +0800" channel="after-hours">
+    <title>Music &amp; Chill</title>
+    <desc>Kick off the morning with smooth lo-fi beats and a relaxed atmosphere.</desc>
+  </programme>
+  <programme start="20260419110000 +0800" stop="20260419120000 +0800" channel="after-hours">
+    <title>Gaming</title>
+    <desc>Join the crew for some competitive gaming action and live walkthroughs.</desc>
+  </programme>
+  <programme start="20260419132500 +0800" stop="20260419143000 +0800" channel="after-hours" subtitles="/images/subtitles/ahep-sub.vtt">
+    <title>Ang Huling El Bimbo Play: Recap</title>
+    <desc>A deep dive into the rehearsals and behind-the-scenes moments of the legendary musical adaptation.</desc>
+  </programme>
+  <programme start="20260419150000 +0800" stop="20260419160000 +0800" channel="after-hours">
+    <title>Gaming in Afternoon</title>
+    <desc>Wrapping up the day's gaming session with multiplayer matches and viewer challenges.</desc>
+  </programme>
+</tv>
