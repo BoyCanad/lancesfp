@@ -301,9 +301,10 @@ export default function LivePlayer() {
     if (!layer) return;
 
     const handleTouch = (e: TouchEvent) => {
-      e.preventDefault();
+      // NOTE: We no longer call e.preventDefault() here because it blocks the 'User Gesture'
+      // needed to unlock media playback on mobile browsers. 
+      // Instead, we rely on our 'Guardian' Effect to instantly resume play if it pauses.
       e.stopPropagation();
-      // Logic from handleStageClick but for touch
       setShowControls(prev => !prev);
     };
 
@@ -324,7 +325,9 @@ export default function LivePlayer() {
           ref={videoRef}
           className="video-element"
           playsInline
-          style={{ pointerEvents: 'none' }}
+          autoPlay
+          muted={isMuted}
+          style={{ pointerEvents: 'auto' }}
         />
         
         {/* Transparent Interaction Shield: Now with manual non-passive listener */}
