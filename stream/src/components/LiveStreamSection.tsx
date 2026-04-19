@@ -1,4 +1,4 @@
-import { Play, Radio, Star } from 'lucide-react';
+import { Play, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { afterHours } from '../data/movies';
 import './LiveStreamSection.css';
