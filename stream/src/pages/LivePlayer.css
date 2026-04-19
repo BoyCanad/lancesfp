@@ -19,22 +19,35 @@
   object-fit: contain;
 }
 
-.live-player__controls {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 24px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.9) 100%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+/* Override base player z-indexes for Live Player priority */
+.player-controls-overlay {
+  z-index: 1000 !important;
+  background: transparent !important;
 }
 
-.live-player__controls--visible {
-  opacity: 1;
-  pointer-events: auto;
+.player-controls-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 60%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.player-top-bar {
+  z-index: 1100 !important;
+}
+
+/* Ensure visibility is tied to the show-controls class on use */
+.player-controls-overlay,
+.player-top-bar {
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.show-controls .player-controls-overlay,
+.show-controls .player-top-bar {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .live-player__header {
@@ -145,6 +158,114 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Netflix Style Title Info */
+.title-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.title-main {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.title-program {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.video-interaction-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5; /* Above video, below main UI overlays */
+  background: rgba(0, 0, 0, 0.01); /* Not empty, stops click-throughs */
+  cursor: pointer;
+}
+
+/* Sync Controls inside Language Menu */
+.sync-adjustment-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.sync-adj-menu-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.2s;
+  min-width: 70px;
+}
+
+.sync-adj-menu-btn:hover {
+  background: rgba(229, 9, 20, 0.3);
+  border-color: #e50914;
+}
+
+.sync-adj-menu-btn span:first-child {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.sync-adj-menu-btn .adj-val {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.sync-offset-display {
+  font-family: monospace;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #e50914;
+  min-width: 50px;
+  text-align: center;
+}
+
+.menu-reset-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-style: solid;
+}
+
 .sync-label {
   font-size: 14px;
   font-weight: 800;
@@ -164,34 +285,384 @@
   letter-spacing: 2px;
 }
 
-.vplayer-subtitle-overlay {
+/* Custom Subtitle Overlay - Bypasses OS Settings */
+.custom-subtitle-overlay-container {
   position: absolute;
-  bottom: 120px;
+  bottom: 8%; /* Cinematic Baseline */
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
-  max-width: 800px;
   text-align: center;
-  color: white;
-  font-size: 24px;
-  font-weight: 600;
-  text-shadow: 
-    -2px -2px 0 #000,  
-     2px -2px 0 #000,
-    -2px  2px 0 #000,
-     2px  2px 0 #000;
+  z-index: 500; /* Above shadows, below buttons */
   pointer-events: none;
-  z-index: 100;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth drift animation */
+}
+
+/* Float captions above controls when UI is active */
+.show-controls .custom-subtitle-overlay-container {
+  bottom: 15%; 
+}
+
+.custom-subtitle-text {
+  background: transparent;
+  color: #ffffff;
+  font-family: 'Inter', 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
   line-height: 1.4;
-  padding: 0 20px;
+  margin-bottom: 5px;
+  text-shadow: 
+    0px 0px 4px rgba(0,0,0,1),
+    1px 1px 4px rgba(0,0,0,1),
+    -1px -1px 4px rgba(0,0,0,1),
+    2px 2px 6px rgba(0,0,0,0.9),
+    0px 2px 10px rgba(0,0,0,0.8);
+}
+
+@media (min-width: 1024px) {
+  .custom-subtitle-overlay-container {
+    bottom: 10%;
+  }
+  
+  .show-controls .custom-subtitle-overlay-container {
+    bottom: 20%; /* Extra clearance for the large desktop control bar */
+  }
+
+  .custom-subtitle-text {
+    font-size: 2.2rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .vplayer-subtitle-overlay {
-    bottom: 180px; /* Higher on mobile to avoid center controls */
-    font-size: 18px;
-    width: 95%;
+  .custom-subtitle-text {
+    font-size: 1rem; /* Slightly more compact for mobile */
+    line-height: 1.3;
   }
+  
+  .custom-subtitle-overlay-container {
+    bottom: 10%; 
+    z-index: 1;
+  }
+
+  .title-info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    flex-direction: column;
+    gap: 2px;
+    z-index: -1; /* Behind buttons */
+    display: flex !important; /* Force visible on mobile */
+  }
+
+  .title-main {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+
+  .title-program {
+    font-size: 1rem;
+    font-weight: 700;
+    text-shadow: 0 1px 4px rgba(0,0,0,1);
+  }
+
+  .title-info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    flex-direction: column;
+    gap: 2px;
+    z-index: -1; /* Behind buttons */
+  }
+
+  .title-main {
+    font-size: 0.9rem;
+    opacity: 0.6;
+  }
+
+  .title-program {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  /* Remove adaptive shift so controls can overlap subtitles */
+  .show-controls .custom-subtitle-overlay-container {
+    bottom: 10%; 
+  }
+}
+
+/* Subtitle Settings Panel */
+.subtitle-settings-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 15, 15, 0.98);
+  backdrop-filter: blur(20px);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px;
+  z-index: 10000;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.subtitle-settings-panel.open {
+  transform: translateY(0);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.settings-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.close-settings {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1.5px;
+  margin-bottom: 16px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.setting-label {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.toggle-switch.on {
+  background: #e50914;
+}
+
+.switch-handle {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch.on .switch-handle {
+  transform: translateX(24px);
+}
+
+/* Sync Adjustment Group */
+.sync-adjustment-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.sync-adj-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.sync-adj-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.adj-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.adj-sub {
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.sync-current-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  min-width: 60px;
+  text-align: center;
+}
+
+.reset-sync-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reset-sync-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .player-controls-overlay {
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
+  }
+
+  .bottom-controls {
+    padding-bottom: 25px; /* Leave space for home indicators */
+    justify-content: space-around; /* Spread buttons evenly for thumbs */
+  }
+
+  .vplayer-controls-left, .vplayer-controls-right {
+    gap: 30px;
+  }
+
+  .vplayer-control-btn {
+    opacity: 1; /* Always bright on mobile */
+  }
+
+  /* Transform Subtitles Menu into a Premium Bottom Sheet */
+  .subtitles-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    background: rgba(15, 15, 15, 0.98);
+    backdrop-filter: blur(25px);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 30px 20px 40px;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 5000; /* Over everything including controls */
+    animation: slideUpContent 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+  }
+
+  .mobile-bottom-program-slot {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
+    min-width: 0; /* Allow truncation */
+  }
+
+  .mobile-program-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 4px rgba(0,0,0,1);
+    opacity: 0.9;
+  }
+
+  /* Add a 'grab handle' to the bottom sheet */
+  .subtitles-menu::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+
+  .menu-section {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .menu-header {
+    font-size: 0.8rem;
+    color: #e50914;
+    margin-bottom: 15px;
+  }
+
+  .sync-adj-menu-btn {
+    padding: 12px 10px;
+  }
+
+  @keyframes slideUpContent {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+}
+
+@media (min-width: 769px) {
+  /* Desktop specific adjustments if needed */
 }

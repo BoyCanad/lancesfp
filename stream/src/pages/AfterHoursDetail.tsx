@@ -3,18 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Plus, Share2, Library, ArrowLeft, Star, Clock } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { afterHours, featuredMovies } from '../data/movies';
+import { getLiveSchedule, subscribeToScheduleChanges, type EPGProgram } from '../services/epgService';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import './MovieDetail.css';
-
-interface EPGProgram {
-  title: string;
-  description: string;
-  start: Date;
-  stop: Date;
-  isLive: boolean;
-  subtitles?: string | null;
-}
 
 export default function AfterHoursDetail() {
   const movie = afterHours;
@@ -28,49 +20,18 @@ export default function AfterHoursDetail() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Simple XMLTV Parser
+  // Supabase EPG Fetching & Real-time Sync
   useEffect(() => {
-    fetch('/epg.xml')
-      .then(res => res.text())
-      .then(xmlStr => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
-        const programs = xmlDoc.getElementsByTagName("programme");
-        
-        const parsed: EPGProgram[] = [];
-        const now = new Date();
+    const fetchSchedule = async () => {
+      const schedule = await getLiveSchedule();
+      setEpg(schedule);
+    };
 
-        for (let i = 0; i < programs.length; i++) {
-          const p = programs[i];
-          const startStr = p.getAttribute("start") || "";
-          const stopStr = p.getAttribute("stop") || "";
-          
-          // Parse XMLTV date format: 20260419200000 +0000
-          const parseDate = (str: string) => {
-            const y = parseInt(str.substring(0, 4));
-            const m = parseInt(str.substring(4, 6)) - 1;
-            const d = parseInt(str.substring(6, 8));
-            const h = parseInt(str.substring(8, 10));
-            const mm = parseInt(str.substring(10, 12));
-            const s = parseInt(str.substring(12, 14));
-            return new Date(y, m, d, h, mm, s);
-          };
-
-          const start = parseDate(startStr);
-          const stop = parseDate(stopStr);
-          
-          parsed.push({
-            title: p.getElementsByTagName("title")[0]?.textContent || "",
-            description: p.getElementsByTagName("desc")[0]?.textContent || "",
-            start,
-            stop,
-            isLive: now >= start && now <= stop,
-            subtitles: p.getAttribute("subtitles") || null
-          });
-        }
-        setEpg(parsed);
-      })
-      .catch(err => console.error("EPG Load Error:", err));
+    fetchSchedule();
+    const sub = subscribeToScheduleChanges(fetchSchedule);
+    return () => {
+      sub.unsubscribe();
+    };
   }, []);
 
   const handlePlayClick = async () => {
@@ -85,6 +46,10 @@ export default function AfterHoursDetail() {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const now = new Date();
+  const currentProgram = epg.find(p => now >= p.start && now <= p.stop);
+  const isCurrentlyLive = !!currentProgram;
 
   const isMobile = windowWidth < 768;
 
@@ -108,7 +73,7 @@ export default function AfterHoursDetail() {
         <div className="mdetail-gradient mdetail-gradient-bottom" />
 
         <div className="mdetail-content">
-          {movie.streamStatus === 'live' ? (
+          {isCurrentlyLive ? (
             <div className="live-status-pill">
               <div className="pulse-icon-container">
                 <div className="pulse-dot"></div>
@@ -116,14 +81,10 @@ export default function AfterHoursDetail() {
               </div>
               LIVE NOW
             </div>
-          ) : movie.streamStatus === 'scheduled' ? (
+          ) : (
             <div className="upcoming-status-pill">
               <Star size={14} fill="white" />
               PREMIERE
-            </div>
-          ) : (
-            <div className="vod-status-pill">
-              NEW EPISODE
             </div>
           )}
 
@@ -177,20 +138,23 @@ export default function AfterHoursDetail() {
             <Clock size={16} /> Schedule
           </h3>
           <div className="epg-list">
-            {epg.map((prog, idx) => (
-              <div key={idx} className={`epg-item ${prog.isLive ? 'epg-item--active' : ''}`}>
-                <div className="epg-time">
-                  {formatTime(prog.start)}
-                </div>
-                <div className="epg-info">
-                  <div className="epg-prog-title">
-                    {prog.title}
-                    {prog.isLive && <span className="epg-live-indicator">NOW PLAYING</span>}
+            {epg.map((prog, idx) => {
+              const isLive = now >= prog.start && now <= prog.stop;
+              return (
+                <div key={idx} className={`epg-item ${isLive ? 'epg-item--active' : ''}`}>
+                  <div className="epg-time">
+                    {formatTime(prog.start)}
                   </div>
-                  <div className="epg-prog-desc">{prog.description}</div>
+                  <div className="epg-info">
+                    <div className="epg-prog-title">
+                      {prog.title}
+                      {isLive && <span className="epg-live-indicator">NOW PLAYING</span>}
+                    </div>
+                    <div className="epg-prog-desc">{prog.description}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
