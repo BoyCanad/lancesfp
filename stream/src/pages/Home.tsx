@@ -1,5 +1,6 @@
 import HeroCarousel from '../components/HeroCarousel';
 import ContentRow from '../components/ContentRow';
+import LiveStreamSection from '../components/LiveStreamSection';
 import { featuredMovies, trendingMovies, elBimboFeatured, elBimboCollections } from '../data/movies';
 import { useState, useEffect } from 'react';
 import { getProfiles, getWatchProgress } from '../services/profileService';
@@ -62,6 +63,9 @@ export default function Home() {
             showProgress
           />
         )}
+
+        <LiveStreamSection />
+
         <ContentRow
           title="G11 Archives"
           movies={archiveMovies}

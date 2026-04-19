@@ -729,8 +729,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
 /* Bottom Controls Row */
 .bottom-controls-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  gap: 1.5rem;
   width: 100%;
   position: relative;
 }
@@ -779,13 +780,17 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .volume-container {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  width: 25%;
-  position: absolute;
-  /* Re-anchor purely relative to the bottom row, not corner of screen */
-  left: 0;
+  gap: 0.8rem;
+  width: 100%;
+  max-width: 440px;
   color: rgba(255, 255, 255, 0.7);
   z-index: 5;
+}
+
+.volume-time-match {
+  min-width: 32px;
+  display: flex;
+  justify-content: center;
 }
 
 .active-text {

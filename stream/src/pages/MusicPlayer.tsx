@@ -726,36 +726,6 @@ export default function MusicPlayer() {
 
             {/* Playback Controls and Volume Row */}
             <div className="bottom-controls-row">
-              <div className="volume-container">
-                <button className="icon-btn small no-bg" onClick={() => setIsMuted(!isMuted)}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {isMuted || volume === 0 ? (
-                      <>
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                        <line x1="23" y1="9" x2="17" y2="15" />
-                        <line x1="17" y1="9" x2="23" y2="15" />
-                      </>
-                    ) : (
-                      <>
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                      </>
-                    )}
-                  </svg>
-                </button>
-                <input
-                  type="range"
-                  className="volume-slider"
-                  min="0" max="1" step="0.01"
-                  value={isMuted ? 0 : volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  style={{
-                    backgroundSize: `${(isMuted ? 0 : volume) * 100}% 100%`
-                  }}
-                />
-              </div>
-
               <div className="playback-controls">
                 <button className="control-btn secondary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" /></svg>
@@ -780,6 +750,39 @@ export default function MusicPlayer() {
                 <button className="control-btn secondary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
                 </button>
+              </div>
+
+              <div className="volume-container">
+                <div className="volume-time-match">
+                  <button className="icon-btn small no-bg" onClick={() => setIsMuted(!isMuted)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {isMuted || volume === 0 ? (
+                        <>
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <line x1="23" y1="9" x2="17" y2="15" />
+                          <line x1="17" y1="9" x2="23" y2="15" />
+                        </>
+                      ) : (
+                        <>
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                        </>
+                      )}
+                    </svg>
+                  </button>
+                </div>
+                <input
+                  type="range"
+                  className="volume-slider"
+                  min="0" max="1" step="0.01"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  style={{
+                    backgroundSize: `${(isMuted ? 0 : volume) * 100}% 100%`
+                  }}
+                />
+                <div className="volume-time-match" />
               </div>
             </div>
 

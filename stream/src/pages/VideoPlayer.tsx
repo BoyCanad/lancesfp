@@ -1821,7 +1821,7 @@ export default function VideoPlayer() {
         {/* Center Mobile Controls (Hidden on Desktop, Fades out automatically when buffering) */}
         <div className={`center-mobile-controls mobile-only ${showControls && !isLoading ? 'show' : ''}`}>
           <button 
-            className={`control-btn center-action-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
+            className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
             onClick={skipBackward}
             key={`back-${activeIndicator?.type === 'backward' ? activeIndicator.key : 'idle'}`}
           >
@@ -1830,7 +1830,7 @@ export default function VideoPlayer() {
           </button>
           
           <button 
-            className={`control-btn center-play-btn ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
+            className={`vplayer-control-btn center-play-btn ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
             onClick={togglePlay}
             key={`play-${activeIndicator?.type === 'play' || activeIndicator?.type === 'pause' ? activeIndicator.key : 'idle'}`}
           >
@@ -1838,7 +1838,7 @@ export default function VideoPlayer() {
           </button>
           
           <button 
-            className={`control-btn center-action-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
+            className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
             onClick={skipForward}
             key={`fwd-${activeIndicator?.type === 'forward' ? activeIndicator.key : 'idle'}`}
           >
@@ -1938,21 +1938,21 @@ export default function VideoPlayer() {
 
           {/* Bottom Control Bar */}
           <div className="bottom-controls">
-            <div className="controls-left desktop-only">
-              <button className="control-btn" onClick={togglePlay}>
+            <div className="vplayer-controls-left desktop-only">
+              <button className="vplayer-control-btn" onClick={togglePlay}>
                 {isPlaying ? <Pause size={42} fill="currentColor" /> : <Play size={42} fill="currentColor" />}
               </button>
-              <button className="control-btn" onClick={skipBackward}>
+              <button className="vplayer-control-btn" onClick={skipBackward}>
                 <RotateCcw size={38} />
                 <span className="skip-text-inside">10</span>
               </button>
-              <button className="control-btn" onClick={skipForward}>
+              <button className="vplayer-control-btn" onClick={skipForward}>
                 <RotateCw size={38} />
                 <span className="skip-text-inside">10</span>
               </button>
-              
-              <div className="volume-container">
-                <button className="control-btn" onClick={toggleMute}>
+
+              <div className="vplayer-volume-container">
+                <button className="vplayer-control-btn" onClick={toggleMute}>
                   {isMuted || volume === 0 ? <VolumeX size={42} /> : <Volume2 size={42} />}
                 </button>
                 <input
@@ -1962,10 +1962,8 @@ export default function VideoPlayer() {
                   step="0.01"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="volume-slider"
-                  style={{
-                    backgroundSize: `${(isMuted ? 0 : volume) * 100}% 100%`
-                  }}
+                  className="vplayer-volume-slider"
+                  style={{ backgroundSize: `${(isMuted ? 0 : volume) * 100}% 100%` }}
                 />
               </div>
             </div>
@@ -1978,23 +1976,23 @@ export default function VideoPlayer() {
               )}
             </div>
 
-            <div className="controls-right desktop-only">
+            <div className="vplayer-controls-right desktop-only">
               {!isMovie && (
-                <button className="control-btn with-label tooltip">
+                <button className="vplayer-control-btn with-label tooltip">
                   <SkipForward size={38} />
                   <span className="tooltip-text">Next Episode</span>
                 </button>
               )}
 
               {!isMovie && (
-                <button className="control-btn with-label tooltip">
+                <button className="vplayer-control-btn with-label tooltip">
                   <Copy size={38} />
                   <span className="tooltip-text">Episodes</span>
                 </button>
               )}
               
               <div className="subtitles-wrapper">
-                <button className="control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
+                <button className="vplayer-control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
                   <MessageSquareText size={38} />
                   <span className="tooltip-text">Subtitles / Audio</span>
                 </button>
@@ -2044,7 +2042,7 @@ export default function VideoPlayer() {
 
               <div className="speed-wrapper" style={{ position: 'relative' }}>
                 <button 
-                  className="control-btn tooltip" 
+                  className="vplayer-control-btn tooltip" 
                   onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}
                 >
                   <Gauge size={38} />
@@ -2081,7 +2079,7 @@ export default function VideoPlayer() {
 
 
 
-              <button className="control-btn" onClick={toggleFullscreen}>
+              <button className="vplayer-control-btn" onClick={toggleFullscreen}>
                 {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
               </button>
             </div>

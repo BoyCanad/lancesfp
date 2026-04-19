@@ -81,7 +81,6 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     if (movie.id === 'f1' || movie.title.includes('Ang Huling El Bimbo')) navigate('/ang-huling-el-bimbo-play');
     else if (movie.id === 'f2' || movie.title === 'Minsan') navigate('/minsan');
     else if (movie.id === 'f7' || movie.title === 'Pare Ko') navigate('/pare-ko');
-
   };
 
   const handlePlay = async (movie: Movie) => {

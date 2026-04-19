@@ -17,6 +17,8 @@ import ElBimboDetail from './pages/ElBimboDetail';
 import ElBimboCollection from './pages/ElBimboCollection';
 import BeyondLastDanceDetail from './pages/BeyondLastDanceDetail';
 import MusicPlayer from './pages/MusicPlayer';
+import LivePlayer from './pages/LivePlayer';
+import AfterHoursDetail from './pages/AfterHoursDetail';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
@@ -41,7 +43,7 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music');
+  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live';
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
@@ -58,7 +60,8 @@ function App() {
     '/tama-ka-ligaya',
     '/ang-huling-el-bimbo',
     '/collections/el-bimbo',
-    '/beyond-the-last-dance'
+    '/beyond-the-last-dance',
+    '/after-hours'
   ].includes(pathname);
 
   const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix;
@@ -157,12 +160,15 @@ function App() {
         <Route path="/tama-ka-ligaya" element={<TamaKaDetail />} />
         <Route path="/ang-huling-el-bimbo" element={<ElBimboDetail />} />
         <Route path="/beyond-the-last-dance" element={<BeyondLastDanceDetail />} />
+        <Route path="/after-hours" element={<AfterHoursDetail />} />
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
         <Route path="/music/:id" element={<MusicPlayer />} />
         <Route path="/music" element={<MusicPlayer />} />
+        <Route path="/live" element={session ? <LivePlayer /> : <Navigate to="/login" replace />} />
+
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
         <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

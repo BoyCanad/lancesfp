@@ -13,6 +13,7 @@ export interface Movie {
   isOriginal?: boolean;
   progress?: number; // for "continue watching", 0-100
   desktopOnly?: boolean;
+  streamStatus?: 'live' | 'scheduled' | 'offline';
   quality?: string;
   mobileThumbnail?: string;
   mobileBanner?: string;
@@ -57,6 +58,25 @@ export const makingOfLegacy: Movie = {
   isOriginal: true,
   videoUrl: "", // Need video URL
   trailerUrl: "", // Need trailer URL
+};
+
+export const afterHours: Movie = {
+  id: "after-hours",
+  title: "After Hours",
+  logo: "/images/AFTER%20HOURS-logo.png",
+  thumbnail: "/images/after-hours.webp",
+  mobileThumbnail: "/images/after-hours-mobile.webp",
+  banner: "/images/AFTER%20HOURS-banner.gif",
+  mobileBanner: "/images/AFTER%20HOURS-banner.gif",
+  description: "Join us for After Hours, the official 11-STEM A live stream series! Experience real-life moments, candid conversations, and exclusive behind-the-scenes vibes as we document our final journey together.",
+  rating: "10.0",
+  year: "2026",
+  duration: "LIVE",
+  genre: ["Live", "Documentary", "Classroom"],
+  ageRating: "G",
+  isOriginal: true,
+  streamStatus: 'scheduled',
+  videoUrl: "https://livepeercdn.studio/hls/f8a31biu1b7w4hzw/index.m3u8",
 };
 
 export const featuredMovies: Movie[] = [
