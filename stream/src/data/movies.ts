@@ -166,21 +166,7 @@ export const featuredMovies: Movie[] = [
     trailerUrl: "https://boycanad.github.io/stream-storage-2/MINSAN_TRAILER_MOBILE.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TRAILER.vtt",
   },
-  {
-    id: "11-stem-a-sy-2025-2026",
-    title: "11 STEM A SY 2025-2026",
-    logo: "/images/stem-a-logo.webp",
-    thumbnail: "/images/stem-a-archive-banner.webp",
-    banner: "/images/stem-a-archive-banner.webp",
-    mobileBanner: "/images/stem-a-mobile-carousel.webp",
-    description: "A digital archive documenting the journey, memories, and milestones of 11-STEM A for the School Year 2025-2026.",
-    rating: "9.9",
-    year: "2026",
-    duration: "Archive",
-    genre: ["Classroom", "Documentary", "Memories"],
-    ageRating: "G",
-    isOriginal: true,
-  },
+
   {
     id: "tindahan-ni-aling-nena",
     title: "Tindahan ni Aling Nena",
@@ -358,13 +344,12 @@ export const elBimboCollections: Movie[] = [
   elBimboFeatured,
   makingOfLegacy,
   featuredMovies[1], // Minsan
-  featuredMovies[3], // Tindahan
-  featuredMovies[4], // Alapaap
-  featuredMovies[5], // Spoliarium
-  featuredMovies[6], // Pare Ko
-  featuredMovies[7], // Tama Ka
-  featuredMovies[8], // Ang Huling El Bimbo
-  ...trendingMovies
+  featuredMovies[2], // Tindahan
+  featuredMovies[3], // Alapaap
+  featuredMovies[4], // Spoliarium
+  featuredMovies[5], // Pare Ko
+  featuredMovies[6], // Tama Ka
+  featuredMovies[7] // Ang Huling El Bimbo
 ];
 
 export const archiveMovies: Movie[] = [

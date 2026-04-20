@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, Bookmark, Plus, Check } from 'lucide-react';
+import { Play, Info, Plus, Check } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import type { Movie } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
@@ -103,9 +103,9 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
     isMobile && movie.mobileBanner ? movie.mobileBanner : movie.banner;
 
   const handleMoreInfo = (movie: Movie) => {
-    if (movie.id === 'f1' || movie.title.includes('Ang Huling El Bimbo')) navigate('/ang-huling-el-bimbo-play');
-    else if (movie.id === 'f2' || movie.title === 'Minsan') navigate('/minsan');
-    else if (movie.id === 'f7' || movie.title === 'Pare Ko') navigate('/pare-ko');
+    if (movie.id === 'ang-huling-el-bimbo-play' || movie.title.includes('Ang Huling El Bimbo')) navigate('/ang-huling-el-bimbo-play');
+    else if (movie.id === 'minsan' || movie.title === 'Minsan') navigate('/minsan');
+    else if (movie.id === 'pare-ko' || movie.title === 'Pare Ko') navigate('/pare-ko');
   };
 
   const handlePlay = async (movie: Movie) => {
@@ -115,7 +115,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
       return;
     }
 
-    if (movie.id === 'f1' || movie.id === 'eb1' || movie.title.includes('Ang Huling El Bimbo')) {
+    if (movie.id === 'ang-huling-el-bimbo-play' || movie.title.includes('Ang Huling El Bimbo')) {
       navigate('/watch/ang-huling-el-bimbo-play');
     } else {
       navigate(`/watch/${movie.id}`);

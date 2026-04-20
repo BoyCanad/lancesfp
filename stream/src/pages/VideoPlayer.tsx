@@ -389,7 +389,7 @@ export default function VideoPlayer() {
 
   const nextMovie = useMemo(() => {
     // Special overrides for curated recommendations
-    if (movie?.id === 'f2') return featuredMovies.find(m => m.id === 'f1') ?? featuredMovies[0];
+    if (movie?.id === 'minsan') return featuredMovies.find(m => m.id === 'ang-huling-el-bimbo-play') ?? featuredMovies[0];
 
     const currentIndex = featuredMovies.findIndex(m => m.id === movie?.id);
     if (currentIndex !== -1 && currentIndex < featuredMovies.length - 1) {
@@ -427,12 +427,12 @@ export default function VideoPlayer() {
 
   const nextThreeMovies = useMemo(() => {
     // Special overrides for curated recommendations
-    if (movie?.id === 'f2') {
+    if (movie?.id === 'minsan') {
       // End of Minsan → recommend El Bimbo Play first, then Tindahan, Alapaap
       return [
-        featuredMovies.find(m => m.id === 'f1'),
-        featuredMovies.find(m => m.id === 'f4'),
-        featuredMovies.find(m => m.id === 'f5'),
+        featuredMovies.find(m => m.id === 'ang-huling-el-bimbo-play'),
+        featuredMovies.find(m => m.id === 'tindahan-ni-aling-nena'),
+        featuredMovies.find(m => m.id === 'alapaap-overdrive'),
       ].filter(Boolean) as typeof featuredMovies;
     }
 
