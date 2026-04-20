@@ -3,10 +3,13 @@ import { supabase } from '../supabaseClient';
 export interface EPGProgram {
   id: string;
   title: string;
+  episode_title?: string | null;
+  episode_thumbnail?: string | null;
   description: string;
   start: Date;
   stop: Date;
   subtitles: string | null;
+  recording_url?: string | null;
 }
 
 /**
@@ -27,10 +30,13 @@ export const getLiveSchedule = async (): Promise<EPGProgram[]> => {
   return data.map(item => ({
     id: item.id,
     title: item.title,
+    episode_title: item.episode_title,
+    episode_thumbnail: item.episode_thumbnail,
     description: item.description,
     start: new Date(item.start_time),
     stop: new Date(item.stop_time),
-    subtitles: item.subtitles_url
+    subtitles: item.subtitles_url,
+    recording_url: item.recording_url
   }));
 };
 
@@ -47,4 +53,42 @@ export const subscribeToScheduleChanges = (onUpdate: () => void) => {
       () => onUpdate()
     )
     .subscribe();
+};
+
+export interface PastStream {
+  id: string;
+  created_at: Date;
+  title: string;
+  description: string;
+  recording_url: string;
+  thumbnail_url: string | null;
+  subtitles_url: string | null;
+  duration_minutes: number | null;
+  start_time: Date;
+  end_time: Date;
+}
+
+export const getPastStreams = async (): Promise<PastStream[]> => {
+  const { data, error } = await supabase
+    .from('past_streams')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching past streams:', error);
+    return [];
+  }
+
+  return data.map(item => ({
+    id: item.id,
+    created_at: new Date(item.created_at),
+    title: item.title,
+    description: item.description,
+    recording_url: item.recording_url,
+    thumbnail_url: item.thumbnail_url,
+    subtitles_url: item.subtitles_url,
+    duration_minutes: item.duration_minutes,
+    start_time: new Date(item.start_time),
+    end_time: new Date(item.end_time)
+  }));
 };

@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Plus, Share2, Library, ArrowLeft, Star, Clock } from 'lucide-react';
+import { Play, Plus, Share2, Library, ArrowLeft, Star, Clock, ChevronDown } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { afterHours, featuredMovies } from '../data/movies';
-import { getLiveSchedule, subscribeToScheduleChanges, type EPGProgram } from '../services/epgService';
+import { getLiveSchedule, getPastStreams, subscribeToScheduleChanges, type EPGProgram } from '../services/epgService';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import './MovieDetail.css';
 
 export default function AfterHoursDetail() {
   const movie = afterHours;
-  const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [epg, setEpg] = useState<EPGProgram[]>([]);
 
@@ -19,12 +18,77 @@ export default function AfterHoursDetail() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'episodes' | 'schedule'>('episodes');
+  const [selectedSeason, setSelectedSeason] = useState(movie.seasons?.[0]);
 
   // Supabase EPG Fetching & Real-time Sync
   useEffect(() => {
     const fetchSchedule = async () => {
       const schedule = await getLiveSchedule();
+      const pastStreams = await getPastStreams();
       setEpg(schedule);
+
+      console.log('Filtering past streams from dedicated table:', pastStreams);
+
+      const pastRecordings = pastStreams.map((ps, idx) => {
+        // Find programs whose scheduled time overlaps at all with this VOD's actual recorded timeframe
+        const associatedPrograms = schedule.filter(p => p.start < ps.end_time && p.stop > ps.start_time);
+
+          // Only fall back to a live_schedule subtitle if:
+          // 1. past_streams.subtitles_url is not set AND
+          // 2. The program that has subtitles started WITHIN this recording window
+          //    (started >= recording start). This prevents inheriting a previous stream's
+          //    subtitle file just because that old schedule program's stop time runs into
+          //    the current recording's window.
+          const candidateSubtitleOwner = associatedPrograms.find(
+            p => p.subtitles && p.start >= ps.start_time
+          );
+          const fallbackSubtitleUrl = candidateSubtitleOwner?.subtitles ?? null;
+
+          // Find which program owns the subtitle so we can pass an offset to the player
+          const subtitleOwner = ps.subtitles_url
+            ? associatedPrograms.find(p => p.subtitles) // if set explicitly, still resolve the owner
+            : candidateSubtitleOwner;
+          const subtitleProgramStartMs = subtitleOwner ? subtitleOwner.start.getTime() : ps.start_time.getTime();
+
+          console.log('[AfterHours] episode subtitle debug:', {
+            episodeTitle: ps.title,
+            subtitleUrl: ps.subtitles_url || subtitleOwner?.subtitles,
+            subtitleOwnerTitle: subtitleOwner?.title ?? 'none (fallback to recording start)',
+            subtitleProgramStartMs,
+            recordingStartMs: ps.start_time.getTime(),
+            associatedProgramTitles: associatedPrograms.map(p => p.title)
+          });
+
+          return {
+            id: ps.id,
+            episodeNumber: pastStreams.length - idx,
+            title: ps.title,
+            description: ps.description || (associatedPrograms.length > 0 ? `Includes: ${associatedPrograms.map(p => p.title).join(', ')}` : 'Recorded Broadcast'),
+            thumbnail: ps.thumbnail_url || movie.thumbnail,
+            videoUrl: ps.recording_url,
+            duration: ps.duration_minutes ? `${ps.duration_minutes}m` : (associatedPrograms.length > 0 ? `${Math.round((associatedPrograms[associatedPrograms.length - 1].stop.getTime() - associatedPrograms[0].start.getTime()) / 60000)}m` : 'VOD'),
+            subtitles: ps.subtitles_url || fallbackSubtitleUrl,
+            recordingStartTimeMs: ps.start_time.getTime(),
+            subtitleProgramStartMs,
+            associatedPrograms: associatedPrograms.map(s => ({
+              title: s.title,
+              startMs: s.start.getTime(),
+              stopMs: s.stop.getTime()
+            }))
+          };
+      });
+
+      console.log('Processed VOD recordings:', pastRecordings);
+
+      if (movie.seasons) {
+        const updatedSeason = {
+          ...movie.seasons[0],
+          episodes: pastRecordings.reverse() // Display newest first or oldest first? E.g. Netflix usually shows oldest = ep1 first but in UI they can be reversed. 'episodenumber' handles numbering.
+        };
+        setSelectedSeason(updatedSeason);
+      }
     };
 
     fetchSchedule();
@@ -32,7 +96,7 @@ export default function AfterHoursDetail() {
     return () => {
       sub.unsubscribe();
     };
-  }, []);
+  }, [movie]);
 
   const handlePlayClick = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -41,6 +105,20 @@ export default function AfterHoursDetail() {
     } else {
       navigate('/live');
     }
+  };
+
+  const handleEpisodeClick = (episode: any) => {
+    navigate(`/watch/${movie.id}`, { 
+      state: { 
+        videoUrl: episode.videoUrl, 
+        episodeTitle: episode.title, 
+        subtitlesUrl: episode.subtitles,
+        recordingStartTimeMs: episode.recordingStartTimeMs,
+        subtitleProgramStartMs: episode.subtitleProgramStartMs,
+        associatedPrograms: episode.associatedPrograms,
+        episodeId: episode.id  // Unique UUID used as the watch-progress key
+      } 
+    });
   };
 
   const formatTime = (date: Date) => {
@@ -94,11 +172,17 @@ export default function AfterHoursDetail() {
             <h1 className="mdetail-title">{movie.title}</h1>
           )}
 
+          {isCurrentlyLive && currentProgram && (
+            <h3 className="mdetail-live-program" style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '-10px', marginBottom: '15px' }}>
+              {currentProgram.title}
+            </h3>
+          )}
+
           <div className="mdetail-meta-row">
             <span className="mdetail-meta-text">{movie.year}</span>
             <span className="mdetail-badge">{movie.ageRating}</span>
             <span className="mdetail-meta-text" style={{ color: '#e50914', fontWeight: 700 }}>{movie.duration}</span>
-            <span className="mdetail-badge mdetail-badge-cam">4K</span>
+            <span className="mdetail-badge mdetail-badge-cam">HD</span>
             <span className="mdetail-rating">★ {movie.rating}</span>
           </div>
 
@@ -110,7 +194,6 @@ export default function AfterHoursDetail() {
 
           <p className="mdetail-description">{movie.description}</p>
 
-          {/* EPG Section */}
           <div className="mdetail-actions">
             <button onClick={handlePlayClick} className="mdetail-btn mdetail-btn-play">
               <Play size={18} fill="black" strokeWidth={0} /> Watch Live
@@ -131,31 +214,96 @@ export default function AfterHoursDetail() {
         </div>
       </div>
 
-      <div className="mdetail-epg-wrapper">
-        {/* EPG Section */}
-        <div className="epg-section">
-          <h3 className="epg-title">
-            <Clock size={16} /> Schedule
-          </h3>
-          <div className="epg-list">
-            {epg.map((prog, idx) => {
-              const isLive = now >= prog.start && now <= prog.stop;
-              return (
-                <div key={idx} className={`epg-item ${isLive ? 'epg-item--active' : ''}`}>
-                  <div className="epg-time">
-                    {formatTime(prog.start)}
-                  </div>
-                  <div className="epg-info">
-                    <div className="epg-prog-title">
-                      {prog.title}
-                      {isLive && <span className="epg-live-indicator">NOW PLAYING</span>}
+      <div className="mdetail-tabs-section">
+        <div className="mdetail-tabs">
+          <button 
+            className={`mdetail-tab ${activeTab === 'episodes' ? 'mdetail-tab--active' : ''}`}
+            onClick={() => setActiveTab('episodes')}
+          >
+            Episodes
+          </button>
+          <button 
+            className={`mdetail-tab ${activeTab === 'schedule' ? 'mdetail-tab--active' : ''}`}
+            onClick={() => setActiveTab('schedule')}
+          >
+            Schedule
+          </button>
+        </div>
+
+        <div className="mdetail-tab-content">
+          {activeTab === 'episodes' ? (
+            <div className="episodes-section">
+               <div className="season-selector-wrapper">
+                 <button className="season-selector">
+                   {selectedSeason?.title} <ChevronDown size={16} />
+                 </button>
+               </div>
+
+               <div className="episodes-list">
+                 {selectedSeason?.episodes.length === 0 ? (
+                   <div className="no-episodes-message">
+                     <Library size={48} color="#333" strokeWidth={1} />
+                     <p>There are no recordings available for this season yet.</p>
+                     <span>Real past streams will automatically appear here once they finish processing.</span>
+                   </div>
+                 ) : (
+                   selectedSeason?.episodes.map((episode) => (
+                     <div key={episode.id} className="episode-item" onClick={() => handleEpisodeClick(episode)}>
+                       <div className="episode-main">
+                          <div className="episode-index">{episode.episodeNumber}</div>
+                          <div className="episode-thumbnail-container">
+                            <img 
+                            src={episode.thumbnail} 
+                            alt={episode.title} 
+                            className="episode-thumbnail" 
+                            onError={(e) => {
+                              e.currentTarget.onerror = null; // Prevent infinite loop
+                              e.currentTarget.src = movie.thumbnail;
+                            }}
+                          />
+                            <div className="episode-play-overlay">
+                               <Play size={24} fill="white" color="white" />
+                            </div>
+                          </div>
+                          <div className="episode-info-main">
+                            <div className="episode-header">
+                               <h4 className="episode-title">{episode.title}</h4>
+                               <span className="episode-duration">{episode.duration}</span>
+                            </div>
+                            <p className="episode-desc">{episode.description}</p>
+                          </div>
+                       </div>
+                     </div>
+                   ))
+                 )}
+               </div>
+            </div>
+          ) : (
+            <div className="epg-section">
+              <h3 className="epg-title">
+                <Clock size={16} /> Live Broadcast Schedule
+              </h3>
+              <div className="epg-list">
+                {epg.map((prog, idx) => {
+                  const isLive = now >= prog.start && now <= prog.stop;
+                  return (
+                    <div key={idx} className={`epg-item ${isLive ? 'epg-item--active' : ''}`}>
+                      <div className="epg-time">
+                        {formatTime(prog.start)}
+                      </div>
+                      <div className="epg-info">
+                        <div className="epg-prog-title">
+                          {prog.title}
+                          {isLive && <span className="epg-live-indicator">NOW PLAYING</span>}
+                        </div>
+                        <div className="epg-prog-desc">{prog.description}</div>
+                      </div>
                     </div>
-                    <div className="epg-prog-desc">{prog.description}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
@@ -171,9 +319,185 @@ export default function AfterHoursDetail() {
       </div>
 
       <style>{`
-        .mdetail-epg-wrapper {
+        .mdetail-tabs-section {
           padding: 0 4vw 40px;
-          background-color: transparent;
+        }
+
+        .mdetail-tabs {
+          display: flex;
+          gap: 30px;
+          border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 30px;
+        }
+
+        .mdetail-tab {
+          background: none;
+          border: none;
+          color: #a3a3a3;
+          font-size: 1.1rem;
+          font-weight: 700;
+          padding: 15px 0;
+          cursor: pointer;
+          position: relative;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          transition: color 0.3s;
+        }
+
+        .mdetail-tab--active {
+          color: white;
+        }
+
+        .mdetail-tab--active::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: #e50914;
+          border-radius: 2px;
+        }
+
+        .season-selector-wrapper {
+          margin-bottom: 25px;
+        }
+
+        .season-selector {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+          padding: 8px 16px;
+          border-radius: 4px;
+          font-size: 1rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+
+        .season-selector:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .episodes-list {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .episode-item {
+          padding: 20px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.3s;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .episode-item:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .episode-main {
+          display: flex;
+          align-items: center;
+          gap: 25px;
+        }
+
+        .episode-index {
+          font-size: 1.5rem;
+          color: #666;
+          font-weight: 400;
+          min-width: 30px;
+        }
+
+        .episode-thumbnail-container {
+          position: relative;
+          width: 180px;
+          aspect-ratio: 16/9;
+          border-radius: 4px;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        .episode-thumbnail {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .episode-play-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .episode-item:hover .episode-play-overlay {
+          opacity: 1;
+        }
+
+        .episode-info-main {
+          flex: 1;
+        }
+
+        .episode-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .episode-title {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: white;
+          margin: 0;
+        }
+
+        .episode-duration {
+          color: white;
+          font-size: 0.9rem;
+          font-weight: 700;
+        }
+
+        .episode-desc {
+          font-size: 0.9rem;
+          color: #a3a3a3;
+          line-height: 1.4;
+          margin: 0;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+          .episode-main {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+          }
+          
+          .episode-index {
+            display: none;
+          }
+
+          .episode-thumbnail-container {
+            width: 100%;
+          }
+
+          .episode-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+          }
         }
 
         .epg-section {
@@ -231,53 +555,6 @@ export default function AfterHoursDetail() {
           gap: 10px;
         }
 
-        .upcoming-status-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          background: linear-gradient(135deg, #eab308 0%, #d97706 100%);
-          color: white;
-          padding: 8px 18px;
-          border-radius: 50px;
-          font-size: 0.85rem;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-          margin-bottom: 25px;
-          box-shadow: 
-            0 8px 25px rgba(234, 179, 8, 0.4),
-            inset 0 0 10px rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(8px);
-          text-transform: uppercase;
-          width: fit-content;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .upcoming-status-pill::after {
-          content: '';
-          position: absolute;
-          top: -100%;
-          left: -100%;
-          width: 300%;
-          height: 300%;
-          background: linear-gradient(
-            45deg,
-            transparent 0%,
-            transparent 40%,
-            rgba(255, 255, 255, 0.3) 50%,
-            transparent 60%,
-            transparent 100%
-          );
-          animation: shimmer 3s infinite;
-          pointer-events: none;
-        }
-
-        @keyframes shimmer {
-          0% { transform: translate(-30%, -30%); }
-          100% { transform: translate(30%, 30%); }
-        }
-
         .live-status-pill {
           display: inline-flex;
           align-items: center;
@@ -297,32 +574,36 @@ export default function AfterHoursDetail() {
           backdrop-filter: blur(8px);
           text-transform: uppercase;
           width: fit-content;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        .live-dot {
-          width: 10px;
-          height: 10px;
-          background-color: white;
-          border-radius: 50%;
-          position: relative;
+        .upcoming-status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(90deg, rgba(229, 9, 20, 0.2), rgba(255, 255, 255, 0.1));
+          color: white;
+          padding: 8px 18px;
+          border-radius: 50px;
+          font-size: 0.85rem;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+          margin-bottom: 25px;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(10px);
+          text-transform: uppercase;
+          width: fit-content;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
-        .live-dot::after {
-          content: '';
-          position: absolute;
-          inset: -4px;
-          background-color: white;
-          border-radius: 50%;
-          filter: blur(2px);
-          animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
-          opacity: 0.6;
+        .upcoming-status-pill svg {
+          animation: starPulse 2.5s infinite ease-in-out;
         }
 
-        @keyframes pulse-ring {
-          0% { transform: scale(0.33); opacity: 0.6; }
-          80%, 100% { transform: scale(3.5); opacity: 0; }
+        @keyframes starPulse {
+          0%, 100% { transform: scale(1); opacity: 0.7; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
+          50% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 8px rgba(255,255,255,1)); }
         }
+
 
         .epg-live-indicator {
           background: #e50914;
@@ -366,6 +647,32 @@ export default function AfterHoursDetail() {
         @keyframes ringPulse {
           0% { transform: scale(0.4); opacity: 0.8; }
           100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        .no-episodes-message {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          text-align: center;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 12px;
+          border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .no-episodes-message p {
+          color: white;
+          font-size: 1.2rem;
+          font-weight: 700;
+          margin: 20px 0 10px;
+        }
+
+        .no-episodes-message span {
+          color: #666;
+          font-size: 0.9rem;
+          max-width: 300px;
+          line-height: 1.5;
         }
       `}</style>
     </div>

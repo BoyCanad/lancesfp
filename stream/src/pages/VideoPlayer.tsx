@@ -26,7 +26,7 @@ import {
   Camera,
   MoreHorizontal
 } from 'lucide-react';
-import { featuredMovies } from '../data/movies';
+import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../supabaseClient';
 import { updateWatchProgress, getWatchProgress, deleteWatchProgress, addToRecentlyWatched } from '../services/profileService';
@@ -369,8 +369,23 @@ export default function VideoPlayer() {
   };
 
   // Mock Data fallback
-  const movie = featuredMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
-  const title = movie?.title || "Ang Huling El Bimbo";
+  const allMovies = [...featuredMovies, afterHours, makingOfLegacy];
+  const baseMovie = useMemo(() => {
+    return allMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
+  }, [id]);
+
+  const movie = useMemo(() => {
+    if (location.state?.subtitlesUrl) {
+      return {
+        ...baseMovie,
+        subtitles: [
+          { label: "Filipino", srclang: "fil", url: location.state.subtitlesUrl }
+        ]
+      };
+    }
+    return baseMovie;
+  }, [baseMovie, location.state?.subtitlesUrl]);
+  const title = location.state?.episodeTitle || movie?.title || "Ang Huling El Bimbo";
   
   const nextMovie = useMemo(() => {
     // Special overrides for curated recommendations
@@ -384,10 +399,12 @@ export default function VideoPlayer() {
   }, [movie]);
 
   useEffect(() => {
-    if (movie?.subtitles) {
+    if (movie?.subtitles && movie.subtitles.length > 0) {
       const filIndex = movie.subtitles.findIndex(s => s.label.toLowerCase() === 'filipino');
       if (filIndex !== -1) {
         setActiveSubtitle(filIndex);
+      } else {
+        setActiveSubtitle(0);
       }
     }
   }, [movie]);
@@ -440,6 +457,38 @@ export default function VideoPlayer() {
   const seasonAndEpisode = isMovie ? "" : "S1:E1";
   const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
   
+  // Calculate dynamically active program for VOD recordings
+  const currentProgramTitle = useMemo(() => {
+    if (!location.state?.associatedPrograms || !location.state?.recordingStartTimeMs) return null;
+    const currentAbsoluteMs = location.state.recordingStartTimeMs + (currentTime * 1000);
+    const prog = location.state.associatedPrograms.find((p: any) => currentAbsoluteMs >= p.startMs && currentAbsoluteMs <= p.stopMs);
+    return prog?.title;
+  }, [location.state, currentTime]);
+
+  // subtitleTimeOffset: VTT cue timestamps start at 0:00 = program start.
+  // But currentTime is 0 at recording start, which may be minutes before/after the program.
+  // offset = (subtitleProgramStartMs - recordingStartMs) / 1000
+  // adjustedTime = currentTime - offset  →  when currentTime reaches the program's start in the VOD,
+  // adjustedTime hits 0, matching the VTT's first cue.
+  const subtitleTimeOffset = useMemo(() => {
+    if (!location.state?.recordingStartTimeMs || !location.state?.subtitleProgramStartMs) return 0;
+    return (location.state.subtitleProgramStartMs - location.state.recordingStartTimeMs) / 1000;
+  }, [location.state]);
+
+  // Gate: only show subtitles while the currently-active EPG program is the one that
+  // owns the subtitle file. Prevents the subtitle from bleeding into other programs.
+  const isInSubtitleProgram = useMemo(() => {
+    if (!location.state?.recordingStartTimeMs || !location.state?.subtitleProgramStartMs || !location.state?.associatedPrograms) return true;
+    // If subtitleProgramStartMs equals recordingStartMs (no schedule match found), always show.
+    if (location.state.subtitleProgramStartMs === location.state.recordingStartTimeMs) return true;
+    const currentAbsoluteMs = location.state.recordingStartTimeMs + (currentTime * 1000);
+    const activeProg = location.state.associatedPrograms.find(
+      (p: any) => currentAbsoluteMs >= p.startMs && currentAbsoluteMs <= p.stopMs
+    );
+    if (!activeProg) return false;
+    return activeProg.startMs === location.state.subtitleProgramStartMs;
+  }, [location.state, currentTime]);
+
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
@@ -447,11 +496,18 @@ export default function VideoPlayer() {
     // Reset hasStartedPlaying and initial source setup
     setHasStartedPlaying(false);
     
-    // PRIORITY 1: Check if we were passed a direct offline blob URL
+    // PRIORITY 1: Check if we were passed a direct offline blob URL or a dynamic video URL (for episodes)
     if (location.state?.offlineUrl) {
       console.log('[Player] Playing from provided offline blob URL');
       setActiveSource(location.state.offlineUrl);
       setIsUsingOfflineSource(true);
+      return;
+    }
+
+    if (location.state?.videoUrl) {
+      console.log('[Player] Playing from provided dynamic video URL:', location.state.videoUrl);
+      setActiveSource(location.state.videoUrl);
+      setIsUsingOfflineSource(false);
       return;
     }
 
@@ -465,7 +521,7 @@ export default function VideoPlayer() {
         URL.revokeObjectURL(activeSource);
       }
     };
-  }, [videoSrc, movie, location.state]);
+  }, [videoSrc, movie, location.state, activeSource]);
 
   useEffect(() => {
     if (!activeProfileId || !id) return;
@@ -482,8 +538,12 @@ export default function VideoPlayer() {
     });
   }, [activeProfileId, id]);
 
+  // For past stream episodes each has a unique UUID (episodeId) passed via location.state.
+  // Using it as the watch-progress key prevents all episodes sharing the 'after-hours' slot.
+  const progressKey = (location.state?.episodeId as string | undefined) || id;
+
   const saveProgress = async () => {
-    if (activeProfileId && id && latestDurationRef.current > 0) {
+    if (activeProfileId && progressKey && latestDurationRef.current > 0) {
       const time = latestTimeRef.current;
       const duration = latestDurationRef.current;
 
@@ -499,8 +559,8 @@ export default function VideoPlayer() {
       // If reached end credits / recommendation timestamp, delete progress and add to recently watched
       if (isAtCredits) {
         try {
-          await deleteWatchProgress(activeProfileId, id);
-          await addToRecentlyWatched(activeProfileId, id, seasonAndEpisode);
+          await deleteWatchProgress(activeProfileId, progressKey);
+          await addToRecentlyWatched(activeProfileId, progressKey, seasonAndEpisode);
         } catch (e) {
           console.error('Failed to update watch history', e);
         }
@@ -510,7 +570,7 @@ export default function VideoPlayer() {
       try {
         await updateWatchProgress(
           activeProfileId,
-          id,
+          progressKey,
           Math.floor(time * 1000),
           Math.floor(duration * 1000)
         );
@@ -1441,9 +1501,13 @@ export default function VideoPlayer() {
   };
 
   const formatTime = (time: number) => {
-    const clamped = Math.max(0, time); // prevent -1:0-1 at video end
-    const minutes = Math.floor(clamped / 60);
+    const clamped = Math.max(0, time);
+    const hours = Math.floor(clamped / 3600);
+    const minutes = Math.floor((clamped % 3600) / 60);
     const seconds = Math.floor(clamped % 60);
+    if (hours > 0) {
+      return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
@@ -1458,9 +1522,29 @@ export default function VideoPlayer() {
     }
   };
 
-  const skipIds = ['f1', 'eb1', 'f4', 'f5'];
-  const skipTime = skipIds.includes(movie?.id) ? 10 : 30;
-  const skipLabel = skipIds.includes(movie?.id) ? "Skip Logo" : "Skip Intro";
+  const { isApplicable, skipTime, skipLabel } = useMemo(() => {
+    // Special past stream
+    if (movie?.id === 'after-hours') {
+      if (location.state?.episodeTitle?.includes('April 20, 2026')) {
+        return { isApplicable: true, skipTime: 188, skipLabel: "Skip Intro" }; // 3:08 = 188 seconds
+      }
+      return { isApplicable: false, skipTime: 0, skipLabel: "" };
+    }
+    
+    // Normal skips
+    const skipIds = ['f1', 'eb1', 'f4', 'f5'];
+    if (skipIds.includes(movie?.id)) {
+      return { isApplicable: true, skipTime: 10, skipLabel: "Skip Logo" };
+    }
+    
+    // F2 (Minsan) has no skip
+    if (movie?.id === 'f2') {
+       return { isApplicable: false, skipTime: 0, skipLabel: "" };
+    }
+
+    // Default 30s skip
+    return { isApplicable: true, skipTime: 30, skipLabel: "Skip Intro" };
+  }, [movie?.id, location.state?.episodeTitle]);
 
   return (
     <div 
@@ -1748,7 +1832,13 @@ export default function VideoPlayer() {
         {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
           <div className="custom-subtitle-overlay-container">
             {parsedSubtitles[movie.subtitles[activeSubtitle].url]
-              .filter(cue => currentTime >= cue.start && currentTime <= cue.end)
+              .filter(cue => {
+                // VOD_SUBTITLE_LATENCY compensates for HLS encoding delay baked into the recording.
+                // Positive value = show subtitles this many seconds earlier. Tune as needed.
+                const VOD_SUBTITLE_LATENCY = 15;
+                const adjustedTime = currentTime - subtitleTimeOffset + VOD_SUBTITLE_LATENCY;
+                return isInSubtitleProgram && adjustedTime >= cue.start && adjustedTime <= cue.end;
+              })
               .map((cue, idx) => (
                 <div key={idx} className="custom-subtitle-text">
                   {cue.text.split('\n').map((line, i) => (
@@ -1793,8 +1883,17 @@ export default function VideoPlayer() {
           </button>
           
           {/* Mobile Title */}
-          <div className="mobile-top-title mobile-only">
-            {title}
+          <div className="mobile-top-title mobile-only" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span>
+              {movie?.id === 'after-hours' 
+                ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}` 
+                : title}
+            </span>
+            {currentProgramTitle && (
+              <span style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px' }}>
+                {currentProgramTitle}
+              </span>
+            )}
           </div>
           
           <div className="top-right-controls">
@@ -1809,7 +1908,7 @@ export default function VideoPlayer() {
         </div>
 
         {/* Skip Intro/Logo Button */}
-        {movie?.id !== 'f2' && (
+        {isApplicable && (
           <button 
             className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
             onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
@@ -1970,9 +2069,16 @@ export default function VideoPlayer() {
 
             {/* Title & Episode info (Desktop) */}
             <div className="title-info desktop-only">
-              <span className="title-main">{title}</span>
-              {!isMovie && (
+              <span className="title-main">{movie?.id === 'after-hours' ? 'After Hours' : title}</span>
+              {movie?.id === 'after-hours' && location.state?.episodeTitle ? (
+                <span className="title-episode">: {location.state.episodeTitle}</span>
+              ) : !isMovie && movie?.id !== 'after-hours' && (
                 <span className="title-episode">{seasonAndEpisode} {episodeTitle}</span>
+              )}
+              {currentProgramTitle && (
+                <span className="title-program" style={{ color: '#aaa', fontWeight: 600, fontSize: '0.95rem', marginLeft: '12px', borderLeft: '1px solid rgba(255,255,255,0.3)', paddingLeft: '12px' }}>
+                  {currentProgramTitle}
+                </span>
               )}
             </div>
 

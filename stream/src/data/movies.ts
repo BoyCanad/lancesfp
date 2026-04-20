@@ -1,3 +1,20 @@
+export interface Episode {
+  id: string;
+  episodeNumber: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  videoUrl: string;
+  duration: string;
+}
+
+export interface Season {
+  id: string;
+  seasonNumber: number;
+  title: string;
+  episodes: Episode[];
+}
+
 export interface Movie {
   id: string;
   title: string;
@@ -37,6 +54,7 @@ export interface Movie {
     thumbHeight: number;
   };
   downloadUrl?: string;
+  seasons?: Season[];
 }
 
 export const makingOfLegacy: Movie = {
@@ -77,6 +95,14 @@ export const afterHours: Movie = {
   isOriginal: true,
   streamStatus: 'live',
   videoUrl: "https://livepeercdn.studio/hls/f8a31biu1b7w4hzw/index.m3u8",
+  seasons: [
+    {
+      id: "s-april-2026",
+      seasonNumber: 1,
+      title: "Past Stream (April)",
+      episodes: []
+    }
+  ]
 };
 
 export const featuredMovies: Movie[] = [

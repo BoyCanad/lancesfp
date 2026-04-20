@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hls from 'hls.js';
-import { Play, Pause, ArrowLeft, Volume2, VolumeX, Maximize, Minimize, MessageSquareText, Check } from 'lucide-react';
+import { Play, Pause, ArrowLeft, Volume2, VolumeX, Maximize, Minimize, MessageSquareText, Check, Star } from 'lucide-react';
 import { getLiveSchedule, subscribeToScheduleChanges, type EPGProgram } from '../services/epgService';
 import './VideoPlayer.css';
 import './LivePlayer.css';
@@ -24,6 +24,8 @@ export default function LivePlayer() {
   const [parsedCues, setParsedCues] = useState<any[]>([]);
   const [activeSubtitle, setActiveSubtitle] = useState("");
   const [showSettings, setShowSettings] = useState(false); // Subtitle settings panel
+  const [isCurrentlyLive, setIsCurrentlyLive] = useState(false);
+  const [currentProgram, setCurrentProgram] = useState<EPGProgram | null>(null);
 
   const hideControlsTimerRef = useRef<number | null>(null);
 
@@ -105,6 +107,8 @@ export default function LivePlayer() {
     const findActiveProg = () => {
       const now = new Date();
       const currentProg = epg.find(p => now >= p.start && now <= p.stop);
+      setCurrentProgram(currentProg || null);
+      setIsCurrentlyLive(!!currentProg);
       if (currentProg && currentProg.subtitles !== currentSubtitleUrl) {
         setCurrentSubtitleUrl(currentProg.subtitles);
       }
@@ -327,6 +331,7 @@ export default function LivePlayer() {
           playsInline
           autoPlay
           muted={isMuted}
+          poster="/images/AFTER%20HOURS-banner.gif"
           style={{ pointerEvents: 'auto' }}
         />
         
@@ -358,8 +363,13 @@ export default function LivePlayer() {
             <ArrowLeft size={42} />
           </button>
 
-          <div className="mobile-top-title mobile-only">
-            After Hours
+          <div className="mobile-top-title mobile-only" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+            <span>After Hours</span>
+            {currentProgram && (
+              <span style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px' }}>
+                {currentProgram.title}
+              </span>
+            )}
           </div>
 
           <div className="top-right-controls">
@@ -372,14 +382,27 @@ export default function LivePlayer() {
 
         <div className="player-controls-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="timeline-container" style={{ alignItems: 'center', gap: 16 }}>
-            <div
-              className="live-player__badge"
-              onClick={jumpToLive}
-              style={{ flexShrink: 0, fontSize: '0.75rem', cursor: 'pointer' }}
-            >
-              <span className="live-player__dot"></span>
-              LIVE
-            </div>
+            {isCurrentlyLive ? (
+              <div
+                className="live-player__badge"
+                onClick={jumpToLive}
+                style={{ flexShrink: 0, fontSize: '0.75rem', cursor: 'pointer' }}
+              >
+                <div className="pulse-icon-container" style={{ transform: 'scale(0.8)', marginRight: 4 }}>
+                  <div className="pulse-dot"></div>
+                  <div className="pulse-ring"></div>
+                </div>
+                LIVE NOW
+              </div>
+            ) : (
+              <div
+                className="upcoming-status-pill"
+                style={{ marginBottom: 0, padding: '4px 10px', fontSize: '11px', gap: '4px' }}
+              >
+                <Star size={12} fill="white" />
+                PREMIERE
+              </div>
+            )}
 
             <div style={{
               flex: 1,
@@ -423,15 +446,9 @@ export default function LivePlayer() {
 
             <div className="title-info desktop-only">
               <span className="title-main">After Hours</span>
-              {epg.find(p => {
-                const now = new Date();
-                return now >= p.start && now <= p.stop;
-              }) && (
-                <span className="title-program">
-                  {epg.find(p => {
-                    const now = new Date();
-                    return now >= p.start && now <= p.stop;
-                  })?.title}
+              {currentProgram && (
+                <span className="title-episode">
+                  {currentProgram.title}
                 </span>
               )}
             </div>
