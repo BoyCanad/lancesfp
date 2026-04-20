@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useVideoFade } from '../hooks/useVideoFade';
 import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies, makingOfLegacy, elBimboFeatured, elBimboCollections } from '../data/movies';
+import { makingOfLegacy, elBimboCollections } from '../data/movies';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import './MovieDetail.css';
@@ -217,7 +217,7 @@ export default function BeyondLastDanceDetail() {
           </div>
 
           <div className="mdetail-genres">
-            {movie.genre.map((g) => (
+            {movie.genre.filter(g => g !== 'Ang Huling El Bimbo').map((g) => (
               <span key={g} className="mdetail-genre-pill">{g}</span>
             ))}
           </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useVideoFade } from '../hooks/useVideoFade';
-import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
+import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies, elBimboFeatured, elBimboCollections } from '../data/movies';
+import { featuredMovies, elBimboCollections } from '../data/movies';
+import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import './MovieDetail.css';
@@ -70,6 +71,16 @@ export default function MinsanDetail() {
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [inMyList, setInMyList] = useState(false);
+
+  useEffect(() => {
+    if (movie) {
+      setInMyList(isInMyList(movie.id));
+      const handleUpdate = () => setInMyList(isInMyList(movie.id));
+      window.addEventListener('mylist_updated', handleUpdate);
+      return () => window.removeEventListener('mylist_updated', handleUpdate);
+    }
+  }, [movie]);
   useVideoFade(videoRef, isMuted, trailerActive);
 
   useEffect(() => {
@@ -125,6 +136,15 @@ export default function MinsanDetail() {
       })
       .catch(err => console.error('Failed to load subtitles:', err));
   }, [movie]);
+
+  const handleListToggle = () => {
+    if (!movie) return;
+    if (inMyList) {
+      removeFromMyList(movie.id);
+    } else {
+      addToMyList(movie.id);
+    }
+  };
 
   // Sync muted state to video element
   useEffect(() => {
@@ -250,7 +270,7 @@ export default function MinsanDetail() {
 
           {/* Genre pills */}
           <div className="mdetail-genres">
-            {movie.genre.map((g) => (
+            {movie.genre.filter(g => g !== 'Ang Huling El Bimbo').map((g) => (
               <span key={g} className="mdetail-genre-pill">{g}</span>
             ))}
           </div>
@@ -260,17 +280,24 @@ export default function MinsanDetail() {
 
           {/* Action Buttons */}
           <div className="mdetail-actions">
-            <button 
-              onClick={handlePlayClick} 
-              className="mdetail-btn mdetail-btn-play" 
+            <button
+              onClick={handlePlayClick}
+              className="mdetail-btn mdetail-btn-play"
               style={{ textDecoration: 'none', border: 'none', cursor: 'pointer' }}
             >
               <Play size={18} fill="black" strokeWidth={0} /> Play
             </button>
 
             <div className="mdetail-quick-actions">
-              <button className="mdetail-quick-btn">
-                <Plus size={28} color="white" strokeWidth={1.5} />
+              <button
+                className={`mdetail-quick-btn ${inMyList ? 'active' : ''}`}
+                onClick={handleListToggle}
+              >
+                {inMyList ? (
+                  <Check size={28} color="white" strokeWidth={1.5} />
+                ) : (
+                  <Plus size={28} color="white" strokeWidth={1.5} />
+                )}
                 <span>My List</span>
               </button>
               <RateButton movieId={movie.id} />

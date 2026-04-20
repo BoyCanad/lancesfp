@@ -19,6 +19,11 @@ import BeyondLastDanceDetail from './pages/BeyondLastDanceDetail';
 import MusicPlayer from './pages/MusicPlayer';
 import LivePlayer from './pages/LivePlayer';
 import AfterHoursDetail from './pages/AfterHoursDetail';
+import BukangLiwaywayDetail from './pages/BukangLiwaywayDetail';
+import ADayInMyLifeDetail from './pages/ADayInMyLifeDetail';
+import StemADetail from './pages/StemADetail';
+import Search from './pages/Search';
+import MyList from './pages/MyList';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
@@ -61,7 +66,10 @@ function App() {
     '/ang-huling-el-bimbo',
     '/collections/el-bimbo',
     '/beyond-the-last-dance',
-    '/after-hours'
+    '/after-hours',
+    '/bukang-liwayway-takipsilim',
+    '/a-day-in-my-life-stem',
+    '/11-stem-a'
   ].includes(pathname);
 
   const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix;
@@ -111,7 +119,13 @@ function App() {
       setTransitionProfile(null);
     }
     
-    setPageLoading(true);
+    const isSearchTransition = pathname === '/search' || (prevPath === '/search' && pathname === '/browse');
+    
+    if (!isSearchTransition) {
+      setPageLoading(true);
+    } else {
+      setPageLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -151,6 +165,8 @@ function App() {
         <Route path="/IconPicker/:id" element={session ? <IconPicker /> : <Navigate to="/login" replace />} />
         
         <Route path="/browse" element={<Home />} />
+        <Route path="/my-list" element={<MyList />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
         <Route path="/minsan" element={<MinsanDetail />} />
         <Route path="/tindahan-ni-aling-nena" element={<TindahanDetail />} />
@@ -161,6 +177,9 @@ function App() {
         <Route path="/ang-huling-el-bimbo" element={<ElBimboDetail />} />
         <Route path="/beyond-the-last-dance" element={<BeyondLastDanceDetail />} />
         <Route path="/after-hours" element={<AfterHoursDetail />} />
+        <Route path="/bukang-liwayway-takipsilim" element={<BukangLiwaywayDetail />} />
+        <Route path="/a-day-in-my-life-stem" element={<ADayInMyLifeDetail />} />
+        <Route path="/11-stem-a" element={<StemADetail />} />
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />

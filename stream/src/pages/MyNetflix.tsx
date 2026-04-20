@@ -19,7 +19,8 @@ import {
   LogOut
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
+import { featuredMovies, trendingMovies, elBimboFeatured, makingOfLegacy, elBimboCollections } from '../data/movies';
+import { getMyList } from '../services/listService';
 import { getProfiles, getWatchProgress, getRecentlyWatched, getLikedMovies } from '../services/profileService';
 import type { Profile } from '../services/profileService';
 import { MoreVertical } from 'lucide-react';
@@ -34,6 +35,7 @@ export default function MyNetflix() {
   const [continueWatching, setContinueWatching] = useState<any[]>([]);
   const [recentlyWatched, setRecentlyWatched] = useState<any[]>([]);
   const [likedTitles, setLikedTitles] = useState<any[]>([]);
+  const [myList, setMyList] = useState<any[]>([]);
   const [showMenu, setShowMenu] = useState(false);
 
   // PIN Modal states
@@ -55,6 +57,17 @@ export default function MyNetflix() {
     }
     
     getProfiles().then(setProfiles).catch(console.error);
+    
+    // Fetch My List
+    const fetchMyList = () => {
+      const savedIds = getMyList();
+      const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured, makingOfLegacy, ...elBimboCollections];
+      const items = savedIds.map(id => allMovies.find(m => m.id === id)).filter(Boolean);
+      setMyList(items);
+    };
+    fetchMyList();
+    window.addEventListener('mylist_updated', fetchMyList);
+    return () => window.removeEventListener('mylist_updated', fetchMyList);
   }, []);
 
   useEffect(() => {
@@ -172,7 +185,7 @@ export default function MyNetflix() {
     window.location.href = '/login';
   };
 
-  const myListMovies = [...trendingMovies].reverse().slice(0, 4);
+
 
   return (
     <div className="my-netflix">
@@ -315,16 +328,21 @@ export default function MyNetflix() {
         <section className="mn-row">
           <div className="mn-row__header">
             <h2 className="mn-row__title">My List</h2>
-            <button className="mn-row__see-all">
+            <button className="mn-row__see-all" onClick={() => navigate('/my-list')}>
               See All <ChevronRight size={18} />
             </button>
           </div>
           <div className="mn-row__track">
-            {myListMovies.map((movie) => (
+            {myList.map((movie) => (
               <div key={movie.id} className="mn-list-card" onClick={() => navigate(`/watch/${movie.id}`)}>
                 <img src={movie.thumbnail} alt={movie.title} className="mn-list-card__img" />
               </div>
             ))}
+            {myList.length === 0 && (
+              <div className="mn-empty-row-msg">
+                Your list is empty. Add titles to see them here!
+              </div>
+            )}
           </div>
         </section>
 

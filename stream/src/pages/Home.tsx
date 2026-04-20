@@ -1,13 +1,13 @@
 import HeroCarousel from '../components/HeroCarousel';
 import ContentRow from '../components/ContentRow';
 import LiveStreamSection from '../components/LiveStreamSection';
-import { featuredMovies, trendingMovies, elBimboFeatured, elBimboCollections, makingOfLegacy } from '../data/movies';
+import { featuredMovies, trendingMovies, elBimboFeatured, elBimboCollections, makingOfLegacy, archiveMovies } from '../data/movies';
 import { useState, useEffect } from 'react';
 import { getProfiles, getWatchProgress } from '../services/profileService';
 import { useNavigate } from 'react-router-dom';
 import type { Profile } from '../services/profileService';
 
-const archiveMovies = [trendingMovies[2], elBimboFeatured, makingOfLegacy, trendingMovies[0], trendingMovies[1], ...trendingMovies.slice(3)];
+
 
 export default function Home() {
   const navigate = useNavigate();

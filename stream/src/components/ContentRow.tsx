@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play, Plus, Check, X, ThumbsUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import type { Movie } from '../data/movies';
 import { supabase } from '../supabaseClient';
+import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import './ContentRow.css';
 
 interface ContentRowProps {
@@ -38,8 +39,19 @@ export const MovieCard = memo(({
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [hasFinishedOnce, setHasFinishedOnce] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // Default to audio on as requested
+  const [inMyList, setInMyList] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoElemRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    setInMyList(isInMyList(movie.id));
+    
+    const handleUpdate = () => {
+      setInMyList(isInMyList(movie.id));
+    };
+    window.addEventListener('mylist_updated', handleUpdate);
+    return () => window.removeEventListener('mylist_updated', handleUpdate);
+  }, [movie.id]);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
     if (window.innerWidth <= 768) return;
@@ -136,6 +148,15 @@ export const MovieCard = memo(({
     }
   };
 
+  const handleListToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (inMyList) {
+      removeFromMyList(movie.id);
+    } else {
+      addToMyList(movie.id);
+    }
+  };
+
   return (
     <div
       className={`card ${movie.desktopOnly ? 'card--desktop-only' : ''}`}
@@ -179,14 +200,14 @@ export const MovieCard = memo(({
           <div className={`card__expanded-video ${isPlayingTrailer ? 'card__expanded-video--playing' : ''}`}>
             {/* Banner (Static) */}
             <picture className="card__expanded-banner-pic">
-              {(movie.mobileCardBanner || movie.mobileBanner) && (
+              {movie.mobileThumbnail && (
                 <source 
                   media="(max-width: 768px)" 
-                  srcSet={movie.mobileCardBanner || movie.mobileBanner} 
+                  srcSet={movie.mobileThumbnail} 
                 />
               )}
               <img 
-                src={movie.cardBanner || movie.banner || movie.thumbnail} 
+                src={movie.thumbnail} 
                 alt="" 
                 className="card__expanded-banner" 
                 loading="lazy"
@@ -252,8 +273,12 @@ export const MovieCard = memo(({
                     <button className="card__btn card__btn--play card__btn--white" onClick={handlePlayClick}>
                       <Play size={12} fill="black" color="black" />
                     </button>
-                    <button className="card__btn card__btn--icon" onClick={(e) => e.stopPropagation()}>
-                      <Plus size={14} color="white" />
+                    <button 
+                      className={`card__btn card__btn--icon ${inMyList ? 'active' : ''}`} 
+                      onClick={handleListToggle}
+                      title={inMyList ? "Remove from My List" : "Add to My List"}
+                    >
+                      {inMyList ? <Check size={14} color="white" /> : <Plus size={14} color="white" />}
                     </button>
                     <button className="card__btn card__btn--icon" onClick={handleLikeToggle}>
                       <ThumbsUp size={12} color={isLiked ? "#46d369" : "white"} fill={isLiked ? "#46d369" : "transparent"} />
@@ -311,15 +336,6 @@ export const MovieCard = memo(({
         </div>
       )}
 
-      {/* Card info below thumbnail */}
-      <div className="card__info">
-        <p className="card__title">{movie.title}</p>
-        <div className="card__meta">
-          <span className="card__year">{movie.year}</span>
-          <span className="card__dot">·</span>
-          <span className="card__genre">{movie.genre[0]}</span>
-        </div>
-      </div>
     </div>
   );
 });
@@ -380,6 +396,12 @@ export default function ContentRow({
       navigate('/ang-huling-el-bimbo', navOptions);
     } else if (movie.id === 'beyond-the-last-dance') {
       navigate('/beyond-the-last-dance', navOptions);
+    } else if (movie.id === 'bukang-liwayway-takipsilim') {
+      navigate('/bukang-liwayway-takipsilim', navOptions);
+    } else if (movie.id === 'a-day-in-my-life-stem') {
+      navigate('/a-day-in-my-life-stem', navOptions);
+    } else if (movie.id === 't1') {
+      navigate('/11-stem-a', navOptions);
     } else {
       // Fallback or generic detail page
       navigate(`/browse`, navOptions);

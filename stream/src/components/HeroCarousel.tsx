@@ -1,9 +1,34 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, Bookmark } from 'lucide-react';
+import { Play, Info, Bookmark, Plus, Check } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import type { Movie } from '../data/movies';
+import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import './HeroCarousel.css';
+
+function HeroListButton({ movie }: { movie: Movie }) {
+  const [inList, setInList] = useState(() => isInMyList(movie.id));
+
+  useEffect(() => {
+    setInList(isInMyList(movie.id));
+    const handleUpdate = () => setInList(isInMyList(movie.id));
+    window.addEventListener('mylist_updated', handleUpdate);
+    return () => window.removeEventListener('mylist_updated', handleUpdate);
+  }, [movie.id]);
+
+  const toggleList = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (inList) removeFromMyList(movie.id);
+    else addToMyList(movie.id);
+  };
+
+  return (
+    <button className="hero__btn hero__btn--secondary" onClick={toggleList}>
+      {inList ? <Check size={15} strokeWidth={2.5} /> : <Plus size={15} strokeWidth={2.5} />} 
+      My List
+    </button>
+  );
+}
 
 interface HeroCarouselProps {
   movies: Movie[];
@@ -142,7 +167,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <div className="hero__actions">
             <button className="hero__btn hero__btn--play" onClick={() => handlePlay(movie)}><Play size={15} fill="white" /> Play</button>
             <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
-            <button className="hero__btn hero__btn--secondary"><Bookmark size={15} /> Save</button>
+            <HeroListButton movie={movie} />
           </div>
         </div>
       )}
@@ -196,7 +221,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                     <div className="hero__actions">
                       <button className="hero__btn hero__btn--play" onClick={() => handlePlay(movie)}><Play size={15} fill="white" /> Play</button>
                       <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
-                      <button className="hero__btn hero__btn--secondary"><Bookmark size={15} /> Save</button>
+                      <HeroListButton movie={movie} />
                     </div>
                   </div>
                 </div>

@@ -1,16 +1,33 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus } from 'lucide-react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
+
 import './Navbar.css';
 
 export default function Navbar() {
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+
+
   const [session, setSession] = useState<any>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [activeProfile, setActiveProfile] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [params] = useSearchParams();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const closeTimeout = useRef<any>(null);
   const navigate = useNavigate();
 
@@ -75,7 +92,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const location = useLocation();
   const isDetailPage = [
     '/ang-huling-el-bimbo-play',
     '/minsan',
@@ -88,6 +104,38 @@ export default function Navbar() {
     '/collections/el-bimbo',
     '/beyond-the-last-dance'
   ].some(path => location.pathname.includes(path));
+  
+  // Sync query state with URL
+  useEffect(() => {
+    const q = params.get('q');
+    if (q) {
+      setSearchQuery(q);
+      setIsSearchExpanded(true);
+    }
+  }, [params]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim().length > 0) {
+      navigate(`/search?q=${encodeURIComponent(value)}`, { replace: true });
+    } else {
+      navigate('/browse', { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
+  const handleSearchClick = () => {
+    setIsSearchExpanded(true);
+  };
+
+  if (isMobile && location.pathname === '/search') {
+    return null;
+  }
 
   return (
     <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${isDetailPage ? 'navbar--detail-page' : ''}`}>
@@ -108,16 +156,40 @@ export default function Navbar() {
             <li className="navbar__menu-item">Movies</li>
             <li className="navbar__menu-item">Games</li>
             <li className="navbar__menu-item">New & Popular</li>
-            <li className="navbar__menu-item">My List</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/my-list')}>My List</li>
             <li className="navbar__menu-item">Browse by Languages</li>
           </ul>
         </div>
 
         {/* Right Controls */}
-        <div className="navbar__right">
-          <div className="navbar__icon-wrapper">
-            <Search size={24} color="white" />
-          </div>
+          <div className="navbar__right">
+            <div className={`navbar__search-container ${isSearchExpanded ? 'expanded' : ''}`}>
+              <Search 
+                size={22} 
+                color="white" 
+                className="navbar__search-icon" 
+                onClick={handleSearchClick}
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="navbar__search-input"
+                placeholder="Titles, people, genres"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onBlur={() => {
+                  if (searchQuery === '') setTimeout(() => setIsSearchExpanded(false), 200);
+                }}
+              />
+              {isSearchExpanded && searchQuery !== '' && (
+                <X 
+                  size={18} 
+                  color="white" 
+                  className="navbar__clear-icon" 
+                  onClick={() => handleSearchChange('')}
+                />
+              )}
+            </div>
           
           <div className="navbar__icon-wrapper">
             <Bell size={24} color="white" />
@@ -248,7 +320,24 @@ export default function Navbar() {
 
           </div>
           <div className="navbar__mobile-actions">
-            <Search size={24} color="white" />
+            <div className={`navbar__mobile-search ${isSearchExpanded ? 'expanded' : ''}`}>
+               {isSearchExpanded ? (
+                 <div className="navbar__mobile-search-bar">
+                    <Search size={20} color="#b3b3b3" />
+                    <input 
+                      ref={searchInputRef}
+                      type="text" 
+                      placeholder="Search" 
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      autoFocus
+                    />
+                    <X size={20} color="#b3b3b3" onClick={() => { setIsSearchExpanded(false); handleSearchChange(''); }} />
+                 </div>
+               ) : (
+                  <Search size={24} color="white" onClick={() => navigate('/search')} />
+               )}
+            </div>
           </div>
         </div>
         {!isDetailPage && (
