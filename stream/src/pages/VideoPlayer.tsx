@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  RotateCw, 
-  Volume2, 
-  VolumeX, 
-  Maximize, 
-  Minimize, 
+import {
+  ArrowLeft,
+  Play,
+  Pause,
+  RotateCcw,
+  RotateCw,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
   Info,
   MessageSquareText,
   Copy,
@@ -42,7 +42,7 @@ const parseVTT = (vttData: string): ParsedCue[] => {
   const cues: ParsedCue[] = [];
   const lines = vttData.split(/\r?\n/);
   let i = 0;
-  
+
   const timeToSeconds = (timeStr: string) => {
     const parts = timeStr.split(':');
     let secs = 0;
@@ -62,7 +62,7 @@ const parseVTT = (vttData: string): ParsedCue[] => {
       const parts = line.split('-->');
       const start = timeToSeconds(parts[0].trim());
       const end = timeToSeconds(parts[1].trim());
-      
+
       i++;
       let text = '';
       while (i < lines.length && lines[i].trim() !== '') {
@@ -113,7 +113,7 @@ export default function VideoPlayer() {
         }
       } catch { /* bad param, ignore */ }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
 
@@ -149,11 +149,11 @@ export default function VideoPlayer() {
     setCopyLinkDone(true);
     setTimeout(() => setCopyLinkDone(false), 2500);
   };
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLInputElement>(null);
-  
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -203,12 +203,12 @@ export default function VideoPlayer() {
   const clipProgressUIRef = useRef<HTMLDivElement>(null);
   const clipStartHandleUIRef = useRef<HTMLDivElement>(null);
   const clipEndHandleUIRef = useRef<HTMLDivElement>(null);
-  const clipLocalRef = useRef<{start: number, end: number}>({start: 0, end: 0});
+  const clipLocalRef = useRef<{ start: number, end: number }>({ start: 0, end: 0 });
 
   const [activeSource, setActiveSource] = useState('');
   const [isUsingOfflineSource, setIsUsingOfflineSource] = useState(false);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
-  
+
   const latestTimeRef = useRef(0);
   const latestDurationRef = useRef(0);
 
@@ -221,7 +221,7 @@ export default function VideoPlayer() {
     clipLocalRef.current = { start, end };
     if (videoRef.current) {
       videoRef.current.currentTime = start;
-      if (!isPlaying) togglePlay(); 
+      if (!isPlaying) togglePlay();
     }
   };
 
@@ -233,7 +233,7 @@ export default function VideoPlayer() {
     const rect = clipTrackRef.current.getBoundingClientRect();
     let percent = (clientX - rect.left) / rect.width;
     percent = Math.max(0, Math.min(1, percent));
-    
+
     const newTime = percent * duration;
     const formatTimeLocal = (time: number) => {
       const clamped = Math.max(0, time);
@@ -241,13 +241,13 @@ export default function VideoPlayer() {
       const seconds = Math.floor(clamped % 60);
       return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
-    
+
     if (clipActiveHandleRef.current === 'start') {
       if (newTime >= clipLocalRef.current.end - 2) return;
       clipLocalRef.current.start = newTime;
-      
-      if (clipStartHandleUIRef.current) clipStartHandleUIRef.current.style.left = `${(newTime/duration)*100}%`;
-      if (clipProgressUIRef.current) clipProgressUIRef.current.style.left = `${(newTime/duration)*100}%`;
+
+      if (clipStartHandleUIRef.current) clipStartHandleUIRef.current.style.left = `${(newTime / duration) * 100}%`;
+      if (clipProgressUIRef.current) clipProgressUIRef.current.style.left = `${(newTime / duration) * 100}%`;
       if (clipStartUIRef.current) clipStartUIRef.current.textContent = formatTimeLocal(newTime).replace(/^00:/, '');
       if (clipDurationUIRef.current) clipDurationUIRef.current.textContent = formatTimeLocal(clipLocalRef.current.end - newTime).replace(/^00:/, '');
 
@@ -260,9 +260,9 @@ export default function VideoPlayer() {
     } else {
       if (newTime <= clipLocalRef.current.start + 2) return;
       clipLocalRef.current.end = newTime;
-      
-      if (clipEndHandleUIRef.current) clipEndHandleUIRef.current.style.left = `${(newTime/duration)*100}%`;
-      if (clipProgressUIRef.current) clipProgressUIRef.current.style.right = `${100 - (newTime/duration)*100}%`;
+
+      if (clipEndHandleUIRef.current) clipEndHandleUIRef.current.style.left = `${(newTime / duration) * 100}%`;
+      if (clipProgressUIRef.current) clipProgressUIRef.current.style.right = `${100 - (newTime / duration) * 100}%`;
       if (clipEndUIRef.current) clipEndUIRef.current.textContent = formatTimeLocal(newTime).replace(/^00:/, '');
       if (clipDurationUIRef.current) clipDurationUIRef.current.textContent = formatTimeLocal(newTime - clipLocalRef.current.start).replace(/^00:/, '');
 
@@ -284,7 +284,7 @@ export default function VideoPlayer() {
   useEffect(() => {
     if ((isClippingMode || sharedClip) && videoRef.current && currentTime >= clipEnd) {
       videoRef.current.currentTime = clipStart;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
     }
   }, [currentTime, isClippingMode, sharedClip, clipEnd, clipStart]);
 
@@ -324,7 +324,7 @@ export default function VideoPlayer() {
       } else {
         setIsTrailerVideoVisible(true);
         if (trailerVideoRef.current) {
-          trailerVideoRef.current.play().catch(() => {});
+          trailerVideoRef.current.play().catch(() => { });
         }
       }
     } else {
@@ -386,7 +386,7 @@ export default function VideoPlayer() {
     return baseMovie;
   }, [baseMovie, location.state?.subtitlesUrl]);
   const title = location.state?.episodeTitle || movie?.title || "Ang Huling El Bimbo";
-  
+
   const nextMovie = useMemo(() => {
     // Special overrides for curated recommendations
     if (movie?.id === 'f2') return featuredMovies.find(m => m.id === 'f1') ?? featuredMovies[0];
@@ -449,14 +449,14 @@ export default function VideoPlayer() {
     return list;
   }, [movie]);
 
-  
+
   // Determine if it's a movie or series
   // For now, let's assume if it has 'h' in duration or is one of the featured musicals, it's a movie
   const isMovie = movie?.duration?.includes('h') || movie?.id?.startsWith('f') || movie?.id?.includes('el-bimbo') || movie?.duration?.includes('m');
-  
+
   const seasonAndEpisode = isMovie ? "" : "S1:E1";
   const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
-  
+
   // Calculate dynamically active program for VOD recordings
   const currentProgramTitle = useMemo(() => {
     if (!location.state?.associatedPrograms || !location.state?.recordingStartTimeMs) return null;
@@ -495,7 +495,7 @@ export default function VideoPlayer() {
   useEffect(() => {
     // Reset hasStartedPlaying and initial source setup
     setHasStartedPlaying(false);
-    
+
     // PRIORITY 1: Check if we were passed a direct offline blob URL or a dynamic video URL (for episodes)
     if (location.state?.offlineUrl) {
       console.log('[Player] Playing from provided offline blob URL');
@@ -555,7 +555,7 @@ export default function VideoPlayer() {
         // Default: 15 seconds before the end
         isAtCredits = true;
       }
-      
+
       // If reached end credits / recommendation timestamp, delete progress and add to recently watched
       if (isAtCredits) {
         try {
@@ -637,30 +637,30 @@ export default function VideoPlayer() {
         if (videoRef.current) {
           videoRef.current.play()
             .then(() => setIsPlaying(true))
-            .catch(() => {});
+            .catch(() => { });
         }
       });
-      
+
       navigator.mediaSession.setActionHandler('pause', () => {
         if (videoRef.current) {
           videoRef.current.pause();
           setIsPlaying(false);
         }
       });
-      
+
       navigator.mediaSession.setActionHandler('seekbackward', () => {
         if (videoRef.current) {
           videoRef.current.currentTime -= 10;
         }
       });
-      
+
       navigator.mediaSession.setActionHandler('seekforward', () => {
         if (videoRef.current) {
           videoRef.current.currentTime += 10;
         }
       });
     }
-    
+
     return () => {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = null;
@@ -702,7 +702,7 @@ export default function VideoPlayer() {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
+
         // Sample less frequently for a smoother vibe (every 3 seconds)
         if (ctx && video.readyState >= 2) {
           try {
@@ -725,7 +725,7 @@ export default function VideoPlayer() {
   useEffect(() => {
     let timer: number;
     const isMainVideoEnded = videoRef.current?.ended;
-    
+
     if (showRecommendation && (isPlaying || isMainVideoEnded) && nextCountdown > 0 && !isExpandingTrailer) {
       timer = window.setInterval(() => {
         setNextCountdown(prev => {
@@ -824,14 +824,14 @@ export default function VideoPlayer() {
   // Pre-fetch subtitles and parse them to bypass native OS caption styling
   useEffect(() => {
     if (!movie?.subtitles) return;
-    
+
     movie.subtitles.forEach(async (sub) => {
       try {
         const response = await fetch(sub.url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const text = await response.text();
         const parsed = parseVTT(text);
-        
+
         setParsedSubtitles(prev => ({ ...prev, [sub.url]: parsed }));
       } catch (error) {
         console.error('Failed to load subtitle:', sub.url, error);
@@ -1043,7 +1043,7 @@ export default function VideoPlayer() {
     const handleFullscreenChange = async () => {
       const isFull = !!document.fullscreenElement;
       setIsFullscreen(isFull);
-      
+
       // Auto-lock to landscape on mobile when entering fullscreen
       if (isFull) {
         try {
@@ -1152,7 +1152,7 @@ export default function VideoPlayer() {
   const handleTrailerEnded = () => {
     // 1. Hide the video, show the static banner again
     setIsTrailerVideoVisible(false);
-    
+
     // 2. Wait 5 seconds (user requested wait time)
     setTimeout(() => {
       if (isExpandingTrailer) {
@@ -1160,7 +1160,7 @@ export default function VideoPlayer() {
         setIsTrailerVideoVisible(true);
         if (trailerVideoRef.current) {
           trailerVideoRef.current.currentTime = 0;
-          trailerVideoRef.current.play().catch(() => {});
+          trailerVideoRef.current.play().catch(() => { });
         }
       }
     }, 5000);
@@ -1185,12 +1185,12 @@ export default function VideoPlayer() {
     }
 
     const isMobile = window.innerWidth <= 896;
-    
+
     if (isMobile) {
       const now = Date.now();
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      
+
       // Double tap detection (within 300ms)
       if (lastTapRef.current && (now - lastTapRef.current.time) < 300) {
         const width = rect.width;
@@ -1205,7 +1205,7 @@ export default function VideoPlayer() {
           return;
         }
       }
-      
+
       lastTapRef.current = { time: now, x };
 
       // Mobile behavior: toggle controls visibility
@@ -1236,7 +1236,7 @@ export default function VideoPlayer() {
         setIs2xPressing(true);
         if ('vibrate' in navigator) navigator.vibrate(50);
       }
-    }, 500); 
+    }, 500);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -1245,14 +1245,14 @@ export default function VideoPlayer() {
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-    
+
     if (isLongPressActiveRef.current) {
       isLongPressActiveRef.current = false;
       if (videoRef.current) {
         videoRef.current.playbackRate = playbackSpeed;
         setIs2xPressing(false);
       }
-      e.preventDefault(); 
+      e.preventDefault();
     }
   };
 
@@ -1269,12 +1269,26 @@ export default function VideoPlayer() {
     if (videoRef.current && !isScrubbing) {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
-      
+
       // Determine when to trigger the credits mode
       let shouldShowRecommendation = false;
-      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'f1' || movie?.id === 'eb1') {
+
+      // Custom trigger points for musical clips (seconds)
+      const movieTriggers: Record<string, number> = {
+        'minsan': 296,                 // 4:56
+        'tindahan-ni-aling-nena': 353,   // 5:53
+        'alapaap-overdrive': 357,       // 5:57
+        'spoliarium-graduation': 328,    // 5:28
+        'pare-ko': 395,                 // 6:35
+        'tama-ka-ligaya': 293,          // 4:53
+        'ang-huling-el-bimbo': 680      // 11:20
+      };
+
+      if (movie?.id && movieTriggers[movie.id]) {
+        shouldShowRecommendation = time >= movieTriggers[movie.id];
+      } else if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'f1' || movie?.id === 'eb1') {
         const floorTime = Math.floor(time);
-        
+
         // Age Rating Timestamps trigger
         if (EL_BIMBO_RATING_TIMESTAMPS.includes(floorTime) && lastTriggeredRatingRef.current !== floorTime) {
           lastTriggeredRatingRef.current = floorTime;
@@ -1287,7 +1301,7 @@ export default function VideoPlayer() {
         // Default case: 15 seconds before the end
         shouldShowRecommendation = true;
       }
-      
+
       if (shouldShowRecommendation && !dismissedRecommendation) {
         if (!showRecommendation) {
           setShowRecommendation(true);
@@ -1341,7 +1355,7 @@ export default function VideoPlayer() {
       triggerIndicator('backward');
     }
   };
-  
+
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
@@ -1404,7 +1418,7 @@ export default function VideoPlayer() {
     if (!duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    
+
     let time;
     if (sharedClip) {
       // Scale click to be within the clip boundaries
@@ -1424,7 +1438,7 @@ export default function VideoPlayer() {
     const rect = target.getBoundingClientRect();
     let pct = (clientX - rect.left) / rect.width;
     pct = Math.max(0, Math.min(1, pct));
-    
+
     let time;
     if (sharedClip) {
       // Only show preview within the clip boundaries
@@ -1432,14 +1446,14 @@ export default function VideoPlayer() {
     } else {
       time = pct * duration;
     }
-    
+
     lastPreviewTimeRef.current = time; // track for touch end
-    
+
     const cursorPx = pct * rect.width;
     const thumbnailWidth = isMobileWindow ? 180 : 240; // smaller on mobile
     const halfWidth = thumbnailWidth / 2;
     const clampedPx = Math.max(halfWidth, Math.min(rect.width - halfWidth, cursorPx));
-    
+
     setPreviewPos((clampedPx / rect.width) * 100);
     setHoverLinePos(pct * 100);
     setPreviewTime(time);
@@ -1449,14 +1463,14 @@ export default function VideoPlayer() {
     if (hideControlsTimeoutRef.current) {
       clearTimeout(hideControlsTimeoutRef.current);
     }
-    
+
     // For mobile, visually move the progress bar thumb while dragging
     if (isMobileWindow) {
       setCurrentTime(time);
     }
-    
+
     setShowPreview(true);
-    
+
     if (previewVideoRef.current) {
       if (seekDebounceRef.current) window.clearTimeout(seekDebounceRef.current);
       seekDebounceRef.current = window.setTimeout(() => {
@@ -1522,45 +1536,61 @@ export default function VideoPlayer() {
     }
   };
 
-  const { isApplicable, skipTime, skipLabel } = useMemo(() => {
+  const skipPoints = useMemo(() => {
     // Special past stream
     if (movie?.id === 'after-hours') {
       if (location.state?.episodeTitle?.includes('April 20, 2026')) {
-        return { isApplicable: true, skipTime: 188, skipLabel: "Skip Intro" }; // 3:08 = 188 seconds
+        return [
+          { start: 0.1, end: 188, skipTo: 188, label: "Skip Intro" },
+          { start: 3150, end: 3226, skipTo: 3226, label: "Skip" } // 52:30 to 53:46
+        ];
       }
-      return { isApplicable: false, skipTime: 0, skipLabel: "" };
-    }
-    
-    // Normal skips
-    const skipIds = ['f1', 'eb1', 'f4', 'f5'];
-    if (skipIds.includes(movie?.id)) {
-      return { isApplicable: true, skipTime: 10, skipLabel: "Skip Logo" };
-    }
-    
-    // F2 (Minsan) has no skip
-    if (movie?.id === 'f2') {
-       return { isApplicable: false, skipTime: 0, skipLabel: "" };
+      return [];
     }
 
-    // Default 30s skip
-    return { isApplicable: true, skipTime: 30, skipLabel: "Skip Intro" };
+    // Normal skips
+    const skipLogoIds = ['f1', 'eb1', 'f4', 'f5'];
+    if (skipLogoIds.includes(movie?.id)) {
+      return [{ start: 0.1, end: 10, skipTo: 10, label: "Skip Logo" }];
+    }
+
+    // No skip for short musical clips/performances
+    const noSkipIds = [
+      'f2', 
+      'minsan', 
+      'tindahan-ni-aling-nena', 
+      'alapaap-overdrive', 
+      'spoliarium-graduation', 
+      'pare-ko', 
+      'tama-ka-ligaya', 
+      'ang-huling-el-bimbo'
+    ];
+    if (noSkipIds.includes(movie?.id)) {
+      return [];
+    }
+
+    // Default 30s skip for others
+    return [{ start: 0.1, end: 30, skipTo: 30, label: "Skip Intro" }];
   }, [movie?.id, location.state?.episodeTitle]);
 
+  const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
+  const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);
+
   return (
-    <div 
+    <div
       ref={containerRef}
-      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''}`} 
+      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''}`}
     >
-      
+
       {/* GPU Accelerated Ambient Glow */}
-      <div 
+      <div
         className="ambient-glow"
         style={{ backgroundColor: ambientColor }}
       />
 
       {/* Hidden canvas for color sampling */}
       <canvas ref={canvasRef} width="1" height="1" style={{ display: 'none' }} />
-      
+
       {/* ── Old "Next Up" Recommendation Overlays (shows during countdown) ── */}
       {showRecommendation && nextMovie && (
         <>
@@ -1593,13 +1623,13 @@ export default function VideoPlayer() {
           </div>
 
           {/* Mobile Thumbnail Layout */}
-          <div 
+          <div
             className={`mobile-recommendations-overlay ${isExpandingTrailer ? 'trailer-expanding' : ''}`}
             onClick={(e) => {
               if (e.target === e.currentTarget) handleDismissRecommendation();
             }}
           >
-            <div 
+            <div
               className="mobile-recommendations-header-area"
               onClick={(e) => {
                 if (e.target === e.currentTarget) handleDismissRecommendation();
@@ -1609,7 +1639,7 @@ export default function VideoPlayer() {
                 <ArrowLeft size={24} color="white" />
               </button>
             </div>
-            <div 
+            <div
               className="mobile-recommendations-content"
               onClick={(e) => {
                 if (e.target === e.currentTarget) handleDismissRecommendation();
@@ -1619,7 +1649,7 @@ export default function VideoPlayer() {
               <p className="mobile-recommendations-subtitle">
                 Preview in {nextCountdown} seconds
               </p>
-              <div 
+              <div
                 className="mobile-recommendations-grid"
                 onClick={(e) => e.stopPropagation()} // prevent grid area from closing
               >
@@ -1641,12 +1671,12 @@ export default function VideoPlayer() {
       {/* ── Inline Trailer Overlay (TrailerPlayer look) — shows when countdown hits 0 ── */}
       {isExpandingTrailer && nextMovie && (
         <div className="inline-trailer-overlay inline-trailer-overlay--visible">
-        {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
-        <img 
-          src={nextMovie.banner || nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.thumbnail} 
-          className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerVideoVisible ? 'fade-out' : ''}`} 
-          alt="" 
-        />
+          {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
+          <img
+            src={nextMovie.banner || nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.thumbnail}
+            className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerVideoVisible ? 'fade-out' : ''}`}
+            alt=""
+          />
 
           {/* Render trailer video. On desktop it shows immediately, on mobile it fades in after banner expansion. */}
           {nextMovie.trailerUrl && (!isMobileWindow || isExpandingTrailer) && (
@@ -1677,13 +1707,13 @@ export default function VideoPlayer() {
             className={`inline-trailer-back ${isMobileWindow ? 'mobile-close-btn' : ''}`}
             onClick={() => {
               if (isMobileWindow) {
-                 handleDismissRecommendation();
-                 if (videoRef.current) {
-                   videoRef.current.volume = 1;
-                   videoRef.current.play().catch(() => {});
-                 }
+                handleDismissRecommendation();
+                if (videoRef.current) {
+                  videoRef.current.volume = 1;
+                  videoRef.current.play().catch(() => { });
+                }
               } else {
-                 navigate('/browse');
+                navigate('/browse');
               }
             }}
           >
@@ -1708,7 +1738,7 @@ export default function VideoPlayer() {
             ) : (
               <h2 className="inline-trailer-title">{nextMovie.title}</h2>
             )}
-            
+
             {/* Description (Desktop only, only during banner pause phase) */}
             {!isTrailerVideoVisible && !isMobileWindow && <p className="inline-trailer-desc">{nextMovie.description}</p>}
 
@@ -1737,8 +1767,8 @@ export default function VideoPlayer() {
               )}
             </div>
           </div>
-      </div>
-    )}
+        </div>
+      )}
 
       <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''} ${isClippingMode ? 'clipping-active' : ''}`}>
         {/* Rate overlay inside the shrunken frame */}
@@ -1751,19 +1781,19 @@ export default function VideoPlayer() {
 
         {/* Loading Poster Overlay */}
         {(movie?.banner || movie?.thumbnail) && (
-          <img 
-            src={movie.banner || movie.thumbnail} 
+          <img
+            src={movie.banner || movie.thumbnail}
             alt="Loading poster"
             style={{
-               position: 'absolute', 
-               inset: 0, 
-               width: '100%', 
-               height: '100%', 
-               objectFit: 'cover', 
-               zIndex: 15,
-               opacity: hasStartedPlaying ? 0 : 1,
-               transition: 'opacity 0.4s ease',
-               pointerEvents: 'none'
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 15,
+              opacity: hasStartedPlaying ? 0 : 1,
+              transition: 'opacity 0.4s ease',
+              pointerEvents: 'none'
             }}
           />
         )}
@@ -1819,7 +1849,7 @@ export default function VideoPlayer() {
               e.stopPropagation();
               if (videoRef.current) {
                 videoRef.current.currentTime = clipStart;
-                videoRef.current.play().catch(()=>{});
+                videoRef.current.play().catch(() => { });
                 setIsPlaying(true);
               }
             }}>
@@ -1851,13 +1881,13 @@ export default function VideoPlayer() {
               ))}
           </div>
         )}
-        
+
         {isLoading && !videoError && (
           <div className="player-loading-overlay">
             <div className="loading-spinner"></div>
           </div>
         )}
-        
+
         {videoError && (
           <div className="video-error-overlay">
             <p>{videoError}</p>
@@ -1875,18 +1905,18 @@ export default function VideoPlayer() {
             )}
           </div>
         </div>
-        
+
         {/* Top Bar Navigation */}
         <div className="player-top-bar">
           <button className="back-button" onClick={() => navigate(-1)}>
             <ArrowLeft size={42} />
           </button>
-          
+
           {/* Mobile Title */}
           <div className="mobile-top-title mobile-only" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <span>
-              {movie?.id === 'after-hours' 
-                ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}` 
+              {movie?.id === 'after-hours'
+                ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
                 : title}
             </span>
             {currentProgramTitle && (
@@ -1895,7 +1925,7 @@ export default function VideoPlayer() {
               </span>
             )}
           </div>
-          
+
           <div className="top-right-controls">
             <button className="flag-button lock-button desktop-only tooltip">
               <Flag size={38} />
@@ -1908,18 +1938,21 @@ export default function VideoPlayer() {
         </div>
 
         {/* Skip Intro/Logo Button */}
-        {isApplicable && (
-          <button 
-            className={`skip-intro-btn ${currentTime > 0.1 && currentTime < skipTime ? 'show' : (currentTime >= skipTime && currentTime < skipTime + 3 ? 'hide' : '')}`} 
-            onClick={() => { if(videoRef.current) videoRef.current.currentTime = skipTime; }}
+        {(activeSkipPoint || recentlyPassedSkipPoint) && (
+          <button
+            className={`skip-intro-btn ${activeSkipPoint ? 'show' : 'hide'}`}
+            onClick={() => {
+              const target = activeSkipPoint || recentlyPassedSkipPoint;
+              if (videoRef.current && target) videoRef.current.currentTime = target.skipTo;
+            }}
           >
-            {skipLabel}
+            {(activeSkipPoint || recentlyPassedSkipPoint)?.label}
           </button>
         )}
 
         {/* Center Mobile Controls (Hidden on Desktop, Fades out automatically when buffering) */}
         <div className={`center-mobile-controls mobile-only ${showControls && !isLoading ? 'show' : ''}`}>
-          <button 
+          <button
             className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
             onClick={skipBackward}
             key={`back-${activeIndicator?.type === 'backward' ? activeIndicator.key : 'idle'}`}
@@ -1927,16 +1960,16 @@ export default function VideoPlayer() {
             <RotateCcw size={36} />
             <span className="skip-text-inside">10</span>
           </button>
-          
-          <button 
+
+          <button
             className={`vplayer-control-btn center-play-btn ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
             onClick={togglePlay}
             key={`play-${activeIndicator?.type === 'play' || activeIndicator?.type === 'pause' ? activeIndicator.key : 'idle'}`}
           >
             {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
           </button>
-          
-          <button 
+
+          <button
             className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
             onClick={skipForward}
             key={`fwd-${activeIndicator?.type === 'forward' ? activeIndicator.key : 'idle'}`}
@@ -1948,10 +1981,10 @@ export default function VideoPlayer() {
 
         {/* Controls Overlay */}
         <div className="player-controls-overlay">
-          
+
           {/* Timeline */}
           <div className="timeline-container">
-            <div 
+            <div
               className="timeline-track-wrapper"
               onMouseMove={handleTimelineMouseMove}
               onMouseDown={seekFromEvent}
@@ -1962,13 +1995,13 @@ export default function VideoPlayer() {
               style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', marginRight: '15px', cursor: 'pointer' }}
             >
               {showPreview && (
-                <div 
+                <div
                   className="hover-progress-line"
                   style={{
                     position: 'absolute',
                     left: `${hoverLinePos}%`,
                     width: '2px',
-                    height: '8px', 
+                    height: '8px',
                     top: '50%',
                     backgroundColor: 'white',
                     transform: 'translate(-50%, -50%)',
@@ -1977,9 +2010,9 @@ export default function VideoPlayer() {
                   }}
                 />
               )}
-              <div 
+              <div
                 className="seek-preview-overlay"
-                style={{ 
+                style={{
                   left: `${previewPos}%`,
                   opacity: showPreview ? 1 : 0,
                   transform: `translateX(-50%) translateY(${showPreview ? '0' : '10px'})`,
@@ -1987,43 +2020,43 @@ export default function VideoPlayer() {
                   zIndex: 10
                 }}
               >
-                  <div className="seek-preview-frame">
-                    {movie.spriteUrl && movie.spriteConfig ? (
-                      <div 
-                        className="preview-sprite-element"
-                        style={{
-                          backgroundImage: `url(${movie.spriteUrl})`,
-                          backgroundPosition: (() => {
-                            const config = movie.spriteConfig;
-                            const index = Math.floor(previewTime / config.interval);
-                            const col = index % config.cols;
-                            const row = Math.floor(index / config.cols);
-                            const posX = config.cols > 1 ? (col / (config.cols - 1)) * 100 : 0;
-                            const posY = config.rows > 1 ? (row / (config.rows - 1)) * 100 : 0;
-                            return `${posX}% ${posY}%`;
-                          })(),
-                          backgroundSize: `${movie.spriteConfig.cols * 100}% ${movie.spriteConfig.rows * 100}%`
-                        }}
-                      />
-                    ) : (
-                      <video
-                        ref={previewVideoRef}
-                        className="preview-video-element"
-                        muted
-                        playsInline
-                        preload="auto"
-                      />
-                    )}
-                  </div>
-                  <span className="seek-preview-time">{formatTime(previewTime)}</span>
+                <div className="seek-preview-frame">
+                  {movie.spriteUrl && movie.spriteConfig ? (
+                    <div
+                      className="preview-sprite-element"
+                      style={{
+                        backgroundImage: `url(${movie.spriteUrl})`,
+                        backgroundPosition: (() => {
+                          const config = movie.spriteConfig;
+                          const index = Math.floor(previewTime / config.interval);
+                          const col = index % config.cols;
+                          const row = Math.floor(index / config.cols);
+                          const posX = config.cols > 1 ? (col / (config.cols - 1)) * 100 : 0;
+                          const posY = config.rows > 1 ? (row / (config.rows - 1)) * 100 : 0;
+                          return `${posX}% ${posY}%`;
+                        })(),
+                        backgroundSize: `${movie.spriteConfig.cols * 100}% ${movie.spriteConfig.rows * 100}%`
+                      }}
+                    />
+                  ) : (
+                    <video
+                      ref={previewVideoRef}
+                      className="preview-video-element"
+                      muted
+                      playsInline
+                      preload="auto"
+                    />
+                  )}
                 </div>
+                <span className="seek-preview-time">{formatTime(previewTime)}</span>
+              </div>
               <input
                 ref={sliderRef}
                 type="range"
                 min="0"
                 max={duration || 100}
                 value={currentTime}
-                onChange={() => {/* seeking handled by onMouseDown on wrapper */}}
+                onChange={() => {/* seeking handled by onMouseDown on wrapper */ }}
                 className="timeline-slider"
                 style={{
                   backgroundSize: `${(currentTime / Math.max(duration, 1)) * 100}% 100%`,
@@ -2096,7 +2129,7 @@ export default function VideoPlayer() {
                   <span className="tooltip-text">Episodes</span>
                 </button>
               )}
-              
+
               <div className="subtitles-wrapper">
                 <button className="vplayer-control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
                   <MessageSquareText size={38} />
@@ -2115,12 +2148,12 @@ export default function VideoPlayer() {
                         </ul>
                       </div>
                     </div>
-                    
+
                     <div className="menu-section">
                       <h4 className="menu-header">Subtitles</h4>
                       <div className="scrollable-list">
                         <ul className="menu-list">
-                          <li 
+                          <li
                             className={`menu-item ${activeSubtitle === -1 ? "active" : ""}`}
                             onClick={() => handleSubtitleChange(-1)}
                           >
@@ -2129,7 +2162,7 @@ export default function VideoPlayer() {
                             <span>Off</span>
                           </li>
                           {movie.subtitles?.map((sub, idx) => (
-                            <li 
+                            <li
                               key={idx}
                               className={`menu-item ${activeSubtitle === idx ? "active" : ""}`}
                               onClick={() => handleSubtitleChange(idx)}
@@ -2147,14 +2180,14 @@ export default function VideoPlayer() {
               </div>
 
               <div className="speed-wrapper" style={{ position: 'relative' }}>
-                <button 
-                  className="vplayer-control-btn tooltip" 
+                <button
+                  className="vplayer-control-btn tooltip"
                   onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowSubtitlesMenu(false); }}
                 >
                   <Gauge size={38} />
                   <span className="tooltip-text">Playback Speed</span>
                 </button>
-                
+
                 {showSpeedMenu && (
                   <div className="speed-menu subtitles-menu speed-slider-popover">
                     <div className="speed-slider-container">
@@ -2163,8 +2196,8 @@ export default function VideoPlayer() {
                         <div className="speed-track"></div>
                         <div className="speed-marks">
                           {[0.5, 0.75, 1, 1.5, 2].map(speed => (
-                            <div 
-                              key={speed} 
+                            <div
+                              key={speed}
                               className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
                               onClick={() => handleSpeedChange(speed)}
                             >
@@ -2192,221 +2225,221 @@ export default function VideoPlayer() {
           </div>
 
           {/* Mobile Bottom Fixed Row */}
-            <div className="mobile-bottom-row mobile-only">
-              <div className="mobile-bottom-btn" onClick={handleClipTrigger}>
-                <Scissors size={20} />
-                <span>Clip</span>
-              </div>
-              <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(true); setShowSubtitlesMenu(false); }}>
-                <Gauge size={20} />
-                <span>Speed ({playbackSpeed}x)</span>
-              </div>
-              <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(true); setShowSpeedMenu(false); }}>
-                <MessageSquareText size={20} />
-                <span>Audio & Subtitles</span>
-              </div>
+          <div className="mobile-bottom-row mobile-only">
+            <div className="mobile-bottom-btn" onClick={handleClipTrigger}>
+              <Scissors size={20} />
+              <span>Clip</span>
             </div>
+            <div className="mobile-bottom-btn" onClick={() => { setShowSpeedMenu(true); setShowSubtitlesMenu(false); }}>
+              <Gauge size={20} />
+              <span>Speed ({playbackSpeed}x)</span>
+            </div>
+            <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(true); setShowSpeedMenu(false); }}>
+              <MessageSquareText size={20} />
+              <span>Audio & Subtitles</span>
+            </div>
+          </div>
 
 
-            {/* Mobile Menu Backdrop */}
-            <div 
-              className={`mobile-menu-backdrop ${(showSubtitlesMenu || showSpeedMenu) && isMobileWindow ? 'show' : ''}`}
-              onClick={() => { setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
-            />
+          {/* Mobile Menu Backdrop */}
+          <div
+            className={`mobile-menu-backdrop ${(showSubtitlesMenu || showSpeedMenu) && isMobileWindow ? 'show' : ''}`}
+            onClick={() => { setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
+          />
 
-            {/* Mobile Subtitles Bottom Sheet */}
-            {isMobileWindow && showSubtitlesMenu && (
-              <div className="mobile-bottom-sheet show">
-                <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
-                <div className="mobile-sheet-header">
-                  <button className="close-sheet-btn" onClick={() => setShowSubtitlesMenu(false)}>
-                    <X size={24} />
-                  </button>
-                  <div className="mobile-menu-title">Audio & Subtitles</div>
-                </div>
-                <div className="mobile-menu-scrollable mobile-dual-column">
-                  <div className="mobile-menu-section">
-                    <h4>Audio</h4>
-                    <div className="mobile-scroll-container">
-                      <ul className="mobile-menu-list">
-                        <li className="mobile-menu-item active">
-                          <div className="mobile-menu-item-left">
-                            <Check size={20} className="mobile-check-icon" />
-                            <span>Filipino [Original]</span>
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  <div className="mobile-menu-section">
-                    <h4>Subtitles</h4>
-                    <div className="mobile-scroll-container">
-                      <ul className="mobile-menu-list">
-                        <li 
-                          className={`mobile-menu-item ${activeSubtitle === -1 ? 'active' : ''}`}
-                          onClick={() => { handleSubtitleChange(-1); setShowSubtitlesMenu(false); }}
-                        >
-                          <div className="mobile-menu-item-left">
-                            {activeSubtitle === -1 && <Check size={20} className="mobile-check-icon" />}
-                            {activeSubtitle !== -1 && <div className="mobile-spacer-icon" />}
-                            <span>Off</span>
-                          </div>
-                        </li>
-                        {movie.subtitles?.map((sub, idx) => (
-                          <li 
-                            key={idx}
-                            className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
-                            onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
-                          >
-                            <div className="mobile-menu-item-left">
-                              {activeSubtitle === idx && <Check size={20} className="mobile-check-icon" />}
-                              {activeSubtitle !== idx && <div className="mobile-spacer-icon" />}
-                              <span>{sub.label}</span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+          {/* Mobile Subtitles Bottom Sheet */}
+          {isMobileWindow && showSubtitlesMenu && (
+            <div className="mobile-bottom-sheet show">
+              <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
+              <div className="mobile-sheet-header">
+                <button className="close-sheet-btn" onClick={() => setShowSubtitlesMenu(false)}>
+                  <X size={24} />
+                </button>
+                <div className="mobile-menu-title">Audio & Subtitles</div>
               </div>
-            )}
-
-            {/* Mobile Speed Bottom Sheet */}
-            {isMobileWindow && showSpeedMenu && (
-              <div className="mobile-bottom-sheet mobile-speed-sheet show">
-                <div className="mobile-menu-handle" onClick={() => setShowSpeedMenu(false)}></div>
-                <div className="mobile-sheet-header">
-                    <button className="close-sheet-btn" onClick={() => setShowSpeedMenu(false)}>
-                      <X size={24} />
-                    </button>
-                    <div className="mobile-menu-title">Playback Speed</div>
-                </div>
-                <div className="speed-slider-container">
-                  <div className="speed-track-wrapper">
-                    <div className="speed-track"></div>
-                    <div className="speed-marks">
-                      {[0.5, 0.75, 1, 1.5, 2].map(speed => (
-                        <div 
-                          key={speed} 
-                          className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
-                          onClick={() => handleSpeedChange(speed)}
-                        >
-                          <div className="speed-dot-outer">
-                            <div className="speed-dot"></div>
-                          </div>
-                          <span className="speed-label">
-                            {speed === 1 ? 'Normal' : `${speed}x`}
-                          </span>
+              <div className="mobile-menu-scrollable mobile-dual-column">
+                <div className="mobile-menu-section">
+                  <h4>Audio</h4>
+                  <div className="mobile-scroll-container">
+                    <ul className="mobile-menu-list">
+                      <li className="mobile-menu-item active">
+                        <div className="mobile-menu-item-left">
+                          <Check size={20} className="mobile-check-icon" />
+                          <span>Filipino [Original]</span>
                         </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mobile-menu-section">
+                  <h4>Subtitles</h4>
+                  <div className="mobile-scroll-container">
+                    <ul className="mobile-menu-list">
+                      <li
+                        className={`mobile-menu-item ${activeSubtitle === -1 ? 'active' : ''}`}
+                        onClick={() => { handleSubtitleChange(-1); setShowSubtitlesMenu(false); }}
+                      >
+                        <div className="mobile-menu-item-left">
+                          {activeSubtitle === -1 && <Check size={20} className="mobile-check-icon" />}
+                          {activeSubtitle !== -1 && <div className="mobile-spacer-icon" />}
+                          <span>Off</span>
+                        </div>
+                      </li>
+                      {movie.subtitles?.map((sub, idx) => (
+                        <li
+                          key={idx}
+                          className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
+                          onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
+                        >
+                          <div className="mobile-menu-item-left">
+                            {activeSubtitle === idx && <Check size={20} className="mobile-check-icon" />}
+                            {activeSubtitle !== idx && <div className="mobile-spacer-icon" />}
+                            <span>{sub.label}</span>
+                          </div>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Mobile Speed Bottom Sheet */}
+          {isMobileWindow && showSpeedMenu && (
+            <div className="mobile-bottom-sheet mobile-speed-sheet show">
+              <div className="mobile-menu-handle" onClick={() => setShowSpeedMenu(false)}></div>
+              <div className="mobile-sheet-header">
+                <button className="close-sheet-btn" onClick={() => setShowSpeedMenu(false)}>
+                  <X size={24} />
+                </button>
+                <div className="mobile-menu-title">Playback Speed</div>
+              </div>
+              <div className="speed-slider-container">
+                <div className="speed-track-wrapper">
+                  <div className="speed-track"></div>
+                  <div className="speed-marks">
+                    {[0.5, 0.75, 1, 1.5, 2].map(speed => (
+                      <div
+                        key={speed}
+                        className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
+                        onClick={() => handleSpeedChange(speed)}
+                      >
+                        <div className="speed-dot-outer">
+                          <div className="speed-dot"></div>
+                        </div>
+                        <span className="speed-label">
+                          {speed === 1 ? 'Normal' : `${speed}x`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-        {/* Clip Editor Moment UI */}
-        {isClippingMode && (
-          <div className="clip-editor-ui">
-            <div className="clip-header">
-              <button className="clip-back-btn" onClick={() => {
-                setIsClippingMode(false);
-                if (videoRef.current) videoRef.current.play();
-              }}>
-                <ArrowLeft size={28} />
-              </button>
-              <h2 className="clip-title">Clip a Moment</h2>
-              <button className="clip-save-btn" onClick={() => {
-                 setIsClippingMode(false);
-                 setShowShareMoment(true);
-                 if (videoRef.current) videoRef.current.pause();
-                 setIsPlaying(false);
-              }}>Save</button>
+      {/* Clip Editor Moment UI */}
+      {isClippingMode && (
+        <div className="clip-editor-ui">
+          <div className="clip-header">
+            <button className="clip-back-btn" onClick={() => {
+              setIsClippingMode(false);
+              if (videoRef.current) videoRef.current.play();
+            }}>
+              <ArrowLeft size={28} />
+            </button>
+            <h2 className="clip-title">Clip a Moment</h2>
+            <button className="clip-save-btn" onClick={() => {
+              setIsClippingMode(false);
+              setShowShareMoment(true);
+              if (videoRef.current) videoRef.current.pause();
+              setIsPlaying(false);
+            }}>Save</button>
+          </div>
+
+          <div className="clip-body-labels">
+            <div className="clip-side clip-side-left">
+              <span className="clip-label-green">Start</span>
+              <span className="clip-time-large" ref={clipStartUIRef}>{formatTime(clipStart).replace(/^00:/, '')}</span>
             </div>
 
-            <div className="clip-body-labels">
-              <div className="clip-side clip-side-left">
-                <span className="clip-label-green">Start</span>
-                <span className="clip-time-large" ref={clipStartUIRef}>{formatTime(clipStart).replace(/^00:/, '')}</span>
-              </div>
-              
-              <div className="clip-side clip-side-right">
-                <span className="clip-label-red">End</span>
-                <span className="clip-time-large" ref={clipEndUIRef}>{formatTime(clipEnd).replace(/^00:/, '')}</span>
-              </div>
+            <div className="clip-side clip-side-right">
+              <span className="clip-label-red">End</span>
+              <span className="clip-time-large" ref={clipEndUIRef}>{formatTime(clipEnd).replace(/^00:/, '')}</span>
             </div>
-            
-            <div className="clip-duration-bottom" ref={clipDurationUIRef}>
-              {formatTime(clipEnd - clipStart).replace(/^00:/, '')}
-            </div>
-            
-            <div className="clip-timeline-scroll-container" ref={clipScrollContainerRef}>
-              <div className="clip-timeline-bottom" 
-                ref={clipTrackRef} 
-                style={{ width: movie?.spriteConfig ? `${movie.spriteConfig!.cols * movie.spriteConfig!.rows * (45 * (16/9))}px` : '100%' }}
-                onTouchMove={handleClipTouchMove} 
-                onTouchEnd={handleClipTouchEnd}
-                onMouseMove={handleClipTouchMove}
-                onMouseUp={handleClipTouchEnd}
-                onMouseLeave={handleClipTouchEnd}
+          </div>
+
+          <div className="clip-duration-bottom" ref={clipDurationUIRef}>
+            {formatTime(clipEnd - clipStart).replace(/^00:/, '')}
+          </div>
+
+          <div className="clip-timeline-scroll-container" ref={clipScrollContainerRef}>
+            <div className="clip-timeline-bottom"
+              ref={clipTrackRef}
+              style={{ width: movie?.spriteConfig ? `${movie.spriteConfig!.cols * movie.spriteConfig!.rows * (45 * (16 / 9))}px` : '100%' }}
+              onTouchMove={handleClipTouchMove}
+              onTouchEnd={handleClipTouchEnd}
+              onMouseMove={handleClipTouchMove}
+              onMouseUp={handleClipTouchEnd}
+              onMouseLeave={handleClipTouchEnd}
+            >
+              <div className="clip-track-bg" style={{ display: 'flex', overflow: 'hidden' }}>
+                {movie?.spriteUrl && movie?.spriteConfig ? (
+                  Array.from({ length: movie.spriteConfig!.cols * movie.spriteConfig!.rows }).map((_, i) => {
+                    const col = i % movie.spriteConfig!.cols;
+                    const row = Math.floor(i / movie.spriteConfig!.cols);
+                    const posX = movie.spriteConfig!.cols > 1 ? (col / (movie.spriteConfig!.cols - 1)) * 100 : 0;
+                    const posY = movie.spriteConfig!.rows > 1 ? (row / (movie.spriteConfig!.rows - 1)) * 100 : 0;
+                    return (
+                      <div key={i} style={{
+                        width: `${45 * (16 / 9)}px`,
+                        flexShrink: 0,
+                        height: '100%',
+                        backgroundImage: `url(${movie.spriteUrl})`,
+                        backgroundPosition: `${posX}% ${posY}%`,
+                        backgroundSize: `${movie.spriteConfig!.cols * 100}% ${movie.spriteConfig!.rows * 100}%`
+                      }} />
+                    );
+                  })
+                ) : null}
+              </div>
+
+              <div className="clip-track-progress" ref={clipProgressUIRef} style={{
+                left: `${(clipStart / Math.max(duration, 1)) * 100}%`,
+                right: `${100 - (clipEnd / Math.max(duration, 1)) * 100}%`
+              }}>
+                <div className="clip-playhead" style={{
+                  left: `${((currentTime - clipStart) / Math.max(clipEnd - clipStart, 1)) * 100}%`
+                }} />
+              </div>
+
+              <div
+                className="clip-handle start-handle"
+                ref={clipStartHandleUIRef}
+                style={{ left: `${(clipStart / Math.max(duration, 1)) * 100}%` }}
+                onTouchStart={(e) => { clipActiveHandleRef.current = 'start'; e.stopPropagation(); }}
+                onMouseDown={() => clipActiveHandleRef.current = 'start'}
               >
-                 <div className="clip-track-bg" style={{ display: 'flex', overflow: 'hidden' }}>
-                   {movie?.spriteUrl && movie?.spriteConfig ? (
-                     Array.from({ length: movie.spriteConfig!.cols * movie.spriteConfig!.rows }).map((_, i) => {
-                       const col = i % movie.spriteConfig!.cols;
-                       const row = Math.floor(i / movie.spriteConfig!.cols);
-                       const posX = movie.spriteConfig!.cols > 1 ? (col / (movie.spriteConfig!.cols - 1)) * 100 : 0;
-                       const posY = movie.spriteConfig!.rows > 1 ? (row / (movie.spriteConfig!.rows - 1)) * 100 : 0;
-                       return (
-                         <div key={i} style={{
-                           width: `${45 * (16/9)}px`,
-                           flexShrink: 0,
-                           height: '100%',
-                           backgroundImage: `url(${movie.spriteUrl})`,
-                           backgroundPosition: `${posX}% ${posY}%`,
-                           backgroundSize: `${movie.spriteConfig!.cols * 100}% ${movie.spriteConfig!.rows * 100}%`
-                         }} />
-                       );
-                     })
-                   ) : null}
-                 </div>
-                 
-                 <div className="clip-track-progress" ref={clipProgressUIRef} style={{ 
-                     left: `${(clipStart/Math.max(duration, 1))*100}%`, 
-                     right: `${100 - (clipEnd/Math.max(duration, 1))*100}%` 
-                 }}>
-                    <div className="clip-playhead" style={{ 
-                       left: `${((currentTime - clipStart) / Math.max(clipEnd - clipStart, 1)) * 100}%` 
-                    }} />
-                 </div>
-                 
-                 <div 
-                    className="clip-handle start-handle" 
-                    ref={clipStartHandleUIRef}
-                    style={{ left: `${(clipStart/Math.max(duration, 1))*100}%` }}
-                    onTouchStart={(e) => { clipActiveHandleRef.current = 'start'; e.stopPropagation(); }}
-                    onMouseDown={() => clipActiveHandleRef.current = 'start'}
-                 >
-                    <div className="handle-chevron handle-chevron-left" />
-                    <div className="handle-chevron handle-chevron-right" />
-                 </div>
-                 <div 
-                    className="clip-handle end-handle" 
-                    ref={clipEndHandleUIRef}
-                    style={{ left: `${(clipEnd/Math.max(duration, 1))*100}%` }}
-                    onTouchStart={(e) => { clipActiveHandleRef.current = 'end'; e.stopPropagation(); }}
-                    onMouseDown={() => clipActiveHandleRef.current = 'end'}
-                 >
-                    <div className="handle-chevron handle-chevron-left" />
-                    <div className="handle-chevron handle-chevron-right" />
-                 </div>
+                <div className="handle-chevron handle-chevron-left" />
+                <div className="handle-chevron handle-chevron-right" />
+              </div>
+              <div
+                className="clip-handle end-handle"
+                ref={clipEndHandleUIRef}
+                style={{ left: `${(clipEnd / Math.max(duration, 1)) * 100}%` }}
+                onTouchStart={(e) => { clipActiveHandleRef.current = 'end'; e.stopPropagation(); }}
+                onMouseDown={() => clipActiveHandleRef.current = 'end'}
+              >
+                <div className="handle-chevron handle-chevron-left" />
+                <div className="handle-chevron handle-chevron-right" />
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Share Moment Screen Overlay */}
       <div className={`share-moment-overlay ${showShareMoment ? 'show' : ''}`}>
@@ -2440,7 +2473,7 @@ export default function VideoPlayer() {
             </div>
             <div className="share-app-btn">
               <div className="share-app-icon bg-instagram"><Camera color="white" /></div>
-              <span>Instagram<br/>Stories</span>
+              <span>Instagram<br />Stories</span>
             </div>
             <div className="share-app-btn">
               <div className="share-app-icon bg-messenger"><MessageCircle color="white" fill="white" /></div>

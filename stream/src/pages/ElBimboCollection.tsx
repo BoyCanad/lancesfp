@@ -37,13 +37,13 @@ export default function ElBimboCollection() {
       <section className="collection-hero">
         <picture className="collection-hero__bg">
           <source media="(max-width: 768px)" srcSet="/images/collection-m.webp" />
-          <img src="/images/collection.webp" alt="Ang Huling El Bimbo Collection" />
+          <img src="/images/bg.webp" alt="Ang Huling El Bimbo Collection" />
         </picture>
         
         <div className="collection-hero__overlay">
           <div className="collection-hero__content">
             <img 
-              src="/images/collection-logo.webp" 
+              src="/images/collection-logo.png" 
               alt="Ang Huling El Bimbo" 
               className="collection-hero__logo" 
             />

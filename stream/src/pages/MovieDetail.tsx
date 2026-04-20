@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useVideoFade } from '../hooks/useVideoFade';
 import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies, elBimboFeatured } from '../data/movies';
+import { featuredMovies, trendingMovies, elBimboFeatured, elBimboCollections } from '../data/movies';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import BarkadaSection from '../components/BarkadaSection';
@@ -55,17 +55,7 @@ const parseVTT = (vttData: string): ParsedCue[] => {
   return cues;
 };
 
-const elBimboCollections = [
-  elBimboFeatured,
-  featuredMovies[1],
-  featuredMovies[3],
-  featuredMovies[4],
-  featuredMovies[5],
-  featuredMovies[6],
-  featuredMovies[7],
-  featuredMovies[8],
-  ...[...trendingMovies].reverse().slice(7)
-];
+
 
 export default function MovieDetail() {
   const movie = featuredMovies.find((m) => m.id === 'ang-huling-el-bimbo-play');
