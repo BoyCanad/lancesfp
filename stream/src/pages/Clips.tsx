@@ -66,6 +66,7 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
   const [showPauseFlash, setShowPauseFlash] = useState(false);
   const [inList, setInList] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const flashTimerRef = useRef<number | null>(null);
 
   // Subtitle state
@@ -93,11 +94,20 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
     if (!video) return;
     const onTimeUpdate = () => setCurrentTime(video.currentTime);
     const onLoadedMetadata = () => setDuration(video.duration);
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
+    const onCanPlay = () => setIsBuffering(false);
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
+    video.addEventListener('canplay', onCanPlay);
     return () => {
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('canplay', onCanPlay);
     };
   }, []);
 
@@ -114,6 +124,7 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
     if (isActive) {
       video.currentTime = 0;
       video.muted = isMuted;
+      setIsBuffering(true);
       video.play().catch(() => {
         // Autoplay policy blocked — retry muted
         video.muted = true;
@@ -206,6 +217,13 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
       {showPauseFlash && (
         <div className="clip-play-flash">
           <Play size={64} fill="white" strokeWidth={0} />
+        </div>
+      )}
+
+      {/* ── Buffering spinner (only on active clip) ── */}
+      {isActive && isBuffering && (
+        <div className="clip-buffering-spinner">
+          <div className="clip-spinner" />
         </div>
       )}
 
