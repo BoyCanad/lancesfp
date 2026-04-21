@@ -46,7 +46,7 @@ export default function LiveStreamSection() {
       
       <div className="live-banner">
         <img 
-          src="/images/AFTER%20HOURS-banner.gif" 
+          src="/images/AFTERHOURS-banner.png" 
           alt="After Hours" 
           className="live-banner__img" 
         />

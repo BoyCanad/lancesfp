@@ -154,8 +154,8 @@ export default function Navbar() {
           
           <ul className="navbar__menu">
             <li className="navbar__menu-item fw-bold" onClick={() => navigate('/browse')}>Home</li>
-            <li className="navbar__menu-item">Shows</li>
-            <li className="navbar__menu-item">Movies</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/genre/shows')}>Shows</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/genre/movies')}>Movies</li>
             <li className="navbar__menu-item">Games</li>
             <li className="navbar__menu-item">New & Popular</li>
             <li className="navbar__menu-item" onClick={() => navigate('/my-list')}>My List</li>
@@ -344,8 +344,8 @@ export default function Navbar() {
         </div>
         {!isDetailPage && (
           <div className={`navbar__mobile-pills ${scrolled ? 'navbar__mobile-pills--hidden' : ''}`}>
-            <button className="navbar__mobile-pill">Shows</button>
-            <button className="navbar__mobile-pill">Movies</button>
+            <button className="navbar__mobile-pill" onClick={() => navigate('/genre/shows')}>Shows</button>
+            <button className="navbar__mobile-pill" onClick={() => navigate('/genre/movies')}>Movies</button>
             <button 
               className="navbar__mobile-pill"
               onClick={() => setIsCategorySelectorOpen(true)}

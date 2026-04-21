@@ -5,13 +5,13 @@ import {
   Home, PlaySquare, Gamepad2
 } from 'lucide-react';
 import { isInMyList, addToMyList, removeFromMyList } from '../services/listService';
-import { featuredMovies } from '../data/movies';
+import { allMovies } from '../data/movies';
 import type { Movie } from '../data/movies';
 import { getProfiles } from '../services/profileService';
 import './Clips.css';
 
-// Only include movies that have a trailerUrl
-const clipsData: Movie[] = featuredMovies.filter(m => m.trailerUrl);
+// Include any movie that has a tall trailer (vertical video)
+const clipsData: Movie[] = allMovies.filter(m => m.tallTrailerUrl);
 
 // ─────────────────────────────────────────────────────────
 //  VTT parser — returns array of { start, end, text } cues

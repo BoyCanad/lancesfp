@@ -27,9 +27,11 @@ export default function CategoryPage() {
     // Remove duplicates
     const uniqueMovies = Array.from(new Map(allMovies.map(item => [item.id, item])).values());
 
-    const filtered = uniqueMovies.filter(m => 
-      m.genre.some((g: string) => g.toLowerCase() === genreId.toLowerCase())
-    );
+    const filtered = uniqueMovies.filter(m => {
+      if (genreId?.toLowerCase() === 'shows') return m.mediaType === 'show';
+      if (genreId?.toLowerCase() === 'movies') return m.mediaType === 'movie';
+      return m.genre.some((g: string) => g.toLowerCase() === genreId?.toLowerCase());
+    });
 
     setMovies(filtered);
   }, [genreId]);

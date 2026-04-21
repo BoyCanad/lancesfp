@@ -57,6 +57,7 @@ export interface Movie {
   seasons?: Season[];
   squareThumbnail?: string;
   tallTrailerUrl?: string;
+  mediaType?: 'movie' | 'show';
 }
 
 export const makingOfLegacy: Movie = {
@@ -77,7 +78,11 @@ export const makingOfLegacy: Movie = {
   ageRating: "G",
   isOriginal: true,
   videoUrl: "", // Need video URL
-  trailerUrl: "", // Need trailer URL
+  trailerUrl: "https://github.com/BoyCanad/stream-storage-2/raw/refs/heads/main/BTLD-trailer.mp4",
+  tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/refs/heads/main/BTLD-tall.mp4",
+  squareThumbnail: "/images/clips/square/BTLD.webp",
+  trailerVttUrl: "https://boycanad.github.io/stream-storage-2/BTLD-trailer.vtt",
+  mediaType: 'show',
 };
 
 export const afterHours: Movie = {
@@ -86,8 +91,8 @@ export const afterHours: Movie = {
   logo: "/images/AFTER%20HOURS-logo.png",
   thumbnail: "/images/after-hours.webp",
   mobileThumbnail: "/images/after-hours-mobile.webp",
-  banner: "/images/AFTER%20HOURS-banner.gif",
-  mobileBanner: "/images/AFTER%20HOURS-banner.gif",
+  banner: "/images/AFTERHOURS-banner.png",
+  mobileBanner: "/images/AFTERHOURS-banner.png",
   description: "Join us for After Hours, the official 11-STEM A live stream series! Experience real-life moments, candid conversations, and exclusive behind-the-scenes vibes as we document our final journey together.",
   rating: "10.0",
   year: "2026",
@@ -96,6 +101,7 @@ export const afterHours: Movie = {
   ageRating: "PG-13",
   isOriginal: true,
   streamStatus: 'live',
+  mediaType: 'show',
   videoUrl: "https://livepeercdn.studio/hls/f8a31biu1b7w4hzw/index.m3u8",
   seasons: [
     {
@@ -151,6 +157,7 @@ export const featuredMovies: Movie[] = [
       thumbHeight: 180
     },
     squareThumbnail: "/images/clips/square/AngHulingElBimboPlay.webp",
+    mediaType: 'movie',
   },
   {
     id: "minsan",
@@ -171,6 +178,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Minsan-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TRAILER.vtt",
     squareThumbnail: "/images/clips/square/Minsan.webp",
+    mediaType: 'movie',
   },
 
   {
@@ -179,7 +187,7 @@ export const featuredMovies: Movie[] = [
     logo: "/images/tindahan-logo.webp",
     thumbnail: "/images/tindahan.webp",
     banner: "/images/tindahan-detail.webp",
-    mobileBanner: "/images/tindahan-detail-mobile.webp",
+    mobileBanner: "/images/Tindahan-mobile-banner.webp",
     cardBanner: "/images/tindahan.webp",
     description: "A lively and colorful performance of “Tindahan ni Aling Nena” from Ang Huling El Bimbo, this scene brings energy and humor while subtly reflecting the group’s youthful bond and everyday life.",
     rating: "9.7",
@@ -192,6 +200,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Tindahan-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Tindahan_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/Tindahan.webp",
+    mediaType: 'movie',
   },
   {
     id: "alapaap-overdrive",
@@ -212,6 +221,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Alapaap-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Alapaap_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/Alapaap.webp",
+    mediaType: 'movie',
   },
   {
     id: "spoliarium-graduation",
@@ -232,6 +242,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Spoliarium-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Spoliarium_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/Spoliairum.webp",
+    mediaType: 'movie',
   },
   {
     id: "pare-ko",
@@ -252,6 +263,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/PareKo-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/PareKo_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/PareKo.webp",
+    mediaType: 'movie',
   },
   {
     id: "tama-ka-ligaya",
@@ -274,6 +286,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/TamaKa-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TamaKa_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/TamaKa.webp",
+    mediaType: 'movie',
   },
   {
     id: "ang-huling-el-bimbo",
@@ -296,6 +309,7 @@ export const featuredMovies: Movie[] = [
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/ElBimbo-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/AngHulingElBimbo.webp",
+    mediaType: 'movie',
   }
 
 
@@ -315,6 +329,11 @@ export const trendingMovies: Movie[] = [
     description: "A profound documentary exploring the journey of self-discovery and the beauty of transient moments from dawn until dusk.",
     rating: "9.5", year: "2026", duration: "Documentary",
     genre: ["Documentary", "STEM"], ageRating: "G",
+    trailerUrl: "https://github.com/BoyCanad/stream-storage-2/raw/refs/heads/main/BLHT-trailer.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/refs/heads/main/BLHT-tall.mp4",
+    squareThumbnail: "/images/clips/square/BLHTS.webp",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/BLHT-trailer.vtt",
+    mediaType: 'movie',
   },
   {
     id: "a-day-in-my-life-stem",
@@ -327,6 +346,11 @@ export const trendingMovies: Movie[] = [
     description: "An authentic look into the rigorous yet rewarding daily life of a STEM student, capturing the balance between academic challenges and personal growth.",
     rating: "9.3", year: "2026", duration: "Vlog",
     genre: ["Classroom", "Documentary", "STEM"], ageRating: "G",
+    trailerUrl: "https://github.com/BoyCanad/stream-storage-2/raw/refs/heads/main/ADIML-trailer.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/refs/heads/main/ADIML-tall.mp4",
+    squareThumbnail: "/images/clips/square/ADIML.webp",
+    trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ADIML-trailer.vtt",
+    mediaType: 'movie',
   },
   {
     id: "t1",
@@ -337,6 +361,7 @@ export const trendingMovies: Movie[] = [
     description: "A digital archive documenting the journey, memories, and milestones of 11-STEM A for the School Year 2025-2026.",
     rating: "9.9", year: "2026", duration: "Archive",
     genre: ["Classroom", "Documentary", "STEM"], ageRating: "G",
+    mediaType: 'show',
   },
 ];
 
@@ -381,3 +406,16 @@ export const archiveMovies: Movie[] = [
   trendingMovies[1], // A Day In My Life
   ...trendingMovies.slice(3)
 ];
+
+// All movies combined for global filtering (like Clips, Search, etc.)
+export const allMovies: Movie[] = [
+  ...featuredMovies,
+  ...trendingMovies,
+  makingOfLegacy,
+  afterHours
+].filter((movie, index, self) => 
+  index === self.findIndex((m) => m.id === movie.id)
+);
+
+export const shows: Movie[] = allMovies.filter(m => m.mediaType === 'show');
+export const moviesList: Movie[] = allMovies.filter(m => m.mediaType === 'movie');

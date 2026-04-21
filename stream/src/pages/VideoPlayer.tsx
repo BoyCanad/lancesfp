@@ -493,7 +493,7 @@ export default function VideoPlayer() {
   const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
 
   useEffect(() => {
-    // Reset hasStartedPlaying and initial source setup
+    // Reset hasStartedPlaying so the poster banner shows until the new video starts playing
     setHasStartedPlaying(false);
 
     // PRIORITY 1: Check if we were passed a direct offline blob URL or a dynamic video URL (for episodes)
@@ -992,6 +992,14 @@ export default function VideoPlayer() {
         })
         .catch(err => console.warn("MP4 autoplay blocked:", err));
     }
+    
+    // Reset volume as it might have been set to 0 by the inline trailer fade-out
+    if (videoRef.current) {
+       videoRef.current.volume = 1;
+       videoRef.current.muted = false;
+       setIsMuted(false);
+       setVolume(1);
+    }
 
     return () => {
       if (hls) {
@@ -1318,6 +1326,12 @@ export default function VideoPlayer() {
 
   const handleWaiting = () => {
     setIsLoading(true);
+  };
+
+  // Fires the instant actual playback begins — more reliable than waiting for
+  // isPlaying React state to propagate. Clears the loading poster immediately.
+  const handlePlaying = () => {
+    setHasStartedPlaying(true);
   };
 
   const handleCanPlay = () => {
@@ -1684,6 +1698,8 @@ export default function VideoPlayer() {
               ref={trailerVideoRef}
               className={`inline-trailer-video ${isTrailerVideoVisible ? 'fade-in' : 'hidden-video'}`}
               playsInline
+              autoPlay={false}
+              muted={true}
               onTimeUpdate={handleTrailerTimeUpdate}
               onEnded={handleTrailerEnded}
             >
@@ -1807,6 +1823,7 @@ export default function VideoPlayer() {
           onLoadedMetadata={handleLoadedMetadata}
           onWaiting={handleWaiting}
           onCanPlay={handleCanPlay}
+          onPlaying={handlePlaying}
           onClick={handleVideoClick}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
