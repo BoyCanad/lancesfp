@@ -200,7 +200,6 @@ export default function MovieDetail() {
     : movie.banner || movie.thumbnail;
 
   const isElBimbo = movie.genre.includes('Ang Huling El Bimbo') || movie.id.includes('el-bimbo');
-  const isArchive = movie.genre.includes('STEM') || archiveMovies.some(m => m.id === movie.id);
 
   return (
     <div className="mdetail-page-wrapper">
