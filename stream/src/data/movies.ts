@@ -75,7 +75,7 @@ export const makingOfLegacy: Movie = {
   year: "2026",
   duration: "1h 15m",
   genre: ["Documentary", "Behind the Scenes", "Ang Huling El Bimbo"],
-  ageRating: "G",
+  ageRating: "PG-13",
   isOriginal: true,
   videoUrl: "", // Need video URL
   trailerUrl: "https://github.com/BoyCanad/stream-storage-2/raw/refs/heads/main/BTLD-trailer.mp4",
@@ -413,7 +413,7 @@ export const allMovies: Movie[] = [
   ...trendingMovies,
   makingOfLegacy,
   afterHours
-].filter((movie, index, self) => 
+].filter((movie, index, self) =>
   index === self.findIndex((m) => m.id === movie.id)
 );
 

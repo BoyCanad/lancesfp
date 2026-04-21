@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useVideoFade } from '../hooks/useVideoFade';
 import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, elBimboCollections } from '../data/movies';
+import { allMovies, elBimboCollections, archiveMovies } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
@@ -59,9 +59,12 @@ const parseVTT = (vttData: string): ParsedCue[] => {
 
 
 export default function MovieDetail() {
-  const movie = featuredMovies.find((m) => m.id === 'ang-huling-el-bimbo-play');
   const navigate = useNavigate();
   const location = useLocation();
+  const pathname = location.pathname.substring(1); // remove leading slash
+  
+  const movie = allMovies.find((m) => m.id === pathname) || allMovies.find(m => m.id === 'ang-huling-el-bimbo-play');
+  
   const stateStartTime = location.state?.startTime as number | undefined;
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -193,8 +196,11 @@ export default function MovieDetail() {
   }
 
   const backgroundImage = isMobile
-    ? '/images/el-bimbo-detail-mobile.webp'
-    : '/images/el-bimbo-detail.webp';
+    ? movie.mobileBanner || movie.banner || movie.mobileThumbnail || movie.thumbnail
+    : movie.banner || movie.thumbnail;
+
+  const isElBimbo = movie.genre.includes('Ang Huling El Bimbo') || movie.id.includes('el-bimbo');
+  const isArchive = movie.genre.includes('STEM') || archiveMovies.some(m => m.id === movie.id);
 
   return (
     <div className="mdetail-page-wrapper">
@@ -315,18 +321,33 @@ export default function MovieDetail() {
         </div>
       </div>
 
-      <BarkadaSection />
-      <BehindTheScenesSection />
+      {isElBimbo && movie.id === 'ang-huling-el-bimbo-play' && (
+        <>
+          <BarkadaSection />
+          <BehindTheScenesSection />
+        </>
+      )}
 
       <div className="mdetail-collections-wrapper">
-        <ContentRow
-          title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Library size={24} color="#e50914" /> Ang Huling El Bimbo Collections
-            </div>
-          }
-          movies={elBimboCollections.filter(m => m.title !== movie?.title)}
-        />
+        {isElBimbo ? (
+          <ContentRow
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Library size={24} color="#e50914" /> Ang Huling El Bimbo Collections
+              </div>
+            }
+            movies={elBimboCollections.filter(m => m.id !== movie?.id)}
+          />
+        ) : (
+          <ContentRow
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Library size={24} color="#e50914" /> G11 Archives
+              </div>
+            }
+            movies={archiveMovies.filter(m => m.id !== movie?.id)}
+          />
+        )}
       </div>
     </div>
   );

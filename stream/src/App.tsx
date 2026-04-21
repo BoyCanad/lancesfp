@@ -7,20 +7,10 @@ import MobileNav from './components/MobileNav';
 import LoadingSpinner from './components/LoadingSpinner';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
-import MinsanDetail from './pages/MinsanDetail';
-import TindahanDetail from './pages/TindahanDetail';
-import AlapaapDetail from './pages/AlapaapDetail';
-import SpoliariumDetail from './pages/SpoliariumDetail';
-import PareKoDetail from './pages/PareKoDetail';
-import TamaKaDetail from './pages/TamaKaDetail';
-import ElBimboDetail from './pages/ElBimboDetail';
 import ElBimboCollection from './pages/ElBimboCollection';
-import BeyondLastDanceDetail from './pages/BeyondLastDanceDetail';
 import MusicPlayer from './pages/MusicPlayer';
 import LivePlayer from './pages/LivePlayer';
 import AfterHoursDetail from './pages/AfterHoursDetail';
-import BukangLiwaywayDetail from './pages/BukangLiwaywayDetail';
-import ADayInMyLifeDetail from './pages/ADayInMyLifeDetail';
 import StemADetail from './pages/StemADetail';
 import Search from './pages/Search';
 import MyList from './pages/MyList';
@@ -173,17 +163,17 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/genre/:genreId" element={<CategoryPage />} />
         <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
-        <Route path="/minsan" element={<MinsanDetail />} />
-        <Route path="/tindahan-ni-aling-nena" element={<TindahanDetail />} />
-        <Route path="/alapaap-overdrive" element={<AlapaapDetail />} />
-        <Route path="/spoliarium-graduation" element={<SpoliariumDetail />} />
-        <Route path="/pare-ko" element={<PareKoDetail />} />
-        <Route path="/tama-ka-ligaya" element={<TamaKaDetail />} />
-        <Route path="/ang-huling-el-bimbo" element={<ElBimboDetail />} />
-        <Route path="/beyond-the-last-dance" element={<BeyondLastDanceDetail />} />
+        <Route path="/minsan" element={<MovieDetail />} />
+        <Route path="/tindahan-ni-aling-nena" element={<MovieDetail />} />
+        <Route path="/alapaap-overdrive" element={<MovieDetail />} />
+        <Route path="/spoliarium-graduation" element={<MovieDetail />} />
+        <Route path="/pare-ko" element={<MovieDetail />} />
+        <Route path="/tama-ka-ligaya" element={<MovieDetail />} />
+        <Route path="/ang-huling-el-bimbo" element={<MovieDetail />} />
+        <Route path="/beyond-the-last-dance" element={<MovieDetail />} />
         <Route path="/after-hours" element={<AfterHoursDetail />} />
-        <Route path="/bukang-liwayway-takipsilim" element={<BukangLiwaywayDetail />} />
-        <Route path="/a-day-in-my-life-stem" element={<ADayInMyLifeDetail />} />
+        <Route path="/bukang-liwayway-takipsilim" element={<MovieDetail />} />
+        <Route path="/a-day-in-my-life-stem" element={<MovieDetail />} />
         <Route path="/11-stem-a" element={<StemADetail />} />
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
