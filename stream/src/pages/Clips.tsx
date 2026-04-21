@@ -54,12 +54,13 @@ interface ClipItemProps {
   movie: Movie;
   isActive: boolean;
   isNext: boolean;
+  isPrev: boolean;
   isMuted: boolean;
   onMuteToggle: () => void;
   index: number;
 }
 
-function ClipItem({ movie, isActive, isNext, isMuted, onMuteToggle, index }: ClipItemProps) {
+function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, index }: ClipItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
   const [showPauseFlash, setShowPauseFlash] = useState(false);
@@ -109,13 +110,27 @@ function ClipItem({ movie, isActive, isNext, isMuted, onMuteToggle, index }: Cli
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
     if (isActive) {
-      video.currentTime = 0;
       video.muted = isMuted;
-      video.play().catch(() => {
-        video.muted = true;
-        video.play().catch(() => {});
-      });
+
+      const tryPlay = () => {
+        video.currentTime = 0;
+        video.play().catch(() => {
+          video.muted = true;
+          video.play().catch(() => {});
+        });
+      };
+
+      // readyState < 3 means not enough data buffered to play
+      if (video.readyState < 3) {
+        video.load(); // kick off loading
+        const onCanPlay = () => tryPlay();
+        video.addEventListener('canplay', onCanPlay, { once: true });
+        return () => video.removeEventListener('canplay', onCanPlay);
+      } else {
+        tryPlay();
+      }
     } else {
       video.pause();
       video.currentTime = 0;
@@ -192,7 +207,7 @@ function ClipItem({ movie, isActive, isNext, isMuted, onMuteToggle, index }: Cli
         playsInline
         loop
         muted={isMuted}
-        preload={isActive || isNext ? 'auto' : 'metadata'}
+        preload={isActive || isNext || isPrev ? 'auto' : 'metadata'}
         onClick={handleVideoClick}
       />
 
@@ -375,6 +390,7 @@ export default function Clips() {
             index={i}
             isActive={i === activeIndex}
             isNext={i === activeIndex + 1}
+            isPrev={i === activeIndex - 1}
             isMuted={isMuted}
             onMuteToggle={() => setIsMuted(m => !m)}
           />
