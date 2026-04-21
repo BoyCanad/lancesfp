@@ -53,12 +53,13 @@ function parseVtt(raw: string): VttCue[] {
 interface ClipItemProps {
   movie: Movie;
   isActive: boolean;
+  isNext: boolean;
   isMuted: boolean;
   onMuteToggle: () => void;
   index: number;
 }
 
-function ClipItem({ movie, isActive, isMuted, onMuteToggle, index }: ClipItemProps) {
+function ClipItem({ movie, isActive, isNext, isMuted, onMuteToggle, index }: ClipItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
   const [showPauseFlash, setShowPauseFlash] = useState(false);
@@ -188,7 +189,7 @@ function ClipItem({ movie, isActive, isMuted, onMuteToggle, index }: ClipItemPro
         playsInline
         loop
         muted={isMuted}
-        preload={isActive ? 'auto' : 'metadata'}
+        preload={isActive || isNext ? 'auto' : 'metadata'}
         onClick={handleVideoClick}
       />
 
@@ -316,7 +317,7 @@ function ClipItem({ movie, isActive, isMuted, onMuteToggle, index }: ClipItemPro
 export default function Clips() {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(false); // Play audio by default
+  const [isMuted, setIsMuted] = useState(false); // Audio ON by default as requested
   const [activeProfile, setActiveProfile] = useState<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -370,6 +371,7 @@ export default function Clips() {
             movie={movie}
             index={i}
             isActive={i === activeIndex}
+            isNext={i === activeIndex + 1}
             isMuted={isMuted}
             onMuteToggle={() => setIsMuted(m => !m)}
           />

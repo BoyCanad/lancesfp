@@ -243,7 +243,6 @@ export const featuredMovies: Movie[] = [
     cardBanner: "/images/pare-ko.webp",
     description: "This high-energy ROTC sequence transforms military drills into a vibrant spectacle of brotherhood. Set to the iconic **“Pare Ko,”** it balances sharp choreography with the raw “friendzone” angst that defines the bond between the three leads.",
     rating: "9.6",
-
     year: "2026",
     duration: "6m 39s",
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
@@ -293,11 +292,13 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/ElBimbo/index.m3u8",
-    trailerUrl: "ElBimbo_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.mp4",
     tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/ElBimbo-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.vtt",
     squareThumbnail: "/images/clips/square/AngHulingElBimbo.webp",
   }
+
+
 ];
 
 export const continueWatching: Movie[] = [];
