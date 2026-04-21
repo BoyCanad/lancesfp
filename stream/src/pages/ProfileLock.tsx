@@ -246,6 +246,8 @@ export default function ProfileLock() {
             onChange={(e) => handlePinChange(i, e.target.value)}
             onKeyDown={(e) => handlePinKeyDown(i, e)}
             autoFocus={i === 0}
+            inputMode="numeric"
+            pattern="[0-9]*"
           />
         ))}
       </div>
