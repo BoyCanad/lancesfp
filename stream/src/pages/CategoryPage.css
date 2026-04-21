@@ -1,0 +1,230 @@
+.category-page {
+  background-color: #172a3e; /* Dark teal/blue background from the screenshot */
+  background: linear-gradient(180deg, #1d334b 0%, #0d1a28 100%);
+  min-height: 100vh;
+  padding-top: 60px;
+  padding-bottom: 80px;
+  color: white;
+  overflow-x: hidden;
+  font-family: 'Inter', 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.category-page__header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 100;
+  background: transparent;
+}
+
+.category-page__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-page__header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.category-page__icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-page__header-title {
+  font-size: 21px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.category-page__filter-container {
+  padding: 12px 16px;
+  position: relative;
+  z-index: 90;
+}
+
+.category-page__filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: white;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* HERO CARD */
+.category-page__hero-card {
+  margin: 12px 16px 32px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  aspect-ratio: 9 / 14; 
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+.category-page__hero-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-page__hero-n-logo {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+}
+
+.category-page__hero-overlay {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(to top, rgba(16, 32, 50, 1) 0%, rgba(16, 32, 50, 0.7) 40%, transparent 100%);
+  padding: 30px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.category-page__hero-logo {
+  max-width: 92%;
+  max-height: 130px;
+  object-fit: contain;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.category-page__hero-title {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.category-page__hero-genres {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 20px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+
+.category-page__hero-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.category-page__play-btn,
+.category-page__mylist-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-page__play-btn {
+  background-color: white;
+  color: black;
+}
+.category-page__play-btn:active {
+  background-color: #ddd;
+}
+
+.category-page__mylist-btn {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+.category-page__mylist-btn:active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* LIST ROW */
+.category-page__list-section {
+  padding: 0 0 24px 16px;
+}
+
+.category-page__list-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  letter-spacing: 0.2px;
+}
+
+.category-page__row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-right: 16px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.category-page__row::-webkit-scrollbar {
+  display: none;
+}
+
+.category-page__list-item {
+  position: relative;
+  flex: 0 0 calc(33.333% - 10px);
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #222;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-page__list-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-page__list-item-logo {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 85%;
+  max-height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}

@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Volume2, VolumeX, Plus, Check, Share2, Play,
-  ChevronUp, ChevronDown, Home, PlaySquare, Gamepad2
+  Home, PlaySquare, Gamepad2
 } from 'lucide-react';
 import { isInMyList, addToMyList, removeFromMyList } from '../services/listService';
 import { featuredMovies } from '../data/movies';
@@ -358,12 +358,7 @@ export default function Clips() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToIndex = useCallback((idx: number) => {
-    const container = containerRef.current;
-    if (!container || idx < 0 || idx >= clipsData.length) return;
-    const el = container.querySelectorAll<HTMLElement>('.clip-item')[idx];
-    el?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+
 
   return (
     <>
@@ -380,36 +375,6 @@ export default function Clips() {
           />
         ))}
 
-        {/* Up / Down nav arrows */}
-        {activeIndex > 0 && (
-          <button
-            className="clip-nav-arrow clip-nav-arrow--up"
-            onClick={() => scrollToIndex(activeIndex - 1)}
-            aria-label="Previous"
-          >
-            <ChevronUp size={20} />
-          </button>
-        )}
-        {activeIndex < clipsData.length - 1 && (
-          <button
-            className="clip-nav-arrow clip-nav-arrow--down"
-            onClick={() => scrollToIndex(activeIndex + 1)}
-            aria-label="Next"
-          >
-            <ChevronDown size={20} />
-          </button>
-        )}
-
-        {/* Side dot progress indicator */}
-        <div className="clip-dots">
-          {clipsData.map((_, i) => (
-            <div
-              key={i}
-              className={`clip-dot${i === activeIndex ? ' clip-dot--active' : ''}`}
-              onClick={() => scrollToIndex(i)}
-            />
-          ))}
-        </div>
       </div>
 
       {/* ── Embedded bottom nav (global nav is suppressed on this route) ── */}

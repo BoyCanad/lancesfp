@@ -4,6 +4,7 @@ import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, P
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
 
+import CategorySelector from './CategorySelector';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -25,6 +26,7 @@ export default function Navbar() {
   const [activeProfile, setActiveProfile] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [params] = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -344,10 +346,20 @@ export default function Navbar() {
           <div className={`navbar__mobile-pills ${scrolled ? 'navbar__mobile-pills--hidden' : ''}`}>
             <button className="navbar__mobile-pill">Shows</button>
             <button className="navbar__mobile-pill">Movies</button>
-            <button className="navbar__mobile-pill">Categories <ChevronDown size={14} style={{ marginLeft: 4 }} /></button>
+            <button 
+              className="navbar__mobile-pill"
+              onClick={() => setIsCategorySelectorOpen(true)}
+            >
+              Categories <ChevronDown size={14} style={{ marginLeft: 4 }} />
+            </button>
           </div>
         )}
       </div>
+
+      <CategorySelector 
+        isOpen={isCategorySelectorOpen} 
+        onClose={() => setIsCategorySelectorOpen(false)} 
+      />
     </header>
   );
 }

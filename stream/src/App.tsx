@@ -24,6 +24,7 @@ import ADayInMyLifeDetail from './pages/ADayInMyLifeDetail';
 import StemADetail from './pages/StemADetail';
 import Search from './pages/Search';
 import MyList from './pages/MyList';
+import CategoryPage from './pages/CategoryPage';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
@@ -73,7 +74,9 @@ function App() {
     '/11-stem-a'
   ].includes(pathname);
 
-  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix;
+  const isGenrePage = pathname.startsWith('/genre');
+
+  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
@@ -153,7 +156,7 @@ function App() {
   return (
     <div className="app">
       <LoadingSpinner visible={pageLoading} profileImage={transitionProfile} />
-      {showNavAndFooter && !isMyNetflix && <Navbar />}
+      {showNavAndFooter && !isMyNetflix && !isGenrePage && <Navbar />}
 
       <Routes>
         <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
@@ -168,6 +171,7 @@ function App() {
         <Route path="/browse" element={<Home />} />
         <Route path="/my-list" element={<MyList />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/genre/:genreId" element={<CategoryPage />} />
         <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
         <Route path="/minsan" element={<MinsanDetail />} />
         <Route path="/tindahan-ni-aling-nena" element={<TindahanDetail />} />
