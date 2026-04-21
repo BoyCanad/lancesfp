@@ -112,7 +112,10 @@ function ClipItem({ movie, isActive, isNext, isMuted, onMuteToggle, index }: Cli
     if (isActive) {
       video.currentTime = 0;
       video.muted = isMuted;
-      video.play().catch(() => {});
+      video.play().catch(() => {
+        video.muted = true;
+        video.play().catch(() => {});
+      });
     } else {
       video.pause();
       video.currentTime = 0;

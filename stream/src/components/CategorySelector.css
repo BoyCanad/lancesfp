@@ -55,7 +55,8 @@
 }
 
 .category-selector__item:hover,
-.category-selector__item:active {
+.category-selector__item:active,
+.category-selector__item.is-active {
   color: #fff;
   font-size: 1.4rem;
   font-weight: 700;

@@ -108,17 +108,18 @@
   position: relative;
   z-index: 10;
   background: linear-gradient(to top, rgba(16, 32, 50, 1) 0%, rgba(16, 32, 50, 0.7) 40%, transparent 100%);
-  padding: 30px 16px 16px;
+  padding: 240px 16px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .category-page__hero-logo {
-  max-width: 92%;
-  max-height: 130px;
+  max-width: 94%;
+  max-height: 240px;
   object-fit: contain;
-  margin-bottom: 20px;
+  margin-bottom: -20px;
+  transform: translateY(20px);
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 
@@ -218,13 +219,4 @@
   object-fit: cover;
 }
 
-.category-page__list-item-logo {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 85%;
-  max-height: 40px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-}
+

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Search, ChevronDown, Play, Plus } from 'lucide-react';
+import { ArrowLeft, Download, Search, ChevronDown, Play, Plus, Check } from 'lucide-react';
 import { featuredMovies, trendingMovies, elBimboFeatured, makingOfLegacy, elBimboCollections } from '../data/movies';
+import { isInMyList, addToMyList, removeFromMyList } from '../services/listService';
 import CategorySelector from '../components/CategorySelector';
 import './CategoryPage.css';
 
@@ -10,6 +11,7 @@ export default function CategoryPage() {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<any[]>([]);
   const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
+  const [inMyList, setInMyList] = useState(false);
 
   useEffect(() => {
     if (!genreId) return;
@@ -53,6 +55,24 @@ export default function CategoryPage() {
   };
 
   const featured = movies.length > 0 ? movies[0] : null;
+
+  useEffect(() => {
+    if (featured) {
+      setInMyList(isInMyList(featured.id));
+    }
+  }, [featured]);
+
+  const handleToggleList = () => {
+    if (!featured) return;
+    if (inMyList) {
+      removeFromMyList(featured.id);
+      setInMyList(false);
+    } else {
+      addToMyList(featured.id);
+      setInMyList(true);
+    }
+  };
+
   const listMovies = movies.length > 1 ? movies.slice(1) : [];
 
   return (
@@ -101,8 +121,13 @@ export default function CategoryPage() {
                 <button className="category-page__play-btn" onClick={() => handleMovieClick(featured)}>
                   <Play size={20} fill="black" /> <span>Play</span>
                 </button>
-                <button className="category-page__mylist-btn">
-                  <Plus size={22} color="white" /> <span>My List</span>
+                <button className="category-page__mylist-btn" onClick={handleToggleList}>
+                  {inMyList ? (
+                    <Check size={22} color="#00ff00" />
+                  ) : (
+                    <Plus size={22} color="white" />
+                  )}
+                  <span>{inMyList ? 'Added' : 'My List'}</span>
                 </button>
               </div>
             </div>
@@ -120,7 +145,6 @@ export default function CategoryPage() {
               {listMovies.map(movie => (
                 <div key={movie.id} className="category-page__list-item" onClick={() => handleMovieClick(movie)}>
                   <img src={movie.mobileThumbnail || movie.thumbnail} alt={movie.title} />
-                  {movie.logo && <img src={movie.logo} className="category-page__list-item-logo" alt="" />}
                 </div>
               ))}
             </div>
@@ -131,6 +155,7 @@ export default function CategoryPage() {
       <CategorySelector 
         isOpen={isCategorySelectorOpen} 
         onClose={() => setIsCategorySelectorOpen(false)} 
+        currentCategory={genreId}
       />
     </div>
   );

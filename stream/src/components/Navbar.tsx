@@ -359,6 +359,7 @@ export default function Navbar() {
       <CategorySelector 
         isOpen={isCategorySelectorOpen} 
         onClose={() => setIsCategorySelectorOpen(false)} 
+        currentCategory={location.pathname === '/browse' ? 'Home' : location.pathname.startsWith('/genre/') ? location.pathname.split('/').pop() : undefined}
       />
     </header>
   );

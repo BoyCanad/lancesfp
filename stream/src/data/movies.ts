@@ -307,17 +307,19 @@ export const trendingMovies: Movie[] = [
   {
     id: "bukang-liwayway-takipsilim",
     title: "Bukang-Liwayway Hanggang Takipsilim",
+    logo: "/images/BUKANG-LOGO.webp",
     thumbnail: "/images/MBLHTS.webp",
     mobileThumbnail: "/images/MBLHTS-mobile.webp",
     banner: "/images/MBLHTS-banner.webp",
     mobileBanner: "/images/MBLHTS-banner.webp",
     description: "A profound documentary exploring the journey of self-discovery and the beauty of transient moments from dawn until dusk.",
     rating: "9.5", year: "2026", duration: "Documentary",
-    genre: ["Documentary", "Life", "Philosophy"], ageRating: "G",
+    genre: ["Documentary", "STEM"], ageRating: "G",
   },
   {
     id: "a-day-in-my-life-stem",
     title: "A Day In My Life as a STEM Student",
+    logo: "/images/ADIML-LOGO.webp",
     thumbnail: "/images/ADIML.webp",
     mobileThumbnail: "/images/ADIML-mobile.webp",
     banner: "/images/ADML-banner.webp",
@@ -334,7 +336,7 @@ export const trendingMovies: Movie[] = [
     mobileThumbnail: "/images/stem-a-archive-mobile.webp",
     description: "A digital archive documenting the journey, memories, and milestones of 11-STEM A for the School Year 2025-2026.",
     rating: "9.9", year: "2026", duration: "Archive",
-    genre: ["Classroom", "Documentary", "Memories"], ageRating: "G",
+    genre: ["Classroom", "Documentary", "STEM"], ageRating: "G",
   },
 ];
 
