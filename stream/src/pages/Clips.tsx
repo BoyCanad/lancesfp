@@ -63,6 +63,7 @@ function ClipItem({ movie, isActive, isMuted, onMuteToggle, index }: ClipItemPro
   const navigate = useNavigate();
   const [showPauseFlash, setShowPauseFlash] = useState(false);
   const [inList, setInList] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const flashTimerRef = useRef<number | null>(null);
 
   // Subtitle state
@@ -260,7 +261,22 @@ function ClipItem({ movie, isActive, isMuted, onMuteToggle, index }: ClipItemPro
             ))}
           </div>
 
-          <p className="clip-description">{movie.description}</p>
+          <div 
+            className={`clip-description-container ${isExpanded ? 'is-expanded' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+          >
+            <p className="clip-description">
+              {movie.description}
+            </p>
+            {!isExpanded && movie.description.length > 60 && (
+              <span className="clip-description-more">
+                ...more
+              </span>
+            )}
+          </div>
 
           <button className="clip-watch-btn" onClick={handleDetailsClick}>
             <Play size={14} fill="white" strokeWidth={0} />
