@@ -112,25 +112,13 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
     if (!video) return;
 
     if (isActive) {
+      video.currentTime = 0;
       video.muted = isMuted;
-
-      const tryPlay = () => {
-        video.currentTime = 0;
-        video.play().catch(() => {
-          video.muted = true;
-          video.play().catch(() => {});
-        });
-      };
-
-      // readyState < 3 means not enough data buffered to play
-      if (video.readyState < 3) {
-        video.load(); // kick off loading
-        const onCanPlay = () => tryPlay();
-        video.addEventListener('canplay', onCanPlay, { once: true });
-        return () => video.removeEventListener('canplay', onCanPlay);
-      } else {
-        tryPlay();
-      }
+      video.play().catch(() => {
+        // Autoplay policy blocked — retry muted
+        video.muted = true;
+        video.play().catch(() => {});
+      });
     } else {
       video.pause();
       video.currentTime = 0;
