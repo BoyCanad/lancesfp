@@ -27,6 +27,7 @@ import MyList from './pages/MyList';
 
 import VideoPlayer from './pages/VideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
+import Clips from './pages/Clips';
 import ClipPlayer from './pages/ClipPlayer';
 import ProfilePicker from './pages/ProfilePicker';
 import ManageProfile from './pages/ManageProfile';
@@ -48,7 +49,7 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live';
+  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
@@ -183,6 +184,7 @@ function App() {
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
+        <Route path="/clips" element={session ? <Clips /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
         <Route path="/music/:id" element={<MusicPlayer />} />
         <Route path="/music" element={<MusicPlayer />} />

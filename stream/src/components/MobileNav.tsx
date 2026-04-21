@@ -10,7 +10,7 @@ export default function MobileNav() {
   const navigate = useNavigate();
 
   // Highlight based on current pathname
-  const activeId = pathname.includes('/my-lsfplus') ? 'my-lsfplus' : 'home';
+  const activeId = pathname.includes('/my-lsfplus') ? 'my-lsfplus' : pathname === '/clips' ? 'clips' : 'home';
 
   useEffect(() => {
     // Attempt to load the active profile specifically for the "My Netflix" avatar
@@ -44,6 +44,7 @@ export default function MobileNav() {
               className={`mobile-nav__btn ${isActive ? 'mobile-nav__btn--active' : ''}`}
               onClick={() => {
                 if (item.id === 'home') navigate('/browse');
+                else if (item.id === 'clips') navigate('/clips');
                 else if (item.id === 'my-lsfplus') navigate('/my-lsfplus');
               }}
             >

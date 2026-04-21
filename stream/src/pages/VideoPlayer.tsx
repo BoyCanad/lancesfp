@@ -1865,7 +1865,7 @@ export default function VideoPlayer() {
               .filter(cue => {
                 // VOD_SUBTITLE_LATENCY compensates for HLS encoding delay baked into the recording.
                 // Positive value = show subtitles this many seconds earlier. Tune as needed.
-                const VOD_SUBTITLE_LATENCY = 15;
+                const VOD_SUBTITLE_LATENCY = movie?.id === 'after-hours' ? 15 : 0;
                 const adjustedTime = currentTime - subtitleTimeOffset + VOD_SUBTITLE_LATENCY;
                 return isInSubtitleProgram && adjustedTime >= cue.start && adjustedTime <= cue.end;
               })

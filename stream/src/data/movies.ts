@@ -55,6 +55,8 @@ export interface Movie {
   };
   downloadUrl?: string;
   seasons?: Season[];
+  squareThumbnail?: string;
+  tallTrailerUrl?: string;
 }
 
 export const makingOfLegacy: Movie = {
@@ -114,7 +116,7 @@ export const featuredMovies: Movie[] = [
     banner: "/images/el-bimbo-banner.jpg",
     cardBanner: "/images/el-bimbo.webp",
     mobileCardBanner: "/images/el-bimbo.webp",
-    mobileBanner: "/images/el-bimbo-mobile-carousel.jpg",
+    mobileBanner: "/images/clips/tall/ElBimboPlay-tall.webp",
     description: "A nostalgic journey through the 90s, where three friends find themselves at a crossroads that will change their lives forever.",
     rating: "9.8",
     year: "2026",
@@ -126,7 +128,8 @@ export const featuredMovies: Movie[] = [
     mobileThumbnail: "/images/el-bimbo-mobile.webp",
     videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
     downloadUrl: "https://video-proxy.booran-special.workers.dev/",
-    trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/HulingElBimboPlay.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/HulingElBimboPlay-tall.mp4",
     subtitles: [
       {
         label: "Filipino",
@@ -146,7 +149,8 @@ export const featuredMovies: Movie[] = [
       interval: 5,
       thumbWidth: 320,
       thumbHeight: 180
-    }
+    },
+    squareThumbnail: "/images/clips/square/AngHulingElBimboPlay.webp",
   },
   {
     id: "minsan",
@@ -163,8 +167,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/MINSAN_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Minsan.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Minsan-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TRAILER.vtt",
+    squareThumbnail: "/images/clips/square/Minsan.webp",
   },
 
   {
@@ -182,8 +188,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/Tindahan/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/Tindahan_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Tindahan.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Tindahan-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Tindahan_TRAILER_MOBILE.vtt",
+    squareThumbnail: "/images/clips/square/Tindahan.webp",
   },
   {
     id: "alapaap-overdrive",
@@ -200,8 +208,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/Alapaap/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/Alapaap_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Alapaap.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Alapaap-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Alapaap_TRAILER_MOBILE.vtt",
+    squareThumbnail: "/images/clips/square/Alapaap.webp",
   },
   {
     id: "spoliarium-graduation",
@@ -218,8 +228,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/Spoliarium/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/Spoliarium_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Spoliarium.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/Spoliarium-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/Spoliarium_TRAILER_MOBILE.vtt",
+    squareThumbnail: "/images/clips/square/Spoliairum.webp",
   },
   {
     id: "pare-ko",
@@ -237,8 +249,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/PareKo/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/PareKo_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/PareKo.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/PareKo-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/PareKo_TRAILER_MOBILE.vtt",
+    squareThumbnail: "/images/clips/square/PareKo.webp",
   },
   {
     id: "tama-ka-ligaya",
@@ -257,8 +271,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/TamaKa/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/TamaKa_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/TamaKa.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/TamaKa-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/TamaKa_TRAILER_MOBILE.vtt",
+    squareThumbnail: "/images/clips/square/TamaKa.webp",
   },
   {
     id: "ang-huling-el-bimbo",
@@ -277,8 +293,10 @@ export const featuredMovies: Movie[] = [
     genre: ["Musical", "Drama", "Nostalgia", "Ang Huling El Bimbo"],
     ageRating: "PG-13",
     videoUrl: "https://boycanad.github.io/stream-storage-3/ElBimbo/index.m3u8",
-    trailerUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.mp4",
+    trailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/ElBimbo.mp4",
+    tallTrailerUrl: "https://github.com/BoyCanad/clips-storage-1/raw/main/ElBimbo-tall.mp4",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ElBimbo_TRAILER_MOBILE.vtt",
+    squareThumbnail: "/images/clips/square/AngHulingElBimbo.webp",
   }
 ];
 
