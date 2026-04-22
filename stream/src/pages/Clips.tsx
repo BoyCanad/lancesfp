@@ -355,6 +355,25 @@ export default function Clips() {
         .then(data => { if (data.length > 0) setActiveProfile(data[0]); })
         .catch(() => {});
     }
+
+    // --- Viewport Height Fix ---
+    let lastWidth = window.innerWidth;
+    const updateVH = () => {
+      // Only recalculate if width changed (orientation change)
+      // This prevents jitter when the address bar hides/shows
+      if (window.innerWidth !== lastWidth) {
+        lastWidth = window.innerWidth;
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      }
+    };
+    
+    // Initial set
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    
+    window.addEventListener('resize', updateVH);
+    return () => window.removeEventListener('resize', updateVH);
   }, []);
 
   // Intersection observer: detect which clip is most visible
