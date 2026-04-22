@@ -22,7 +22,7 @@
 .clip-item {
   position: relative;
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100); 
+  height: 100dvh; /* dynamic viewport height — avoids address-bar glitch */
   scroll-snap-align: start;
   scroll-snap-stop: always;
   overflow: hidden;
