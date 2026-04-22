@@ -34,7 +34,7 @@ export const MovieCard = memo(({
   movie: Movie; 
   showProgress?: boolean; 
   onClick: (movie: Movie, startTime?: number) => void;
-  onDetailClick: (movie: Movie) => void;
+  onDetailClick?: (movie: Movie) => void;
 }) => {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
@@ -293,7 +293,11 @@ export const MovieCard = memo(({
                   className="card__btn card__btn--circle-small" 
                   onClick={(e) => { 
                     e.stopPropagation(); 
-                    onDetailClick(movie);
+                    if (onDetailClick) {
+                      onDetailClick(movie);
+                    } else {
+                      onClick(movie);
+                    }
                   }}
                 >
                   <ChevronDown size={showProgress ? 20 : 16} color="white" />
