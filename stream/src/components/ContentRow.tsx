@@ -28,11 +28,13 @@ const parseDurationToMin = (dur: string) => {
 export const MovieCard = memo(({ 
   movie, 
   showProgress, 
-  onClick 
+  onClick,
+  onDetailClick
 }: { 
   movie: Movie; 
   showProgress?: boolean; 
   onClick: (movie: Movie, startTime?: number) => void;
+  onDetailClick: (movie: Movie) => void;
 }) => {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
@@ -291,11 +293,7 @@ export const MovieCard = memo(({
                   className="card__btn card__btn--circle-small" 
                   onClick={(e) => { 
                     e.stopPropagation(); 
-                    if (showProgress) {
-                      navigate(`/watch/${movie.id}`, { state: { startTime: videoElemRef.current?.currentTime } });
-                    } else {
-                      onClick(movie, videoElemRef.current?.currentTime); 
-                    }
+                    onDetailClick(movie);
                   }}
                 >
                   <ChevronDown size={showProgress ? 20 : 16} color="white" />
@@ -368,6 +366,23 @@ export default function ContentRow({
     setTimeout(updateScrollBtns, 400);
   };
 
+  const getDetailPath = (movie: Movie) => {
+    // Use movie.id (The slug) to navigate to details
+    if (movie.id === 'ang-huling-el-bimbo-play') return '/ang-huling-el-bimbo-play';
+    if (movie.id === 'minsan') return '/minsan';
+    if (movie.id === 'tindahan-ni-aling-nena') return '/tindahan-ni-aling-nena';
+    if (movie.id === 'alapaap-overdrive') return '/alapaap-overdrive';
+    if (movie.id === 'spoliarium-graduation') return '/spoliarium-graduation';
+    if (movie.id === 'pare-ko') return '/pare-ko';
+    if (movie.id === 'tama-ka-ligaya') return '/tama-ka-ligaya';
+    if (movie.id === 'ang-huling-el-bimbo') return '/ang-huling-el-bimbo';
+    if (movie.id === 'beyond-the-last-dance') return '/beyond-the-last-dance';
+    if (movie.id === 'bukang-liwayway-takipsilim') return '/bukang-liwayway-takipsilim';
+    if (movie.id === 'a-day-in-my-life-stem') return '/a-day-in-my-life-stem';
+    if (movie.id === 't1') return '/11-stem-a';
+    return `/browse`; // Fallback
+  };
+
   const handleMovieClick = useCallback((movie: Movie, startTime?: number) => {
     const navOptions = { state: { startTime } };
     
@@ -377,37 +392,12 @@ export default function ContentRow({
       return;
     }
 
-    // Use movie.id (The slug) to navigate to details
-    if (movie.id === 'ang-huling-el-bimbo-play') {
-      navigate('/ang-huling-el-bimbo-play', navOptions);
-    } else if (movie.id === 'minsan') {
-      navigate('/minsan', navOptions);
-    } else if (movie.id === 'tindahan-ni-aling-nena') {
-      navigate('/tindahan-ni-aling-nena', navOptions);
-    } else if (movie.id === 'alapaap-overdrive') {
-      navigate('/alapaap-overdrive', navOptions);
-    } else if (movie.id === 'spoliarium-graduation') {
-      navigate('/spoliarium-graduation', navOptions);
-    } else if (movie.id === 'pare-ko') {
-      navigate('/pare-ko', navOptions);
-    } else if (movie.id === 'tama-ka-ligaya') {
-      navigate('/tama-ka-ligaya', navOptions);
-    } else if (movie.id === 'ang-huling-el-bimbo') {
-      navigate('/ang-huling-el-bimbo', navOptions);
-    } else if (movie.id === 'beyond-the-last-dance') {
-      navigate('/beyond-the-last-dance', navOptions);
-    } else if (movie.id === 'bukang-liwayway-takipsilim') {
-      navigate('/bukang-liwayway-takipsilim', navOptions);
-    } else if (movie.id === 'a-day-in-my-life-stem') {
-      navigate('/a-day-in-my-life-stem', navOptions);
-    } else if (movie.id === 't1') {
-      navigate('/11-stem-a', navOptions);
-    } else {
-      // Fallback or generic detail page
-      navigate(`/browse`, navOptions);
-    }
-
+    navigate(getDetailPath(movie), navOptions);
   }, [navigate, showProgress]);
+
+  const handleDetailClick = useCallback((movie: Movie) => {
+    navigate(getDetailPath(movie));
+  }, [navigate]);
 
   return (
     <section className="row">
@@ -439,12 +429,13 @@ export default function ContentRow({
           className={`row__track row__track--${variant}`}
           onScroll={updateScrollBtns}
         >
-          {movies.map(movie => (
+          {movies.map((movie, index) => (
             <MovieCard 
-              key={movie.id} 
+              key={movie.id + index} 
               movie={movie} 
-              showProgress={showProgress} 
+              showProgress={showProgress}
               onClick={handleMovieClick}
+              onDetailClick={handleDetailClick}
             />
           ))}
         </div>

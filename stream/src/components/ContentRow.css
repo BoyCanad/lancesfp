@@ -34,9 +34,12 @@
   font-weight: 700;
   color: #e5e5e5;
   letter-spacing: -0.2px;
-  white-space: nowrap;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   margin-bottom: 4px;
   line-height: 1.25;
   transition: color 0.3s ease;

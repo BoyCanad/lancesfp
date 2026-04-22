@@ -282,7 +282,7 @@ export default function MyNetflix() {
             <div className="mn-row__track">
               {likedTitles.map((movie) => (
                 <div key={movie.id} className="mn-liked-card" onClick={() => navigate(`/watch/${movie.id}`)}>
-                  <img src={movie.thumbnail} alt={movie.title} className="mn-liked-card__img" />
+                  <img src={movie.mobileBanner || movie.mobileThumbnail || movie.thumbnail} alt={movie.title} className="mn-liked-card__img" />
                   <div className="mn-liked-card__footer">
                     <Share2 size={18} color="white" />
                     <span>Share</span>
@@ -335,7 +335,7 @@ export default function MyNetflix() {
           <div className="mn-row__track">
             {myList.map((movie) => (
               <div key={movie.id} className="mn-list-card" onClick={() => navigate(`/watch/${movie.id}`)}>
-                <img src={movie.thumbnail} alt={movie.title} className="mn-list-card__img" />
+                <img src={movie.mobileBanner || movie.mobileThumbnail || movie.thumbnail} alt={movie.title} className="mn-list-card__img" />
               </div>
             ))}
             {myList.length === 0 && (

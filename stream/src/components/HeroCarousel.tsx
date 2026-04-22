@@ -100,12 +100,30 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const goNext = () => goTo((current + 1) % movies.length, 'right');
 
   const getBannerSource = (movie: Movie) =>
-    isMobile && movie.mobileBanner ? movie.mobileBanner : movie.banner;
+    isMobile
+      ? movie.mobileCarouselBanner || movie.mobileBanner || movie.banner
+      : movie.banner;
 
   const handleMoreInfo = (movie: Movie) => {
-    if (movie.id === 'ang-huling-el-bimbo-play' || movie.title.includes('Ang Huling El Bimbo')) navigate('/ang-huling-el-bimbo-play');
-    else if (movie.id === 'minsan' || movie.title === 'Minsan') navigate('/minsan');
-    else if (movie.id === 'pare-ko' || movie.title === 'Pare Ko') navigate('/pare-ko');
+    const pathMap: Record<string, string> = {
+      'ang-huling-el-bimbo-play': '/ang-huling-el-bimbo-play',
+      'minsan': '/minsan',
+      'tindahan-ni-aling-nena': '/tindahan-ni-aling-nena',
+      'alapaap-overdrive': '/alapaap-overdrive',
+      'spoliarium-graduation': '/spoliarium-graduation',
+      'pare-ko': '/pare-ko',
+      'tama-ka-ligaya': '/tama-ka-ligaya',
+      'ang-huling-el-bimbo': '/ang-huling-el-bimbo',
+      'beyond-the-last-dance': '/beyond-the-last-dance'
+    };
+    
+    if (pathMap[movie.id]) {
+      navigate(pathMap[movie.id]);
+    } else if (movie.title.includes('Ang Huling El Bimbo')) {
+      navigate('/ang-huling-el-bimbo-play');
+    } else {
+      navigate(`/watch/${movie.id}`);
+    }
   };
 
   const handlePlay = async (movie: Movie) => {

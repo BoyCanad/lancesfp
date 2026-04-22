@@ -221,7 +221,7 @@
   display: flex;
   justify-content: center;
   gap: 40px;
-  margin-top: 10px;
+  margin-top: 0px;
 }
 
 .mdetail-back-btn {
@@ -867,4 +867,61 @@
   margin-top: 60px;
   position: relative;
   z-index: 5;
+}
+
+/* Resume & Download Buttons */
+.mdetail-btn-resume {
+  background: white !important;
+  color: black !important;
+  width: 100%;
+}
+.mdetail-btn-resume:hover {
+  background: rgba(255,255,255,0.8) !important;
+}
+
+.mdetail-btn-download {
+  background: rgba(43, 43, 43, 0.4) !important;
+  color: white !important;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-top: 8px;
+}
+
+/* Progress Indicators (Netflix Style) */
+.mdetail-progress-section {
+  margin: 15px 0 5px;
+  width: 100%;
+}
+
+.mdetail-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.mdetail-progress-fill {
+  height: 100%;
+  background: #e50914; /* Netflix Red */
+  border-radius: 2px;
+}
+
+.mdetail-remaining-text {
+  color: #a3a3a3;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: right;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+  .mdetail-progress-section {
+    margin: 20px 0;
+  }
+  .mdetail-remaining-text {
+    font-size: 15px;
+    font-weight: 600;
+  }
 }

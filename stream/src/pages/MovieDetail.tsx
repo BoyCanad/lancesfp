@@ -5,6 +5,7 @@ import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check } from 
 import { supabase } from '../supabaseClient';
 import { allMovies, elBimboCollections, archiveMovies } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
+import { getWatchProgress, type WatchProgress } from '../services/profileService';
 import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import BarkadaSection from '../components/BarkadaSection';
@@ -56,8 +57,6 @@ const parseVTT = (vttData: string): ParsedCue[] => {
   return cues;
 };
 
-
-
 export default function MovieDetail() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,15 +76,28 @@ export default function MovieDetail() {
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inMyList, setInMyList] = useState(false);
+  const [progress, setProgress] = useState<WatchProgress | null>(null);
 
   useEffect(() => {
     if (movie) {
       setInMyList(isInMyList(movie.id));
       const handleUpdate = () => setInMyList(isInMyList(movie.id));
       window.addEventListener('mylist_updated', handleUpdate);
+      
+      // Fetch Watch Progress
+      const stored = localStorage.getItem('activeProfile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        getWatchProgress(profile.id).then(allProgress => {
+          const movieProgress = allProgress.find(p => p.movie_id === movie.id);
+          if (movieProgress) setProgress(movieProgress);
+        });
+      }
+
       return () => window.removeEventListener('mylist_updated', handleUpdate);
     }
   }, [movie]);
+
   useVideoFade(videoRef, isMuted, trailerActive);
 
   useEffect(() => {
@@ -94,74 +106,44 @@ export default function MovieDetail() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-
-
-  // Start trailer once after 3s upon landing (or immediately if from thumbnail)
+  // Trailer start logic...
   useEffect(() => {
     if (hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
-
     if (stateStartTime !== undefined) {
       setTrailerActive(true);
       setHasPlayedOnce(true);
       return;
     }
-
     const timer = window.setTimeout(() => {
       setTrailerActive(true);
       setHasPlayedOnce(true);
     }, 3000);
-
     return () => clearTimeout(timer);
   }, [stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
 
-  // Set initial time if provided from navigation
   useEffect(() => {
     if (trailerActive && stateStartTime !== undefined && videoRef.current) {
       videoRef.current.currentTime = stateStartTime;
     }
   }, [trailerActive, stateStartTime]);
 
-  // Sync muted state to video element
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
+    if (videoRef.current) videoRef.current.muted = isMuted;
   }, [isMuted]);
 
-  // Sync subtitles
   useEffect(() => {
-    if (!trailerActive) {
-      setCurrentSubtitle('');
+    if (movie?.trailerVttUrl) {
+      fetch(movie.trailerVttUrl)
+        .then(res => res.text())
+        .then(data => setCues(parseVTT(data)))
+        .catch(err => console.error('Failed to load subtitles:', err));
     }
-  }, [trailerActive]);
-
-  // Fetch subtitles on mount
-  useEffect(() => {
-    if (!movie?.trailerVttUrl) return;
-    fetch(movie.trailerVttUrl)
-      .then(res => res.text())
-      .then(data => {
-        const parsed = parseVTT(data);
-        setCues(parsed);
-      })
-      .catch(err => console.error('Failed to load subtitles:', err));
   }, [movie]);
-
-  // Handle play when trailer active
-  useEffect(() => {
-    if (trailerActive && videoRef.current) {
-      videoRef.current.muted = isMuted;
-      // videoRef.current.play().catch(() => { });
-    }
-  }, [trailerActive, isMuted]);
 
   const handleListToggle = () => {
     if (!movie) return;
-    if (inMyList) {
-      removeFromMyList(movie.id);
-    } else {
-      addToMyList(movie.id);
-    }
+    if (inMyList) removeFromMyList(movie.id);
+    else addToMyList(movie.id);
   };
 
   const handleTimeUpdate = () => {
@@ -171,13 +153,8 @@ export default function MovieDetail() {
     setCurrentSubtitle(activeCue ? activeCue.text : '');
   };
 
-  const handleTrailerEnd = () => {
-    setTrailerActive(false);
-  };
-
+  const handleTrailerEnd = () => setTrailerActive(false);
   const toggleMute = () => setIsMuted(m => !m);
-
-
 
   const handlePlayClick = async () => {
     if (!movie) return;
@@ -196,10 +173,22 @@ export default function MovieDetail() {
   }
 
   const backgroundImage = isMobile
-    ? movie.mobileBanner || movie.banner || movie.mobileThumbnail || movie.thumbnail
-    : movie.banner || movie.thumbnail;
+    ? movie.detailMobileBanner || movie.mobileBanner || movie.banner || movie.mobileThumbnail || movie.thumbnail
+    : movie.detailBanner || movie.banner || movie.thumbnail;
 
   const isElBimbo = movie.genre.includes('Ang Huling El Bimbo') || movie.id.includes('el-bimbo');
+
+  // Progress Calculation
+  const progressPercent = progress ? (progress.progress_ms / progress.duration_ms) * 100 : 0;
+  const remainingMs = progress ? progress.duration_ms - progress.progress_ms : 0;
+  
+  const formatRemaining = (ms: number) => {
+    const totalMin = Math.floor(ms / 60000);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (h > 0) return `${h}h ${m}m remaining`;
+    return `${m}m remaining`;
+  };
 
   return (
     <div className="mdetail-page-wrapper">
@@ -207,14 +196,11 @@ export default function MovieDetail() {
         <ArrowLeft size={28} />
       </button>
       <div className="mdetail-container">
-
-        {/* Static background — fades out when trailer starts */}
         <div
           className={`mdetail-bg mdetail-bg--static ${trailerActive ? 'mdetail-bg--hidden' : ''}`}
           style={{ backgroundImage: `url(${backgroundImage})` }}
         />
 
-        {/* Trailer video — fades in after 3s */}
         {movie.trailerUrl && (
           <video
             ref={videoRef}
@@ -229,7 +215,6 @@ export default function MovieDetail() {
           />
         )}
 
-        {/* Custom Subtitle Overlay */}
         {trailerActive && currentSubtitle && (
           <div className="mdetail-subtitle-overlay">
             <div className="mdetail-subtitle-text">
@@ -240,35 +225,22 @@ export default function MovieDetail() {
           </div>
         )}
 
-        {/* Gradient overlays */}
         <div className="mdetail-gradient mdetail-gradient-left" />
         <div className="mdetail-gradient mdetail-gradient-bottom" />
 
-        {/* Volume toggle */}
         {trailerActive && movie.trailerUrl && (
-          <button
-            className="mdetail-vol-btn"
-            onClick={toggleMute}
-            aria-label={isMuted ? 'Unmute trailer' : 'Mute trailer'}
-          >
-            {isMuted
-              ? <VolumeX size={20} strokeWidth={2} />
-              : <Volume2 size={20} strokeWidth={2} />
-            }
+          <button className="mdetail-vol-btn" onClick={toggleMute}>
+            {isMuted ? <VolumeX size={20} strokeWidth={2} /> : <Volume2 size={20} strokeWidth={2} />}
           </button>
         )}
 
-        {/* Content wrapper */}
         <div className="mdetail-content">
-
-          {/* Logo */}
           {movie.logo ? (
             <img src={movie.logo} alt={movie.title} className="mdetail-logo" />
           ) : (
             <h1 className="mdetail-title">{movie.title}</h1>
           )}
 
-          {/* Metadata row */}
           <div className="mdetail-meta-row">
             <span className="mdetail-meta-text">{movie.year}</span>
             <span className="mdetail-badge">{movie.ageRating}</span>
@@ -277,36 +249,34 @@ export default function MovieDetail() {
             <span className="mdetail-rating">★ {movie.rating}</span>
           </div>
 
-          {/* Genre pills */}
           <div className="mdetail-genres">
             {movie.genre.filter(g => g !== 'Ang Huling El Bimbo').map((g) => (
               <span key={g} className="mdetail-genre-pill">{g}</span>
             ))}
           </div>
 
-          {/* Description */}
           <p className="mdetail-description">{movie.description}</p>
 
-          {/* Action Buttons */}
           <div className="mdetail-actions">
             <button
-              onClick={handlePlayClick}
-              className="mdetail-btn mdetail-btn-play"
-              style={{ textDecoration: 'none', border: 'none', cursor: 'pointer' }}
+               onClick={handlePlayClick}
+               className={`mdetail-btn ${progress ? 'mdetail-btn-resume' : 'mdetail-btn-play'}`}
             >
-              <Play size={18} fill="black" strokeWidth={0} /> Play
+              <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} /> {progress ? 'Resume' : 'Play'}
             </button>
 
+            {progress && (
+              <div className="mdetail-progress-section">
+                <div className="mdetail-progress-bar">
+                  <div className="mdetail-progress-fill" style={{ width: `${progressPercent}%` }} />
+                </div>
+                <div className="mdetail-remaining-text">{formatRemaining(remainingMs)}</div>
+              </div>
+            )}
+
             <div className="mdetail-quick-actions">
-              <button 
-                className={`mdetail-quick-btn ${inMyList ? 'active' : ''}`} 
-                onClick={handleListToggle}
-              >
-                {inMyList ? (
-                  <Check size={28} color="white" strokeWidth={1.5} />
-                ) : (
-                  <Plus size={28} color="white" strokeWidth={1.5} />
-                )}
+              <button className={`mdetail-quick-btn ${inMyList ? 'active' : ''}`} onClick={handleListToggle}>
+                {inMyList ? <Check size={28} color="white" strokeWidth={1.5} /> : <Plus size={28} color="white" strokeWidth={1.5} />}
                 <span>My List</span>
               </button>
               <RateButton movieId={movie.id} />
@@ -316,37 +286,18 @@ export default function MovieDetail() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
       {isElBimbo && movie.id === 'ang-huling-el-bimbo-play' && (
-        <>
-          <BarkadaSection />
-          <BehindTheScenesSection />
-        </>
+        <><BarkadaSection /><BehindTheScenesSection /></>
       )}
 
       <div className="mdetail-collections-wrapper">
-        {isElBimbo ? (
-          <ContentRow
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Library size={24} color="#e50914" /> Ang Huling El Bimbo Collections
-              </div>
-            }
-            movies={elBimboCollections.filter(m => m.id !== movie?.id)}
-          />
-        ) : (
-          <ContentRow
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Library size={24} color="#e50914" /> G11 Archives
-              </div>
-            }
-            movies={archiveMovies.filter(m => m.id !== movie?.id)}
-          />
-        )}
+        <ContentRow
+          title={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Library size={24} color="#e50914" /> {isElBimbo ? 'Ang Huling El Bimbo Collections' : 'G11 Archives'}</div>}
+          movies={(isElBimbo ? elBimboCollections : archiveMovies).filter(m => m.id !== movie?.id)}
+        />
       </div>
     </div>
   );
