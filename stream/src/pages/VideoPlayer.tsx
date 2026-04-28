@@ -15,7 +15,6 @@ import {
   Copy,
   Gauge,
   SkipForward,
-  Flag,
   Scissors,
   ThumbsUp,
   FastForward,
@@ -30,6 +29,7 @@ import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../supabaseClient';
 import { updateWatchProgress, getWatchProgress, deleteWatchProgress, addToRecentlyWatched } from '../services/profileService';
+import XRayPanel from '../components/XRayPanel';
 import './VideoPlayer.css';
 
 interface ParsedCue {
@@ -78,7 +78,11 @@ const parseVTT = (vttData: string): ParsedCue[] => {
   return cues;
 };
 
-export default function VideoPlayer() {
+interface VideoPlayerProps {
+  variant?: 'default' | 'xray';
+}
+
+export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -456,6 +460,9 @@ export default function VideoPlayer() {
 
   const seasonAndEpisode = isMovie ? "" : "S1:E1";
   const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
+
+  const showXRay = variant === 'xray' || !!movie?.xRay;
+  const [showAllPanel, setShowAllPanel] = useState(false);
 
   // Calculate dynamically active program for VOD recordings
   const currentProgramTitle = useMemo(() => {
@@ -1709,10 +1716,32 @@ export default function VideoPlayer() {
 
           {/* Trailer Subtitle Overlay */}
           {currentTrailerSubtitle && isTrailerVideoVisible && (
-            <div className="inline-trailer-subtitle-overlay">
-              <div className="inline-trailer-subtitle-text">
-                {currentTrailerSubtitle.split('\n').map((line, idx) => (
-                  <span key={idx}>{line}<br /></span>
+            <div 
+              className="inline-trailer-subtitle-overlay"
+              style={{
+                position: 'absolute',
+                bottom: showControls ? (isMobileWindow ? '12%' : '15%') : '5%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '90%',
+                textAlign: 'center',
+                zIndex: 60,
+                pointerEvents: 'none',
+                transition: 'bottom 0.3s ease-in-out'
+              }}
+            >
+              <div 
+                className="inline-trailer-subtitle-text"
+                style={{
+                  color: 'white',
+                  fontSize: isMobileWindow ? '1.1rem' : '1.5rem',
+                  fontWeight: 600,
+                  textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5)',
+                  lineHeight: 1.2
+                }}
+              >
+                {currentTrailerSubtitle.split('\n').map((line, idx, arr) => (
+                  <span key={idx}>{line}{idx !== arr.length - 1 && <br />}</span>
                 ))}
               </div>
             </div>
@@ -1786,7 +1815,7 @@ export default function VideoPlayer() {
         </div>
       )}
 
-      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''} ${isClippingMode ? 'clipping-active' : ''}`}>
+      <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''} ${isClippingMode ? 'clipping-active' : ''} ${showAllPanel ? 'xray-all-open' : ''}`}>
         {/* Rate overlay inside the shrunken frame */}
         {showRecommendation && !isExpandingTrailer && !isMobileWindow && (
           <div className="rate-shrunken-video">
@@ -1886,12 +1915,16 @@ export default function VideoPlayer() {
                 const adjustedTime = currentTime - subtitleTimeOffset + VOD_SUBTITLE_LATENCY;
                 return isInSubtitleProgram && adjustedTime >= cue.start && adjustedTime <= cue.end;
               })
+              // Drop blank/whitespace-only cues that create phantom space
+              .filter(cue => cue.text.trim() !== '')
+              // If multiple cues overlap in time, only render the latest one to prevent upward stacking
+              .slice(-1)
               .map((cue, idx) => (
                 <div key={idx} className="custom-subtitle-text">
-                  {cue.text.split('\n').map((line, i) => (
+                  {cue.text.trim().split('\n').map((line, i, arr) => (
                     <span key={i}>
                       {line}
-                      <br />
+                      {i !== arr.length - 1 && <br />}
                     </span>
                   ))}
                 </div>
@@ -1912,7 +1945,7 @@ export default function VideoPlayer() {
         )}
 
         {/* Age Rating Overlay - Netflix Style */}
-        <div className={`age-rating-overlay ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
+        <div className={`age-rating-overlay${showXRay ? ' age-rating-overlay--xray' : ''} ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
           <div className="age-rating-content">
             <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
             {movie.contentWarnings && movie.contentWarnings.length > 0 && (
@@ -1923,36 +1956,67 @@ export default function VideoPlayer() {
           </div>
         </div>
 
-        {/* Top Bar Navigation */}
-        <div className="player-top-bar">
-          <button className="back-button" onClick={() => navigate(-1)}>
+        {/* X-Ray Panel Overlay */}
+        {showXRay && movie?.xRay && (
+          <XRayPanel xRay={movie.xRay} currentTime={currentTime} onBack={() => navigate(-1)} onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} onShowAllChange={setShowAllPanel} />
+        )}
+
+        {/* X-Ray top-right back button (since the X-Ray panel covers the regular back button) */}
+        {showXRay && (
+          <button className="xray-back-button" onClick={() => navigate(-1)} aria-label="Back">
             <ArrowLeft size={42} />
           </button>
+        )}
 
-          {/* Mobile Title */}
-          <div className="mobile-top-title mobile-only" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span>
-              {movie?.id === 'after-hours'
-                ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
-                : title}
-            </span>
-            {currentProgramTitle && (
-              <span style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px' }}>
-                {currentProgramTitle}
+        {/* X-Ray mobile-only top bar (title + fullscreen) */}
+        {showXRay && (
+          <div className="xray-mobile-top-bar mobile-only">
+            <div className="mobile-top-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span>
+                {movie?.id === 'after-hours'
+                  ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
+                  : title}
               </span>
-            )}
-          </div>
-
-          <div className="top-right-controls">
-            <button className="flag-button lock-button desktop-only tooltip">
-              <Flag size={38} />
-              <span className="tooltip-text tooltip-bottom">Report an issue</span>
-            </button>
-            <button className="flag-button mobile-only" onClick={toggleFullscreen}>
+              {currentProgramTitle && (
+                <span style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px' }}>
+                  {currentProgramTitle}
+                </span>
+              )}
+            </div>
+            <button className="flag-button xray-fullscreen-btn" onClick={toggleFullscreen} aria-label="Toggle fullscreen">
               {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
             </button>
           </div>
-        </div>
+        )}
+
+        {/* Top Bar Navigation */}
+        {!showXRay && (
+          <div className="player-top-bar">
+            <button className="back-button" onClick={() => navigate(-1)}>
+              <ArrowLeft size={42} />
+            </button>
+
+            {/* Mobile Title */}
+            <div className="mobile-top-title mobile-only" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span>
+                {movie?.id === 'after-hours'
+                  ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
+                  : title}
+              </span>
+              {currentProgramTitle && (
+                <span style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px' }}>
+                  {currentProgramTitle}
+                </span>
+              )}
+            </div>
+
+            <div className="top-right-controls">
+              <button className="flag-button mobile-only" onClick={toggleFullscreen}>
+                {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Skip Intro/Logo Button */}
         {(activeSkipPoint || recentlyPassedSkipPoint) && (

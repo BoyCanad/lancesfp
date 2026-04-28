@@ -15,6 +15,31 @@ export interface Season {
   episodes: Episode[];
 }
 
+export interface XRayActor {
+  name: string;
+  character: string;
+  image: string;
+  timeRanges?: { start: number; end: number }[];
+}
+
+export interface XRaySong {
+  title: string;
+  artist?: string;
+  start?: number;
+  end?: number;
+}
+
+export interface XRayScene {
+  start: number;
+  end: number;
+  actors?: XRayActor[];
+  songs?: XRaySong[];
+}
+
+export interface XRayData {
+  scenes: XRayScene[];
+}
+
 export interface Movie {
   id: string;
   title: string;
@@ -61,6 +86,7 @@ export interface Movie {
   squareThumbnail?: string;
   tallTrailerUrl?: string;
   mediaType?: 'movie' | 'show';
+  xRay?: XRayData;
 }
 
 export const makingOfLegacy: Movie = {
@@ -163,7 +189,214 @@ export const featuredMovies: Movie[] = [
       thumbHeight: 180
     },
     squareThumbnail: "/images/clips/square/AngHulingElBimboPlay.webp",
+    mediaType: 'movie'
+  },
+  {
+    id: "ang-huling-el-bimbo-play-xray",
+    title: "Ang Huling El Bimbo Play - Bonus X-Ray Edition",
+    logo: "/images/el-bimbo-x-ray-logo.webp",
+    thumbnail: "/images/el-bimbo-x-ray.webp",
+    banner: "/images/el-bimbo-x-ray.webp",
+    cardBanner: "/images/el-bimbo-x-ray.webp",
+    mobileCardBanner: "/images/el-bimbo-x-ray.webp",
+    mobileBanner: "/images/el-bimbo-x-ray.webp",
+    detailMobileBanner: "/images/el-bimbo-detail-mobile.webp",
+    detailBanner: "/images/el-bimbo-detail.webp",
+    mobileCarouselBanner: "/images/el-bimbo-mobile-carousel.jpg",
+    description: "The same nostalgic journey through the 90s, now with the X-Ray bonus experience — explore behind-the-scenes cast info and songs as you watch.",
+    rating: "9.8",
+    year: "2026",
+    duration: "49m",
+    genre: ["Musical", "Drama", "Nostalgia", "X-Ray"],
+    ageRating: "PG-13",
+    contentWarnings: ["mature themes", "language", "violence", "alcohol use"],
+    isOriginal: true,
+    mobileThumbnail: "/images/el-bimbo-mobile.webp",
+    videoUrl: "https://boycanad.github.io/stream-storage-1/new_index.m3u8",
+    downloadUrl: "https://video-proxy.booran-special.workers.dev/",
+    trailerUrl: "https://boycanad.github.io/stream-storage-1/trailer.mp4",
+    tallTrailerUrl: "https://res.cloudinary.com/dtzphltjc/video/upload/f_mp4,vc_h264,ac_aac/v1776811392/HulingElBimboPlay-tall_v5itkx.mp4",
+    subtitles: [
+      {
+        label: "Filipino",
+        srclang: "fil",
+        url: "https://boycanad.github.io/stream-storage-1/AngHulingElBimboPlay.vtt"
+      },
+      {
+        label: "English",
+        srclang: "en",
+        url: "https://boycanad.github.io/stream-storage-1/AngHulingElBimboPlayEnglish.vtt"
+      }
+    ],
+    spriteUrl: "/images/storyboards/sprite_5s_hq_synced.jpg",
+    spriteConfig: {
+      rows: 30,
+      cols: 20,
+      interval: 5,
+      thumbWidth: 320,
+      thumbHeight: 180
+    },
+    squareThumbnail: "/images/clips/square/AngHulingElBimboPlay.webp",
     mediaType: 'movie',
+    xRay: {
+      scenes: [
+        {
+          start: 11,
+          end: 349,
+          songs: [
+            { title: "Ang Huling El Bimbo Orchestral Arrangement", artist: "Eraserheads", start: 11, end: 52 },
+            { title: "Minsan", artist: "Eraserheads", start: 52, end: 349 }
+          ],
+          actors: [
+            { name: "Dancers", character: "Ensemble", image: "/images/xray/dancers.jpg", timeRanges: [{ start: 52, end: 349 }] },
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 64, end: 349 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 79, end: 349 }] },
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 97, end: 349 }] },
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 97, end: 349 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 165, end: 349 }] }
+          ]
+        },
+        {
+          start: 358,
+          end: 709,
+          songs: [
+            { title: "Tindahan ni Aling Nena", artist: "Eraserheads", start: 359, end: 553 }
+          ],
+          actors: [
+            { name: "Aisha Dela Cruz", character: "Marco's Mother", image: "/images/xray/aisha-xray.webp", timeRanges: [{ start: 358, end: 557 }] },
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 358, end: 709 }] },
+            { name: "Dancers", character: "Ensemble", image: "/images/xray/dancers.jpg", timeRanges: [{ start: 358, end: 557 }] },
+            { name: "Mark Jerzel Tria", character: "Jazzy", image: "/images/xray/jazzy-xray.webp", timeRanges: [{ start: 358, end: 709 }] },
+            { name: "Juliana Faith Cordovez", character: "Aling Nena", image: "/images/xray/nena-xray.webp", timeRanges: [{ start: 369, end: 709 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 384, end: 709 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 447, end: 709 }] },
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 447, end: 709 }] },
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 447, end: 709 }] }
+          ]
+        },
+        {
+          start: 726,
+          end: 1072,
+          songs: [
+            { title: "Overdrive Acapella", artist: "Eraserheads", start: 789, end: 831 },
+            { title: "Alapaap/Overdrive", artist: "Eraserheads", start: 836, end: 1041 }
+          ],
+          actors: [
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 726, end: 1072 }] },
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 726, end: 1072 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 726, end: 1072 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 733, end: 1072 }] },
+            { name: "Mark Jerzel Tria", character: "Jazzy", image: "/images/xray/jazzy-xray.webp", timeRanges: [{ start: 733, end: 1072 }] },
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 759, end: 1072 }] }
+          ]
+        },
+        {
+          start: 1079,
+          end: 1249,
+          songs: [
+            { title: "Spoliarium", artist: "Eraserheads", start: 1120, end: 1249 }
+          ],
+          actors: [
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 1079, end: 1099 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 1079, end: 1228 }] },
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 1079, end: 1170 }] },
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 1079, end: 1099 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 1079, end: 1099 }] }
+          ]
+        },
+        {
+          start: 1252,
+          end: 1407,
+          songs: [
+            { title: "Minsan Instrumental", artist: "Eraserheads", start: 1252, end: 1314 }
+          ],
+          actors: [
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 1252, end: 1321 }] },
+            { name: "Mark Jerzel Tria", character: "Jazzy", image: "/images/xray/jazzy-xray.webp", timeRanges: [{ start: 1260, end: 1321 }, { start: 1362, end: 1407 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 1260, end: 1321 }] },
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 1280, end: 1321 }] },
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 1284, end: 1360 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 1284, end: 1407 }] }
+          ]
+        },
+        {
+          start: 1413,
+          end: 1809,
+          songs: [
+            { title: "Pare Ko/Yoko", artist: "Eraserheads", start: 1420, end: 1759 }
+          ],
+          actors: [
+            { name: "Dancers", character: "Ensemble", image: "/images/xray/dancers.jpg", timeRanges: [{ start: 1413, end: 1762 }] },
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 1489, end: 1809 }] },
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 1523, end: 1556 }, { start: 1673, end: 1687 }, { start: 1763, end: 1809 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 1673, end: 1687 }, { start: 1763, end: 1809 }] }
+          ]
+        },
+        {
+          start: 1815,
+          end: 1841,
+          songs: [
+            { title: "Burnout (Slowed)", artist: "Eraserheads", start: 1821, end: 1841 }
+          ],
+          actors: [
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 1815, end: 1841 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 1821, end: 1841 }] }
+          ]
+        },
+        {
+          start: 1853,
+          end: 2043,
+          songs: [
+            { title: "Tama Ka/Ligaya", artist: "Eraserheads", start: 1853, end: 2043 }
+          ],
+          actors: [
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 1857, end: 2005 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 1860, end: 2043 }] },
+            { name: "Juliana Faith Cordovez", character: "Aling Nena", image: "/images/xray/nena-xray.webp", timeRanges: [{ start: 1868, end: 2005 }] },
+            { name: "Dancers", character: "Ensemble", image: "/images/xray/dancers.jpg", timeRanges: [{ start: 2005, end: 2043 }] }
+          ]
+        },
+        {
+          start: 2044,
+          end: 2244,
+          songs: [
+            { title: "Ang Huling El Bimbo (Violin & Piano)", artist: "Eraserheads", start: 2184, end: 2214 }
+          ],
+          actors: [
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 2044, end: 2109 }, { start: 2171, end: 2204 }] },
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 2045, end: 2091 }, { start: 2132, end: 2186 }] },
+            { name: "Aisha Dela Cruz", character: "Marco's Mother", image: "/images/xray/aisha-xray.webp", timeRanges: [{ start: 2052, end: 2109 }, { start: 2214, end: 2244 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 2117, end: 2204 }] },
+            { name: "Ahlysson Dela Cruz", character: "Doctor", image: "/images/xray/ahlysson-delacruz.jpg", timeRanges: [{ start: 2214, end: 2233 }] }
+          ]
+        },
+        {
+          start: 2245,
+          end: 2795,
+          songs: [
+            { title: "Ang Huling El Bimbo", artist: "Eraserheads", start: 2255, end: 2786 }
+          ],
+          actors: [
+            { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 2245, end: 2795 }] },
+            { name: "Dancers", character: "Ensemble", image: "/images/xray/dancers.jpg", timeRanges: [{ start: 2255, end: 2389 }, { start: 2469, end: 2706 }, { start: 2730, end: 2795 }] },
+            { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 2255, end: 2389 }, { start: 2756, end: 2795 }] },
+            { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 2255, end: 2389 }, { start: 2756, end: 2795 }] },
+            { name: "Aisha Dela Cruz", character: "Marco's Mother", image: "/images/xray/aisha-xray.webp", timeRanges: [{ start: 2255, end: 2389 }] },
+            { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 2440, end: 2795 }] },
+            { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 2756, end: 2795 }] },
+            { name: "Juliana Faith Cordovez", character: "Aling Nena", image: "/images/xray/nena-xray.webp", timeRanges: [{ start: 2756, end: 2795 }] }
+          ]
+        },
+        {
+          start: 2799,
+          end: 2980,
+          songs: [
+            { title: "Ang Huling El Bimbo Orchestral Arrangement", artist: "Eraserheads", start: 2799, end: 2980 }
+          ],
+          actors: []
+        }
+      ]
+    }
   },
   {
     id: "minsan",
@@ -398,19 +631,21 @@ export const elBimboFeatured: Movie = {
 };
 export const elBimboCollections: Movie[] = [
   elBimboFeatured,
+  featuredMovies[1], // Ang Huling El Bimbo Play - Bonus X-Ray Edition
   makingOfLegacy,
-  featuredMovies[1], // Minsan
-  featuredMovies[2], // Tindahan
-  featuredMovies[3], // Alapaap
-  featuredMovies[4], // Spoliarium
-  featuredMovies[5], // Pare Ko
-  featuredMovies[6], // Tama Ka
-  featuredMovies[7] // Ang Huling El Bimbo
+  featuredMovies[2], // Minsan
+  featuredMovies[3], // Tindahan
+  featuredMovies[4], // Alapaap
+  featuredMovies[5], // Spoliarium
+  featuredMovies[6], // Pare Ko
+  featuredMovies[7], // Tama Ka
+  featuredMovies[8] // Ang Huling El Bimbo
 ];
 
 export const archiveMovies: Movie[] = [
   trendingMovies[2], // 11 STEM A
   elBimboFeatured,
+  featuredMovies[1], // Ang Huling El Bimbo Play - Bonus X-Ray Edition
   makingOfLegacy,
   trendingMovies[0], // Bukang Liwayway
   trendingMovies[1], // A Day In My Life

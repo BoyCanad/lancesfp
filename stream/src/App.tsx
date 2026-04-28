@@ -17,6 +17,7 @@ import MyList from './pages/MyList';
 import CategoryPage from './pages/CategoryPage';
 
 import VideoPlayer from './pages/VideoPlayer';
+import XRayVideoPlayer from './pages/XRayVideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
 import Clips from './pages/Clips';
 import ClipPlayer from './pages/ClipPlayer';
@@ -40,7 +41,7 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
+  const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
   const isAuth = pathname === '/login';
@@ -49,6 +50,7 @@ function App() {
   const isMyNetflix = pathname === '/my-lsfplus';
   const isDetailPage = [
     '/ang-huling-el-bimbo-play',
+    '/ang-huling-el-bimbo-play-xray',
     '/minsan',
     '/tindahan-ni-aling-nena',
     '/alapaap-overdrive',
@@ -163,6 +165,7 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/genre/:genreId" element={<CategoryPage />} />
         <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
+        <Route path="/ang-huling-el-bimbo-play-xray" element={<MovieDetail />} />
         <Route path="/minsan" element={<MovieDetail />} />
         <Route path="/tindahan-ni-aling-nena" element={<MovieDetail />} />
         <Route path="/alapaap-overdrive" element={<MovieDetail />} />
@@ -177,6 +180,7 @@ function App() {
         <Route path="/11-stem-a" element={<StemADetail />} />
         <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
         <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
+        <Route path="/xray/:id" element={session ? <XRayVideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/clips" element={session ? <Clips /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />

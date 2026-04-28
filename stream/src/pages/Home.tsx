@@ -63,7 +63,11 @@ export default function Home() {
   return (
     <main className="app__main">
       {/* Hero Carousel */}
-      <HeroCarousel movies={featuredMovies.slice(0, 3)} />
+      <HeroCarousel movies={[
+        featuredMovies.find(m => m.id === 'ang-huling-el-bimbo-play')!,
+        featuredMovies.find(m => m.id === 'tindahan-ni-aling-nena')!,
+        featuredMovies.find(m => m.id === 'minsan')!,
+      ]} />
 
       {/* Content Rows */}
       <div className="app__rows">

@@ -107,7 +107,8 @@ export const MovieCard = memo(({
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/watch/${movie.id}`, { state: { startTime: videoElemRef.current?.currentTime } });
+    const base = movie.xRay ? '/xray' : '/watch';
+    navigate(`${base}/${movie.id}`, { state: { startTime: videoElemRef.current?.currentTime } });
   };
 
   const [isLiked, setIsLiked] = useState<boolean | null>(null);
@@ -373,6 +374,7 @@ export default function ContentRow({
   const getDetailPath = (movie: Movie) => {
     // Use movie.id (The slug) to navigate to details
     if (movie.id === 'ang-huling-el-bimbo-play') return '/ang-huling-el-bimbo-play';
+    if (movie.id === 'ang-huling-el-bimbo-play-xray') return '/ang-huling-el-bimbo-play-xray';
     if (movie.id === 'minsan') return '/minsan';
     if (movie.id === 'tindahan-ni-aling-nena') return '/tindahan-ni-aling-nena';
     if (movie.id === 'alapaap-overdrive') return '/alapaap-overdrive';
@@ -392,7 +394,7 @@ export default function ContentRow({
     
     // If we are in "Continue Watching" mode, go directly to the player
     if (showProgress) {
-      navigate(`/watch/${movie.id}`, navOptions);
+      navigate(`${movie.xRay ? '/xray' : '/watch'}/${movie.id}`, navOptions);
       return;
     }
 

@@ -107,6 +107,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const handleMoreInfo = (movie: Movie) => {
     const pathMap: Record<string, string> = {
       'ang-huling-el-bimbo-play': '/ang-huling-el-bimbo-play',
+      'ang-huling-el-bimbo-play-xray': '/ang-huling-el-bimbo-play-xray',
       'minsan': '/minsan',
       'tindahan-ni-aling-nena': '/tindahan-ni-aling-nena',
       'alapaap-overdrive': '/alapaap-overdrive',

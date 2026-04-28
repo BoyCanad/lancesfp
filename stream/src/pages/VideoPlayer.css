@@ -144,7 +144,11 @@
 
   .custom-subtitle-overlay-container {
     width: 85% !important;
-    bottom: 3% !important;
+    bottom: 5% !important;
+  }
+
+  .show-controls .custom-subtitle-overlay-container {
+    bottom: 12% !important;
   }
 }
 
@@ -167,6 +171,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: bottom 0.3s ease-in-out;
+}
+
+.show-controls .custom-subtitle-overlay-container {
+  bottom: 15%;
 }
 
 .custom-subtitle-text {
@@ -175,8 +184,8 @@
   font-family: 'Inter', 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 1.3rem;
   font-weight: 600;
-  line-height: 1.4;
-  margin-bottom: 5px;
+  line-height: 1.15;
+  margin-bottom: 0;
   text-shadow: 
     0px 0px 4px rgba(0,0,0,1),
     1px 1px 4px rgba(0,0,0,1),
@@ -187,7 +196,11 @@
 
 @media (min-width: 1024px) {
   .custom-subtitle-overlay-container {
-    bottom: 7%;
+    bottom: 5%;
+  }
+
+  .show-controls .custom-subtitle-overlay-container {
+    bottom: 20%;
   }
 
   .custom-subtitle-text {
@@ -811,6 +824,14 @@
   opacity: 0;
 }
 
+/* X-Ray titles: shift age rating right of the compact X-Ray panel so it isn't covered */
+.age-rating-overlay--xray {
+  top: 20px;
+  left: 300px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
 .age-rating-overlay.show {
   animation: ratingSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -856,6 +877,11 @@
   .age-rating-overlay {
     top: 18%;
     padding: 12px 60px 12px 24px;
+  }
+
+  .age-rating-overlay--xray {
+    top: 20px;
+    left: 300px;
   }
 
   .age-rating-main {
@@ -1098,6 +1124,142 @@
 /* Mobile recommendations overlay — hidden on desktop, shown only in mobile media query */
 .mobile-recommendations-overlay {
   display: none;
+}
+
+/* ── X-Ray mobile-only top bar (fullscreen + title) ── */
+.xray-mobile-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 50px 8px 15px; /* right padding leaves room for xray-back-button */
+  z-index: 75;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.xray-mobile-top-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.xray-mobile-top-bar .flag-button,
+.xray-mobile-top-bar .mobile-top-title {
+  pointer-events: auto;
+}
+
+.xray-mobile-top-bar .mobile-top-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1rem;
+  pointer-events: none;
+  max-width: 60%;
+  text-align: center;
+}
+
+.xray-mobile-top-bar .mobile-top-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.xray-fullscreen-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.show-controls .xray-mobile-top-bar {
+  opacity: 1;
+}
+
+/* ── X-Ray top-right back button (matches .back-button / .flag-button styling) ── */
+.xray-back-button {
+  position: absolute;
+  top: 25px;
+  right: 40px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.xray-back-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.show-controls .xray-back-button {
+  opacity: 1;
+}
+
+/* When the All panel is open, push the back button further left so it doesn't sit on top of the panel */
+.video-player-container:has(.xray-all-open) .xray-back-button {
+  right: 500px;
+}
+
+@media (max-width: 896px) {
+  .xray-back-button {
+    top: 8px;
+    right: 15px;
+    padding: 6px;
+  }
+  .xray-back-button svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .video-player-container:has(.xray-all-open) .xray-back-button {
+    right: 335px;
+  }
+
+  /* Match the fullscreen button padding/size with the back button so they align */
+  .xray-fullscreen-btn {
+    padding: 6px !important;
+  }
+  .xray-mobile-top-bar {
+    padding: 8px 50px 8px 15px;
+  }
+}
+
+/* ── X-Ray All Panel: shrink video to make room ── */
+.video-player-container:has(.xray-all-open) {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.video-stage-wrapper.xray-all-open {
+  width: calc(100% - 480px) !important;
+  height: calc((100vw - 480px) * 9 / 16) !important;
+  flex: none !important;
+}
+
+@media (max-width: 896px) {
+  .video-stage-wrapper.xray-all-open {
+    width: calc(100% - 320px) !important;
+    height: calc((100vw - 320px) * 9 / 16) !important;
+  }
 }
 
 /* ── Credits Shrunken Video Frame (PiP while countdown runs) ── */

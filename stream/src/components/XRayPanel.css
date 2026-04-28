@@ -1,0 +1,573 @@
+/* ── Actor placeholder (used when image fails to load) ── */
+.xray-actor-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2a3142, #1a2030);
+  color: rgba(255,255,255,0.4);
+}
+
+/* ── X-Ray Panel ── */
+.xray-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 65;
+  pointer-events: none;
+  width: 450px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.show-controls .xray-panel {
+  opacity: 1;
+}
+
+.xray-panel__inner {
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 45%, rgba(0,0,0,0) 100%);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 8px;
+}
+
+/* Header */
+.xray-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 18px 10px;
+  max-width: 330px;
+}
+
+.xray-panel__title-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+}
+
+.xray-panel__chevron {
+  transition: transform 0.2s ease;
+  opacity: 0.8;
+}
+
+.xray-panel__chevron--rotated {
+  transform: rotate(-90deg);
+}
+
+.xray-panel__badge {
+  background: rgba(255,168,0,0.25);
+  color: #ffb700;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+  border: 1px solid rgba(255,168,0,0.4);
+}
+
+.xray-panel__all-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.xray-panel__all-btn:hover {
+  color: #fff;
+}
+
+.xray-panel__close-btn {
+  margin-left: 10px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: rgba(255,255,255,0.8);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.xray-panel__close-btn:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+/* Scrollable content */
+.xray-panel__scroll {
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+  max-width: 330px;
+}
+
+.xray-panel__scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.xray-panel__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xray-panel__scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+}
+
+.xray-panel__empty {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.82rem;
+  text-align: center;
+  padding: 24px 16px;
+  font-style: italic;
+}
+
+/* Sections */
+.xray-panel__section {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+/* Song */
+.xray-panel__song {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 8px 18px;
+}
+
+.xray-panel__song-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.75);
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+}
+
+.xray-panel__song-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.xray-panel__song-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Actor */
+.xray-panel__actor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  padding: 6px 18px;
+  transition: background 0.15s;
+}
+
+.xray-panel__actor:hover {
+  background: rgba(255,255,255,0.07);
+}
+
+.xray-panel__actor-image-wrapper {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.08);
+}
+
+.xray-panel__actor-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.xray-panel__actor-play {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0,0,0,0.65);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xray-panel__actor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.xray-panel__actor-name {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xray-panel__actor-role {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Expanded "All" Panel (right side) ── */
+.xray-all-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  pointer-events: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.xray-all-panel {
+  width: 480px;
+  height: 100%;
+  background: #1a2030;
+  display: flex;
+  flex-direction: column;
+  animation: xray-slide-in 0.25s ease-out;
+}
+
+@keyframes xray-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.xray-all-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+}
+
+.xray-all-panel__title {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.xray-all-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xray-all-panel__icon-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.xray-all-panel__icon-btn:hover {
+  color: #fff;
+}
+
+/* Tabs */
+.xray-all-panel__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 0 20px;
+}
+
+.xray-all-panel__tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 10px 16px 8px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.xray-all-panel__tab:hover {
+  color: rgba(255,255,255,0.8);
+}
+
+.xray-all-panel__tab--active {
+  color: #4da8da;
+  border-bottom-color: #4da8da;
+}
+
+/* Content */
+.xray-all-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.xray-all-panel__content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.xray-all-panel__content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+
+/* Row */
+.xray-all-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.xray-all-panel__row:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.xray-all-panel__row-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.08);
+}
+
+.xray-all-panel__row-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.xray-all-panel__row-img--music {
+  width: 86px;
+  height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.06);
+}
+
+.xray-all-panel__row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.xray-all-panel__row-name {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xray-all-panel__row-sub {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xray-all-panel__row-chevron {
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+.xray-all-panel__empty {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* Section header */
+.xray-all-panel__section-header {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 14px 20px 6px;
+  letter-spacing: 0.3px;
+}
+
+/* Song row body (wraps info + jump btn) */
+.xray-all-panel__row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xray-all-panel__row--song {
+  align-items: flex-start;
+}
+
+/* Expanded song highlight */
+.xray-all-panel__row--expanded {
+  background: rgba(77, 168, 218, 0.08);
+  border: 1px solid rgba(77, 168, 218, 0.35);
+  border-radius: 6px;
+  margin: 2px 8px;
+  padding: 12px 14px;
+}
+
+.xray-all-panel__row--expanded:hover {
+  background: rgba(77, 168, 218, 0.12);
+}
+
+/* Jump to scene button */
+.xray-all-panel__jump-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+
+.xray-all-panel__jump-btn:hover {
+  color: #4da8da;
+}
+
+/* Mobile */
+@media (max-width: 896px) {
+  .xray-panel {
+    width: 320px;
+  }
+
+  .xray-panel__inner {
+    padding-top: 12px;
+  }
+
+  .xray-panel__actor-image-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+
+  .xray-panel__actor {
+    padding: 5px 12px;
+    gap: 10px;
+  }
+
+  .xray-panel__actor-name {
+    font-size: 0.78rem;
+  }
+
+  .xray-panel__actor-role {
+    font-size: 0.68rem;
+  }
+
+  .xray-panel__song {
+    font-size: 0.78rem;
+    padding: 6px 12px;
+  }
+
+  .xray-panel__header {
+    padding: 20px 12px 8px;
+    max-width: 240px;
+  }
+
+  .xray-panel__scroll {
+    max-width: 240px;
+  }
+
+  .xray-all-panel {
+    width: 320px;
+  }
+
+  .xray-all-panel__row-img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .xray-all-panel__row-name {
+    font-size: 0.8rem;
+  }
+
+  .xray-all-panel__row-sub {
+    font-size: 0.7rem;
+  }
+
+  .xray-all-panel__tab {
+    font-size: 0.78rem;
+    padding: 8px 12px 6px;
+  }
+}

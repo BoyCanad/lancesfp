@@ -163,7 +163,7 @@ export default function MovieDetail() {
       navigate('/login');
       return;
     }
-    navigate(`/watch/${movie.id}`);
+    navigate(movie.xRay ? `/xray/${movie.id}` : `/watch/${movie.id}`);
   };
 
   const isMobile = windowWidth < 768;
@@ -289,7 +289,7 @@ export default function MovieDetail() {
         </div>
       </div>
 
-      {isElBimbo && movie.id === 'ang-huling-el-bimbo-play' && (
+      {isElBimbo && (movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
         <><BarkadaSection /><BehindTheScenesSection /></>
       )}
 
