@@ -13,14 +13,14 @@ const iconCategories = {
     'https://api.dicebear.com/7.x/avataaars/svg?seed=default&backgroundColor=b6e3f4',
   ],
   elBimbo: [
-    '/images/icon/1.webp',
-    '/images/icon/2.webp',
-    '/images/icon/3.webp',
-    '/images/icon/4.webp',
-    '/images/icon/5.webp',
-    '/images/icon/6.webp',
-    '/images/icon/7.webp',
-    '/images/icon/8.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/1.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/2.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/3.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/4.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/5.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/6.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/7.webp',
+    'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/8.webp',
   ]
 };
 
