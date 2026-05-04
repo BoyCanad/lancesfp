@@ -1,13 +1,17 @@
 import HeroCarousel from '../components/HeroCarousel';
 import ContentRow from '../components/ContentRow';
+import CollectionShowcase from '../components/CollectionShowcase';
 import LiveStreamSection from '../components/LiveStreamSection';
 import { useState, useEffect } from 'react';
-import { getProfiles, getWatchProgress, getRecentlyWatched } from '../services/profileService';
+import { useNavigate } from 'react-router-dom';
+import { Library } from 'lucide-react';
+import type { Movie } from '../data/movies';
+import { getWatchProgress, getRecentlyWatched, getProfiles } from '../services/profileService';
+import { supabase } from '../supabaseClient';
 import { fetchMovieRows, type MovieRows } from '../services/movieService';
 import { allMovies as staticAllMovies } from '../data/movies';
-import { useNavigate } from 'react-router-dom';
 import type { Profile } from '../services/profileService';
-import type { Movie } from '../data/movies';
+import './Home.css';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -104,8 +108,11 @@ export default function Home() {
           />
         )}
 
-        <ContentRow
+        <CollectionShowcase
           title="Ang Huling El Bimbo Collections"
+          subtitle="Browse the complete collection from the world of Ang Huling El Bimbo"
+          backgroundImage="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection.png"
+          logoImage="/images/el-bimbo-logo.webp"
           movies={rows?.elBimboCollections ?? []}
           onSeeAll={() => navigate('/collections/el-bimbo')}
         />

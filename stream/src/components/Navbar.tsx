@@ -149,7 +149,7 @@ export default function Navbar() {
             onClick={() => navigate('/browse')}
             style={{ cursor: 'pointer' }}
           >
-            <span className="navbar__logo-text">LSFPlus</span>
+            <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '40px' }} />
           </div>
           
           <ul className="navbar__menu">
@@ -318,7 +318,7 @@ export default function Navbar() {
       <div className="navbar__mobile-inner mobile-only">
         <div className="navbar__mobile-top">
           <div className="navbar__mobile-branding">
-            <span className="navbar__logo-text" style={{ fontSize: '24px' }}>LSFPlus</span>
+            <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '34px' }} />
 
           </div>
           <div className="navbar__mobile-actions">

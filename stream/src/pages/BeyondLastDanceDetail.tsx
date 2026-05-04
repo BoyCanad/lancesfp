@@ -69,6 +69,7 @@ export default function BeyondLastDanceDetail() {
   const [isMuted, setIsMuted] = useState(false);
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+  const [pageReady, setPageReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   useVideoFade(videoRef, isMuted, trailerActive);
 
@@ -85,9 +86,17 @@ export default function BeyondLastDanceDetail() {
     }
   }, [isMuted]);
 
-  // Handle trailer activation
+  // Mark page as ready only after the app-level loading spinner is dismissed
   useEffect(() => {
-    if (hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
+    if ((window as any).__pageLoadingDone) { setPageReady(true); return; }
+    const handleDone = () => setPageReady(true);
+    window.addEventListener('page_loading_done', handleDone);
+    return () => window.removeEventListener('page_loading_done', handleDone);
+  }, []);
+
+  // Handle trailer activation — only after page is fully ready
+  useEffect(() => {
+    if (!pageReady || hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
 
     if (stateStartTime !== undefined) {
       setTrailerActive(true);
@@ -101,7 +110,7 @@ export default function BeyondLastDanceDetail() {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
+  }, [pageReady, stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
 
   // Start playing when trailer becomes active
   useEffect(() => {

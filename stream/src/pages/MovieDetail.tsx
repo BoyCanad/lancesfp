@@ -94,6 +94,7 @@ export default function MovieDetail() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inMyList, setInMyList] = useState(false);
   const [progress, setProgress] = useState<WatchProgress | null>(null);
+  const [pageReady, setPageReady] = useState(false);
 
   useEffect(() => {
     if (movie) {
@@ -123,9 +124,17 @@ export default function MovieDetail() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Trailer start logic...
+  // Mark page as ready only after the app-level loading spinner is dismissed
   useEffect(() => {
-    if (hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
+    if ((window as any).__pageLoadingDone) { setPageReady(true); return; }
+    const handleDone = () => setPageReady(true);
+    window.addEventListener('page_loading_done', handleDone);
+    return () => window.removeEventListener('page_loading_done', handleDone);
+  }, []);
+
+  // Trailer start logic — only after page is fully ready
+  useEffect(() => {
+    if (!pageReady || hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
     if (stateStartTime !== undefined) {
       setTrailerActive(true);
       setHasPlayedOnce(true);
@@ -136,7 +145,7 @@ export default function MovieDetail() {
       setHasPlayedOnce(true);
     }, 3000);
     return () => clearTimeout(timer);
-  }, [stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
+  }, [pageReady, stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
 
   useEffect(() => {
     if (trailerActive && stateStartTime !== undefined && videoRef.current) {

@@ -1,7 +1,7 @@
 .collection-page {
   min-height: 100vh;
   background-color: #0d0d14;
-  padding-bottom: 80px;
+  padding-bottom: 0;
 }
 
 /* Header */
@@ -87,9 +87,10 @@
 }
 
 .collection-hero__meta {
+  display: flex;
   justify-content: center;
   align-items: center;
-  gap: 48px;
+  gap: 24px;
   margin-bottom: 24px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -108,6 +109,24 @@
 }
 .collection-hero__quality { 
   color: #46d369; 
+}
+
+.collection-hero__award {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #3de8c3;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.collection-hero__laurel {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  filter: brightness(0) saturate(100%) invert(76%) sepia(52%) saturate(491%) hue-rotate(113deg) brightness(96%) contrast(89%);
 }
 
 .collection-hero__description {

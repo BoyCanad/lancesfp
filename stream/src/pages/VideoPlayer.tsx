@@ -36,9 +36,11 @@ interface ParsedCue {
   start: number;
   end: number;
   text: string;
+  isKaraoke?: boolean;
+  position?: string;
 }
 
-const parseVTT = (vttData: string): ParsedCue[] => {
+const parseVTT = (vttData: string, preserveKaraoke = false): ParsedCue[] => {
   const cues: ParsedCue[] = [];
   const lines = vttData.split(/\r?\n/);
   let i = 0;
@@ -63,19 +65,102 @@ const parseVTT = (vttData: string): ParsedCue[] => {
       const start = timeToSeconds(parts[0].trim());
       const end = timeToSeconds(parts[1].trim());
 
+      // Extract position attribute if present (e.g., position:80%)
+      let position = undefined;
+      const positionMatch = line.match(/position:\s*(\d+(?:\.\d+)?%)/);
+      if (positionMatch) {
+        position = positionMatch[1];
+      }
+
       i++;
       let text = '';
+      let isKaraoke = false;
       while (i < lines.length && lines[i].trim() !== '') {
-        const textLine = lines[i].trim().replace(/<[^>]+>/g, '');
-        text += (text ? '\n' : '') + textLine;
+        const textLine = lines[i].trim();
+        if (preserveKaraoke) {
+          // Check if this line contains any karaoke color tags (both hex codes and named colors, including dual-color format)
+          if (textLine.match(/<c\.(color[0-9a-fA-F]+(?:\.[0-9a-fA-F]+)?|[a-zA-Z]+(?:\.[a-zA-Z]+)?)>/)) {
+            isKaraoke = true;
+          }
+          text += (text ? '\n' : '') + textLine;
+        } else {
+          text += (text ? '\n' : '') + textLine.replace(/<[^>]+>/g, '');
+        }
         i++;
       }
-      cues.push({ start, end, text });
+      cues.push({ start, end, text, isKaraoke, position });
     } else {
       i++;
     }
   }
   return cues;
+};
+
+// Render karaoke subtitle with highlighted text in blue
+const renderKaraokeSubtitle = (text: string, movieId?: string) => {
+  // First process karaoke tags across the entire text
+  const result: React.ReactNode[] = [];
+  let lastIndex = 0;
+  // Handle dual-color format: <c.color0030ff.00ff83ff> or single-color: <c.color0030ff>
+  const regex = /<c\.(color[0-9a-fA-F]+(?:\.[0-9a-fA-F]+)?|[a-zA-Z]+(?:\.[a-zA-Z]+)?)>(.*?)<\/c>/gs;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the karaoke tag (preserving line breaks)
+    if (match.index > lastIndex) {
+      const beforeText = text.slice(lastIndex, match.index);
+      beforeText.split('\n').forEach((line, idx, arr) => {
+        result.push(<span key={`before-${lastIndex}-${idx}`} style={{ color: 'white' }}>{line}</span>);
+        if (idx < arr.length - 1) result.push(<br key={`before-br-${lastIndex}-${idx}`} />);
+      });
+    }
+
+    // Add the karaoke highlighted text with the specified color
+    const colorValue = match[1];
+    let color = '#0030ff';
+    
+    if (colorValue.includes('.')) {
+      // Dual-color format: color0030ff.00ff83ff
+      const parts = colorValue.split('.');
+      if (parts[0].startsWith('color')) {
+        color = '#' + parts[0].replace('color', '');
+      } else {
+        color = parts[0];
+      }
+    } else {
+      // Single-color format
+      if (colorValue.startsWith('color')) {
+        color = '#' + colorValue.replace('color', '');
+      } else {
+        color = colorValue;
+      }
+    }
+    
+    // Override color for ang-huling-el-bimbo-play: change 0030ff to 00ff83
+    if (movieId === 'ang-huling-el-bimbo-play' && color === '#0030ff') {
+      color = '#00ff83';
+    }
+    
+    // For dual-color, we could potentially render the unsung text in the second color
+    // but the current implementation treats the entire match[2] as highlighted.
+    match[2].split('\n').forEach((line, idx, arr) => {
+      result.push(<span key={`karaoke-${match!.index}-${idx}`} style={{ color }}>{line}</span>);
+      if (idx < arr.length - 1) result.push(<br key={`karaoke-br-${match!.index}-${idx}`} />);
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add any remaining text after the last karaoke tag (preserving line breaks)
+  if (lastIndex < text.length) {
+    const afterText = text.slice(lastIndex);
+    afterText.split('\n').forEach((line, idx, arr) => {
+      result.push(<span key={`after-${lastIndex}-${idx}`} style={{ color: 'white' }}>{line}</span>);
+      if (idx < arr.length - 1) result.push(<br key={`after-br-${lastIndex}-${idx}`} />);
+    });
+  }
+
+  return <>{result}</>;
 };
 
 interface VideoPlayerProps {
@@ -837,14 +922,17 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         const response = await fetch(sub.url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const text = await response.text();
-        const parsed = parseVTT(text);
+        // Use karaoke mode for ang-huling-el-bimbo-play and xray
+        // Also enable if the subtitle URL contains "KARAOKE"
+        const isKaraokeMovie = id === 'ang-huling-el-bimbo-play' || variant === 'xray' || sub.url.includes('KARAOKE');
+        const parsed = parseVTT(text, isKaraokeMovie);
 
         setParsedSubtitles(prev => ({ ...prev, [sub.url]: parsed }));
       } catch (error) {
         console.error('Failed to load subtitle:', sub.url, error);
       }
     });
-  }, [movie?.subtitles]);
+  }, [movie?.subtitles, id, variant]);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -1907,28 +1995,49 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         {/* Custom Subtitle Overlay */}
         {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
           <div className="custom-subtitle-overlay-container">
-            {parsedSubtitles[movie.subtitles[activeSubtitle].url]
-              .filter(cue => {
-                // VOD_SUBTITLE_LATENCY compensates for HLS encoding delay baked into the recording.
-                // Positive value = show subtitles this many seconds earlier. Tune as needed.
-                const VOD_SUBTITLE_LATENCY = movie?.id === 'after-hours' ? 15 : 0;
-                const adjustedTime = currentTime - subtitleTimeOffset + VOD_SUBTITLE_LATENCY;
-                return isInSubtitleProgram && adjustedTime >= cue.start && adjustedTime <= cue.end;
-              })
-              // Drop blank/whitespace-only cues that create phantom space
-              .filter(cue => cue.text.trim() !== '')
-              // If multiple cues overlap in time, only render the latest one to prevent upward stacking
-              .slice(-1)
-              .map((cue, idx) => (
-                <div key={idx} className="custom-subtitle-text">
-                  {cue.text.trim().split('\n').map((line, i, arr) => (
-                    <span key={i}>
-                      {line}
-                      {i !== arr.length - 1 && <br />}
-                    </span>
-                  ))}
+            {(() => {
+              const filteredCues = parsedSubtitles[movie.subtitles[activeSubtitle].url]
+                .filter(cue => {
+                  // VOD_SUBTITLE_LATENCY compensates for HLS encoding delay baked into the recording.
+                  // Positive value = show subtitles this many seconds earlier. Tune as needed.
+                  const VOD_SUBTITLE_LATENCY = movie?.id === 'after-hours' ? 15 : 0;
+                  const adjustedTime = currentTime - subtitleTimeOffset + VOD_SUBTITLE_LATENCY;
+                  return isInSubtitleProgram && adjustedTime >= cue.start && adjustedTime <= cue.end;
+                })
+                // Drop blank/whitespace-only cues that create phantom space
+                .filter(cue => cue.text.trim() !== '');
+
+              // For karaoke or positioned subtitles, show all overlapping cues to handle multiple alignments
+              // For regular subtitles, use the latest one to prevent stacking
+              const hasKaraoke = filteredCues.some(c => c.isKaraoke);
+              const hasPositioned = filteredCues.some(c => c.position);
+              const cuesToShow = (hasKaraoke || hasPositioned) ? filteredCues : filteredCues.sort((a, b) => a.start - b.start).slice(-1);
+
+              return cuesToShow.map((cue, idx) => (
+                <div
+                  key={idx}
+                  className="custom-subtitle-text"
+                  style={cue.position ? { 
+                    left: cue.position, 
+                    transform: 'translateX(-50%)', 
+                    position: 'absolute', 
+                    bottom: '0', 
+                    zIndex: 40 
+                  } : {}}
+                >
+                  {cue.isKaraoke ? (
+                    renderKaraokeSubtitle(cue.text.trim(), movie?.id)
+                  ) : (
+                    cue.text.trim().split('\n').map((line, i, arr) => (
+                      <span key={i}>
+                        {line}
+                        {i !== arr.length - 1 && <br />}
+                      </span>
+                    ))
+                  )}
                 </div>
-              ))}
+              ));
+            })()}
           </div>
         )}
 

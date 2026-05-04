@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { elBimboCollections, type Movie } from '../data/movies';
 import { MovieCard } from '../components/ContentRow';
+import BarkadaSection from '../components/BarkadaSection';
+import BehindTheScenesSection from '../components/BehindTheScenesSection';
 import './ElBimboCollection.css';
 
 export default function ElBimboCollection() {
@@ -49,10 +51,15 @@ export default function ElBimboCollection() {
             />
             <div className="collection-hero__meta">
               <span className="collection-hero__year">2026</span>
-              <span className="collection-hero__dot">•</span>
               <span className="collection-hero__age">PG-13</span>
-              <span className="collection-hero__dot">•</span>
-              <span className="collection-hero__quality">Teatro Bonifacio Winner</span>
+              <span className="collection-hero__award">
+                <img
+                  src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/wreath.png"
+                  alt="Award"
+                  className="collection-hero__laurel"
+                />
+                Teatro Bonifacio Winner
+              </span>
             </div>
             <p className="collection-hero__description">
               Relive the multi-awarded Philippine musical masterpiece. A nostalgic journey through friendship, love, and the bittersweet passage of time, set to the timeless songs of the Eraserheads.
@@ -77,6 +84,12 @@ export default function ElBimboCollection() {
           ))}
         </div>
       </section>
+
+      {/* Barkada Section */}
+      <BarkadaSection />
+
+      {/* Behind The Scenes Section */}
+      <BehindTheScenesSection />
     </div>
   );
 }

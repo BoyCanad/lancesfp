@@ -119,6 +119,7 @@ function App() {
     
     if (!isSearchTransition) {
       setPageLoading(true);
+      (window as any).__pageLoadingDone = false;
     } else {
       setPageLoading(false);
     }
@@ -135,6 +136,8 @@ function App() {
 
     const timer = setTimeout(() => {
       setPageLoading(false);
+      (window as any).__pageLoadingDone = true;
+      window.dispatchEvent(new Event('page_loading_done'));
     }, delay); 
     
     return () => clearTimeout(timer);

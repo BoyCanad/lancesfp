@@ -70,6 +70,7 @@ export default function MinsanDetail() {
   const [isMuted, setIsMuted] = useState(false);
   const [cues, setCues] = useState<ParsedCue[]>([]);
   const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+  const [pageReady, setPageReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inMyList, setInMyList] = useState(false);
 
@@ -91,25 +92,31 @@ export default function MinsanDetail() {
 
 
 
-  // Start trailer once after 5s upon landing (or immediately if from thumbnail)
+  // Mark page as ready only after the app-level loading spinner is dismissed
   useEffect(() => {
-    if (hasPlayedOnce || trailerActive) return;
+    if ((window as any).__pageLoadingDone) { setPageReady(true); return; }
+    const handleDone = () => setPageReady(true);
+    window.addEventListener('page_loading_done', handleDone);
+    return () => window.removeEventListener('page_loading_done', handleDone);
+  }, []);
 
-    // If we came from a thumbnail, play immediately
+  // Trailer start logic — only after page is fully ready
+  useEffect(() => {
+    if (!pageReady || hasPlayedOnce || trailerActive || !movie?.trailerUrl) return;
+
     if (stateStartTime !== undefined) {
       setTrailerActive(true);
       setHasPlayedOnce(true);
       return;
     }
 
-    // Otherwise wait 3 seconds
     const timer = window.setTimeout(() => {
       setTrailerActive(true);
       setHasPlayedOnce(true);
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [stateStartTime, hasPlayedOnce, trailerActive]);
+  }, [pageReady, stateStartTime, hasPlayedOnce, trailerActive, movie?.trailerUrl]);
 
   // Set initial time if provided from navigation
   useEffect(() => {
