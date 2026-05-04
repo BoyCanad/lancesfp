@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { featuredMovies, trendingMovies, elBimboFeatured, makingOfLegacy, elBimboCollections } from '../data/movies';
+import { allMovies as staticAllMovies } from '../data/movies';
+import { fetchAllMovies } from '../services/movieService';
 import { MovieCard } from '../components/ContentRow';
 import { PlayCircle, ArrowLeft, Mic, Download, Search as SearchIcon, X } from 'lucide-react';
 import './Search.css';
@@ -11,6 +12,12 @@ export default function Search() {
   const navigate = useNavigate();
   const [results, setResults] = useState<any[]>([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [allMovies, setAllMovies] = useState(staticAllMovies);
+
+  // Load from Supabase once
+  useEffect(() => {
+    fetchAllMovies().then(setAllMovies);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -22,16 +29,9 @@ export default function Search() {
   const isSearchEmpty = query.trim().length === 0;
 
   useEffect(() => {
-    const allMovies = [
-      ...featuredMovies, 
-      ...trendingMovies, 
-      elBimboFeatured, 
-      makingOfLegacy,
-      ...elBimboCollections
-    ];
     if (!isSearchEmpty) {
       const lowerQuery = query.toLowerCase();
-      const filtered = allMovies.filter(m => 
+      const filtered = allMovies.filter(m =>
         m.title.toLowerCase().includes(lowerQuery) ||
         m.description.toLowerCase().includes(lowerQuery) ||
         m.genre.some(g => g.toLowerCase().includes(lowerQuery)) ||
@@ -42,11 +42,11 @@ export default function Search() {
       setResults(uniqueResults);
     } else if (isMobile) {
       // Recommendations for mobile empty state
-      setResults([...featuredMovies, ...trendingMovies].slice(0, 8));
+      setResults(allMovies.slice(0, 8));
     } else {
       setResults([]);
     }
-  }, [query, isMobile, isSearchEmpty]);
+  }, [query, isMobile, isSearchEmpty, allMovies]);
 
   const handleMovieClick = (movie: any) => {
     const pathMap: Record<string, string> = {

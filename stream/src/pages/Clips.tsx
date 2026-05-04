@@ -5,13 +5,14 @@ import {
   Home, PlaySquare, Gamepad2
 } from 'lucide-react';
 import { isInMyList, addToMyList, removeFromMyList } from '../services/listService';
-import { allMovies } from '../data/movies';
+import { allMovies as staticAllMovies } from '../data/movies';
 import type { Movie } from '../data/movies';
+import { fetchAllMovies } from '../services/movieService';
 import { getProfiles } from '../services/profileService';
 import './Clips.css';
 
 // Include any movie that has a tall trailer (vertical video)
-const clipsData: Movie[] = allMovies.filter(m => m.tallTrailerUrl);
+const staticClipsData: Movie[] = staticAllMovies.filter(m => m.tallTrailerUrl);
 
 // ─────────────────────────────────────────────────────────
 //  VTT parser — returns array of { start, end, text } cues
@@ -341,9 +342,18 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
 export default function Clips() {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(false); // Audio ON by default as requested
+  const [isMuted, setIsMuted] = useState(false);
   const [activeProfile, setActiveProfile] = useState<any>(null);
+  const [clipsData, setClipsData] = useState<Movie[]>(staticClipsData);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch from Supabase and filter for clips
+  useEffect(() => {
+    fetchAllMovies().then(movies => {
+      const clips = movies.filter(m => m.tallTrailerUrl);
+      if (clips.length > 0) setClipsData(clips);
+    });
+  }, []);
 
   // Load active profile for the bottom nav avatar
   useEffect(() => {

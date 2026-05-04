@@ -3,7 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useVideoFade } from '../hooks/useVideoFade';
 import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { allMovies, elBimboCollections, archiveMovies } from '../data/movies';
+import { allMovies as staticAllMovies, elBimboCollections as staticElBimboCollections, archiveMovies as staticArchiveMovies } from '../data/movies';
+import type { Movie } from '../data/movies';
+import { fetchMovieById, fetchMovieRows } from '../services/movieService';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import { getWatchProgress, type WatchProgress } from '../services/profileService';
 import ContentRow from '../components/ContentRow';
@@ -61,9 +63,24 @@ export default function MovieDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname.substring(1); // remove leading slash
-  
-  const movie = allMovies.find((m) => m.id === pathname) || allMovies.find(m => m.id === 'ang-huling-el-bimbo-play');
-  
+
+  const [movie, setMovie] = useState<Movie | null>(
+    staticAllMovies.find((m) => m.id === pathname) ?? staticAllMovies.find((m) => m.id === 'ang-huling-el-bimbo-play') ?? null,
+  );
+  const [elBimboCollections, setElBimboCollections] = useState<Movie[]>(staticElBimboCollections);
+  const [archiveMovies, setArchiveMovies] = useState<Movie[]>(staticArchiveMovies);
+
+  // Fetch movie + row data from Supabase (non-blocking, replaces static if richer)
+  useEffect(() => {
+    fetchMovieById(pathname).then((m) => {
+      if (m) setMovie(m);
+    });
+    fetchMovieRows().then((rows) => {
+      setElBimboCollections(rows.elBimboCollections);
+      setArchiveMovies(rows.archiveMovies);
+    });
+  }, [pathname]);
+
   const stateStartTime = location.state?.startTime as number | undefined;
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
