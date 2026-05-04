@@ -44,7 +44,7 @@ export default function Home() {
               progress: (wp.progress_ms / wp.duration_ms) * 100,
             };
           })
-          .filter((m): m is Movie => m !== null);
+          .filter((m): m is Movie & { progress: number } => m !== null);
         setDynamicContinueWatching(watchedCW);
 
         // Check if El Bimbo Play has been watched
