@@ -8,6 +8,7 @@ interface CollectionShowcaseProps {
   title: string;
   subtitle: string;
   backgroundImage: string;
+  mobileBackgroundImage?: string;
   logoImage?: string;
   movies: Movie[];
   onSeeAll?: () => void;
@@ -17,6 +18,7 @@ export default function CollectionShowcase({
   title,
   subtitle,
   backgroundImage,
+  mobileBackgroundImage,
   logoImage,
   movies,
   onSeeAll,
@@ -58,7 +60,13 @@ export default function CollectionShowcase({
   };
 
   return (
-    <section className="showcase" style={{ backgroundImage: `url(${backgroundImage})` }}>
+    <section 
+      className="showcase" 
+      style={{ 
+        '--bg-desktop': `url(${backgroundImage})`,
+        '--bg-mobile': `url(${mobileBackgroundImage || backgroundImage})`
+      } as React.CSSProperties}
+    >
       <div className="showcase__bg-overlay" />
 
       {canScrollLeft && (

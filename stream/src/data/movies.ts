@@ -34,6 +34,7 @@ export interface XRayScene {
   end: number;
   actors?: XRayActor[];
   songs?: XRaySong[];
+  trivia?: string;
 }
 
 export interface XRayData {
@@ -87,6 +88,7 @@ export interface Movie {
   tallTrailerUrl?: string;
   mediaType?: 'movie' | 'show';
   xRay?: XRayData;
+  comingSoon?: boolean;
 }
 
 export const makingOfLegacy: Movie = {
@@ -112,6 +114,7 @@ export const makingOfLegacy: Movie = {
   squareThumbnail: "/images/clips/square/BTLD.webp",
   trailerVttUrl: "https://boycanad.github.io/stream-storage-2/BTLD-trailer.vtt",
   mediaType: 'show',
+  comingSoon: true,
 };
 
 export const afterHours: Movie = {

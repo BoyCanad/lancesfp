@@ -2678,3 +2678,54 @@
   animation: downloading-pulse 1.5s infinite ease-in-out;
 }
 
+/* ── Portrait X-Ray Mode Specific Styles ── */
+.video-player-container.portrait-xray-mode {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: #121212;
+}
+
+.video-player-container.portrait-xray-mode .video-stage-wrapper {
+  width: 100vw;
+  height: calc(100vw * 9 / 16);
+  flex: none;
+  z-index: 20;
+}
+
+/* Limit ambient glow to video area in portrait xray */
+.video-player-container.portrait-xray-mode .ambient-glow {
+  top: calc(100vw * 9 / 32); /* Half of video height */
+  height: calc(100vw * 9 / 16 * 1.5); /* Slightly larger than video */
+  width: 100vw;
+  opacity: 0.6;
+}
+
+/* X-Ray Mobile Top Bar */
+.xray-mobile-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+}
+
+.xray-mobile-top-bar.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 896px) and (orientation: portrait) {
+  .xray-mobile-top-bar {
+    padding: 8px 15px !important;
+  }
+}

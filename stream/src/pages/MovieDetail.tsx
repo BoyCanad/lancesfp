@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useVideoFade } from '../hooks/useVideoFade';
-import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check } from 'lucide-react';
+import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check, Bell } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { allMovies as staticAllMovies, elBimboCollections as staticElBimboCollections, archiveMovies as staticArchiveMovies } from '../data/movies';
 import type { Movie } from '../data/movies';
@@ -286,9 +286,10 @@ export default function MovieDetail() {
           <div className="mdetail-actions">
             <button
                onClick={handlePlayClick}
-               className={`mdetail-btn ${progress ? 'mdetail-btn-resume' : 'mdetail-btn-play'}`}
+               className={`mdetail-btn ${progress ? 'mdetail-btn-resume' : 'mdetail-btn-play'} ${movie.comingSoon ? 'mdetail-btn-disabled' : ''}`}
+               disabled={movie.comingSoon}
             >
-              <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} /> {progress ? 'Resume' : 'Play'}
+              {movie.comingSoon ? <Bell size={18} fill="white" /> : <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} />} {movie.comingSoon ? 'Remind Me' : (progress ? 'Resume' : 'Play')}
             </button>
 
             {progress && (

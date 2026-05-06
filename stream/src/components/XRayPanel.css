@@ -15,7 +15,7 @@
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: 65;
+  z-index: 55;
   pointer-events: none;
   width: 450px;
   display: flex;
@@ -28,14 +28,34 @@
   opacity: 1;
 }
 
+/* 1. Remove background and fix pointer events on the inner wrapper */
 .xray-panel__inner {
   height: 100%;
-  background: linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 45%, rgba(0,0,0,0) 100%);
-  pointer-events: auto;
+  position: relative; /* Added for the background layer */
+  pointer-events: none; /* Crucial: Lets clicks pass through to the player controls */
   display: flex;
   flex-direction: column;
   gap: 0;
   padding-bottom: 8px;
+}
+
+/* 2. Move the background to a pseudo-element with a permanently feathered bottom edge */
+.xray-panel__inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 45%, rgba(0,0,0,0) 100%);
+  z-index: -1;
+  /* This creates a perfectly soft, seamless fade at the bottom edge so it never cuts off harshly */
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%);
+  transition: bottom 0.3s ease-in-out;
+}
+
+/* 3. Restore interactivity to the actual X-Ray content so buttons still work */
+.xray-panel__header,
+.xray-panel__scroll {
+  pointer-events: auto;
 }
 
 /* Header */
@@ -124,24 +144,29 @@
 
 /* Scrollable content */
 .xray-panel__scroll {
+  flex: 1;
   overflow-y: auto;
-  max-height: calc(100vh - 160px);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.2) transparent;
+  padding-bottom: 80px;
+  scrollbar-width: none;
   max-width: 330px;
+  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 180px), transparent calc(100% - 60px));
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 180px), transparent calc(100% - 60px));
+  
+  /* Add these two lines for smooth dynamic shrinking */
+  margin-bottom: 0;
+  transition: margin-bottom 0.3s ease-in-out;
+}
+
+/* 4. When controls appear, slide the text AND the soft background cloud up together */
+.show-controls .xray-panel__inner::before {
+  bottom: 130px; 
+}
+.show-controls .xray-panel__scroll {
+  margin-bottom: 130px; 
 }
 
 .xray-panel__scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.xray-panel__scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.xray-panel__scroll::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.2);
-  border-radius: 2px;
+  display: none;
 }
 
 .xray-panel__empty {
@@ -271,7 +296,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 10000;
+  z-index: 55;
   pointer-events: auto;
   display: flex;
   justify-content: flex-end;
@@ -362,17 +387,14 @@
 .xray-all-panel__content {
   flex: 1;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.15) transparent;
+  padding-bottom: 80px;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 180px), transparent calc(100% - 60px));
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 180px), transparent calc(100% - 60px));
 }
 
 .xray-all-panel__content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.xray-all-panel__content::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
+  display: none;
 }
 
 /* Row */
@@ -513,6 +535,14 @@
     width: 320px;
   }
 
+  /* 5. Adapt the lift for the compact mobile controls */
+  .show-controls .xray-panel__inner::before {
+    bottom: 110px;
+  }
+  .show-controls .xray-panel__scroll {
+    margin-bottom: 110px;
+  }
+
   .xray-panel__inner {
     padding-top: 12px;
   }
@@ -570,4 +600,222 @@
     font-size: 0.78rem;
     padding: 8px 12px 6px;
   }
+}
+
+/* ── Maximize vertical height in Mobile Landscape ── */
+@media (max-width: 896px) and (orientation: landscape) {
+  
+  /* 1. Tighten the top padding to pull the header up */
+  .xray-panel__inner {
+    padding-top: 5px;
+  }
+  .xray-panel__header {
+    padding: 10px 12px 5px;
+  }
+
+  /* 2. Push the fade-out mask much closer to the bottom of the screen */
+  .xray-panel__scroll {
+    padding-bottom: 40px; /* Reduced from 80px */
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 70px), transparent calc(100% - 10px));
+    mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 70px), transparent calc(100% - 10px));
+  }
+
+  /* 3. Drop the controls-lift slightly so the text can reach further down */
+  .show-controls .xray-panel__inner::before {
+    bottom: 90px; 
+  }
+  .show-controls .xray-panel__scroll {
+    margin-bottom: 90px; 
+  }
+}
+/* ── Portrait Layout (Mobile) ── */
+.xray-portrait-container {
+  width: 100vw;
+  flex: 1;
+  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.xray-portrait-handle-area {
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.xray-portrait-handle {
+  width: 36px;
+  height: 4px;
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 2px;
+}
+
+.xray-portrait-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 40px;
+  scrollbar-width: none;
+}
+
+.xray-portrait-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.xray-portrait-top-pill {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.xray-pill {
+  background-color: white;
+  color: black;
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.xray-portrait-section {
+  margin-bottom: 32px;
+}
+
+.xray-portrait-section-title {
+  color: #888;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.xray-portrait-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.xray-portrait-row:active {
+  background-color: rgba(255,255,255,0.05);
+}
+
+.xray-portrait-actor-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: #333;
+}
+
+.xray-portrait-actor-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xray-portrait-row-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.xray-portrait-name {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.xray-portrait-sub {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.xray-portrait-chevron {
+  color: #444;
+}
+
+.xray-portrait-song-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: #333;
+}
+
+.xray-portrait-song-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xray-portrait-playing-indicator {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  margin-top: 4px;
+}
+
+.xray-portrait-playing-indicator .bar {
+  width: 2px;
+  background-color: white;
+  animation: playing-bar 0.6s infinite ease-in-out alternate;
+}
+
+.xray-portrait-playing-indicator .bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.xray-portrait-playing-indicator .bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes playing-bar {
+  0% { height: 4px; }
+  100% { height: 14px; }
+}
+
+.xray-portrait-trivia {
+  display: flex;
+  gap: 16px;
+  background-color: rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.xray-portrait-trivia-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.xray-portrait-trivia-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xray-portrait-trivia-text {
+  flex: 1;
+  color: #ddd;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.xray-portrait-trivia-text strong {
+  color: white;
 }

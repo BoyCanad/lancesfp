@@ -127,7 +127,9 @@ export default function IconPicker() {
   return (
     <div className="ip-container">
       <header className="ip-header">
-        <div className="ip-logo" onClick={() => navigate('/')}>LSFPlus</div>
+        <div className="ip-logo" onClick={() => navigate('/')}>
+          <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '45px' }} />
+        </div>
       </header>
 
       <main className="ip-main">

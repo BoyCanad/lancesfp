@@ -1,7 +1,7 @@
 import { useRef, useState, memo, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Play, Plus, Check, X, ThumbsUp, ChevronDown, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Plus, Check, X, ThumbsUp, ChevronDown, Volume2, VolumeX, Bell } from 'lucide-react';
 import type { Movie } from '../data/movies';
 import { supabase } from '../supabaseClient';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
@@ -258,8 +258,12 @@ export const MovieCard = memo(({
               <div className="card__controls-left">
                 {showProgress ? (
                   <>
-                    <button className="card__btn card__btn--play-large" onClick={handlePlayClick}>
-                      <Play size={20} fill="black" color="black" />
+                    <button 
+                      className={`card__btn card__btn--play-large ${movie.comingSoon ? 'card__btn--disabled' : ''}`} 
+                      onClick={(e) => !movie.comingSoon && handlePlayClick(e)}
+                      disabled={movie.comingSoon}
+                    >
+                      {movie.comingSoon ? <Bell size={20} fill="black" color="black" /> : <Play size={20} fill="black" color="black" />}
                     </button>
                     <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
                       <Check size={18} color="white" />
@@ -273,8 +277,12 @@ export const MovieCard = memo(({
                   </>
                 ) : (
                   <>
-                    <button className="card__btn card__btn--play card__btn--white" onClick={handlePlayClick}>
-                      <Play size={12} fill="black" color="black" />
+                    <button 
+                      className={`card__btn card__btn--play card__btn--white ${movie.comingSoon ? 'card__btn--disabled' : ''}`} 
+                      onClick={(e) => !movie.comingSoon && handlePlayClick(e)}
+                      disabled={movie.comingSoon}
+                    >
+                      {movie.comingSoon ? <Bell size={14} color="white" fill="white" /> : <Play size={12} fill="black" color="black" />}
                     </button>
                     <button 
                       className={`card__btn card__btn--icon ${inMyList ? 'active' : ''}`} 
@@ -318,10 +326,14 @@ export const MovieCard = memo(({
             ) : (
               <>
                 <div className="card__metadata-row">
-                  <span className="card__match">98% Match</span>
+                  {movie.comingSoon ? (
+                    <span className="card__coming-soon">COMING SOON</span>
+                  ) : (
+                    <span className="card__match">98% Match</span>
+                  )}
                   <span className="card__age">{movie.ageRating || '13+'}</span>
                   <span className="card__duration">
-                    {movie.duration.includes('s') ? `${parseDurationToMin(movie.duration)}m` : movie.duration}
+                    {movie.comingSoon ? 'TBA' : (movie.duration.includes('s') ? `${parseDurationToMin(movie.duration)}m` : movie.duration)}
                   </span>
                   <span className="card__quality-badge">{movie.quality || 'HD'}</span>
                 </div>

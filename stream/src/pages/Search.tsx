@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { allMovies as staticAllMovies } from '../data/movies';
 import { fetchAllMovies } from '../services/movieService';
 import { MovieCard } from '../components/ContentRow';
-import { PlayCircle, ArrowLeft, Mic, Download, Search as SearchIcon, X } from 'lucide-react';
+import { PlayCircle, ArrowLeft, Mic, Download, Search as SearchIcon, X, Bell } from 'lucide-react';
 import './Search.css';
 
 export default function Search() {
@@ -124,9 +124,10 @@ export default function Search() {
                 </div>
                 <div className="search-page__item-info">
                   <span className="search-page__item-title">{movie.title}</span>
+                  {movie.comingSoon && <span className="search-page__item-coming-soon">Remind Me</span>}
                 </div>
                 <div className="search-page__item-action">
-                  <PlayCircle size={28} color="white" strokeWidth={1.5} />
+                  {movie.comingSoon ? <Bell size={24} color="white" /> : <PlayCircle size={28} color="white" strokeWidth={1.5} />}
                 </div>
               </div>
             ))}

@@ -100,6 +100,7 @@ function mapRow(row: any): Movie {
     tallTrailerUrl: row.tallTrailerUrl ?? undefined,
     mediaType: row.mediaType ?? 'movie',
     xRay: row.xRay ?? undefined,
+    comingSoon: row.comingSoon || !row.videoUrl || row.videoUrl === '' || row.id === 'beyond-the-last-dance',
   };
 }
 

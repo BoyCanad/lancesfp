@@ -217,7 +217,9 @@ export default function EditProfile() {
   return (
     <div className="ep-container">
       <header className="ep-header">
-        <div className="ep-logo" onClick={() => navigate('/browse')}>LSFPlus</div>
+        <div className="ep-logo" onClick={() => navigate('/browse')}>
+          <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '45px' }} />
+        </div>
       </header>
 
       <main className="ep-main">

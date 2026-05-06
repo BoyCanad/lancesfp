@@ -110,6 +110,7 @@ export default function Home() {
           title="Ang Huling El Bimbo Collections"
           subtitle="Browse the complete collection from the world of Ang Huling El Bimbo"
           backgroundImage="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection.png"
+          mobileBackgroundImage="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection-m.webp"
           logoImage="/images/el-bimbo-logo.webp"
           movies={rows?.elBimboCollections ?? []}
           onSeeAll={() => navigate('/collections/el-bimbo')}

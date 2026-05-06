@@ -31,6 +31,7 @@ import ProfileLock from './pages/ProfileLock';
 import Account from './pages/Account';
 import MyNetflix from './pages/MyNetflix';
 import ForgotPassword from './pages/ForgotPassword';
+import Introduction from './pages/Introduction';
 import './App.css';
 
 function App() {
@@ -44,7 +45,7 @@ function App() {
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
-  const isAuth = pathname === '/login';
+  const isAuth = pathname === '/login' || pathname === '/introduction';
   const isForgotPassword = pathname === '/forgot-password';
   const isAccount = pathname === '/account';
   const isMyNetflix = pathname === '/my-lsfplus';
@@ -156,7 +157,8 @@ function App() {
       <Routes>
         <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
         
-        <Route path="/" element={session ? <ProfilePicker /> : <Navigate to="/browse" replace />} />
+        <Route path="/" element={session ? <ProfilePicker /> : <Introduction />} />
+        <Route path="/introduction" element={<Introduction />} />
         <Route path="/CreateProfile" element={session ? <CreateProfile /> : <Navigate to="/login" replace />} />
         <Route path="/ProfileLock/:id" element={session ? <ProfileLock /> : <Navigate to="/login" replace />} />
         <Route path="/ManageProfile/:id" element={session ? <ManageProfile /> : <Navigate to="/login" replace />} />
@@ -201,7 +203,7 @@ function App() {
           {!isMyNetflix && (
             <footer className="app__footer">
               <div className="app__footer-logo">
-                LSFPlus
+                <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '32px' }} />
               </div>
               <p className="app__footer-text">
                 © 2025 LSFPlus, Inc. All rights reserved.

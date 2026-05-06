@@ -121,7 +121,9 @@ export default function Account() {
             <button className="mobile-account-back" onClick={() => navigate('/browse')}>
               <ArrowLeft size={24} color="white" />
             </button>
-            <div className="mobile-account-logo">LSFPlus</div>
+            <div className="mobile-account-logo">
+              <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '30px' }} />
+            </div>
           </header>
 
           <div className="mobile-account-content">
@@ -321,7 +323,7 @@ export default function Account() {
         <nav className="account-nav">
         <div className="account-nav__left">
           <div className="account-nav__logo" onClick={() => navigate('/browse')}>
-            LSFPlus
+            <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '35px' }} />
           </div>
         </div>
         <div className="account-nav__right">

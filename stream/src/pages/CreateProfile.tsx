@@ -51,7 +51,7 @@ export default function CreateProfile() {
     <div className="cp-container">
       <header className="cp-header">
         <div className="cp-logo" onClick={() => navigate('/browse')}>
-          LSFPlus
+          <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '45px' }} />
         </div>
       </header>
 

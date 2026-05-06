@@ -130,6 +130,14 @@
   line-height: 1.3;
 }
 
+.search-page__item-coming-soon {
+  color: #e50914;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
 .search-page__item-action {
   padding-right: 15px;
   display: flex;

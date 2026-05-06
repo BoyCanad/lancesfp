@@ -23,7 +23,8 @@ import {
   Check,
   MessageCircle,
   Camera,
-  MoreHorizontal
+  MoreHorizontal,
+  PictureInPicture2
 } from 'lucide-react';
 import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
@@ -274,6 +275,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [hoverLinePos, setHoverLinePos] = useState(0);
   const [isMobileWindow, setIsMobileWindow] = useState(window.innerWidth <= 896);
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const isScrubbingRef = useRef(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
@@ -297,6 +299,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [activeSource, setActiveSource] = useState('');
   const [isUsingOfflineSource, setIsUsingOfflineSource] = useState(false);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const [isPiP, setIsPiP] = useState(false);
 
   const latestTimeRef = useRef(0);
   const latestDurationRef = useRef(0);
@@ -378,7 +381,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   }, [currentTime, isClippingMode, sharedClip, clipEnd, clipStart]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobileWindow(window.innerWidth <= 896);
+    const handleResize = () => {
+      setIsMobileWindow(window.innerWidth <= 896);
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
     window.addEventListener('resize', handleResize);
 
     const stored = localStorage.getItem('activeProfile');
@@ -1276,6 +1282,338 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     setNextCountdown(10);
   };
 
+  // ── Document Picture-in-Picture API (custom PiP window) ──
+  const pipWindowRef = useRef<Window | null>(null);
+  const pipSyncRef = useRef<number | null>(null);
+  const pipVideoContainerRef = useRef<HTMLElement | null>(null);
+
+  const togglePiP = async () => {
+    if (!videoRef.current || !movie) return;
+
+    // If already in PiP, close it
+    if (isPiP && pipWindowRef.current) {
+      pipWindowRef.current.close();
+      return;
+    }
+
+    // Document PiP API (Chrome 116+)
+    if ('documentPictureInPicture' in window) {
+      try {
+        const pipWin = await (window as any).documentPictureInPicture.requestWindow({
+          width: 480,
+          height: 270,
+        });
+        pipWindowRef.current = pipWin;
+        setIsPiP(true);
+
+        // Inject premium CSS into PiP window
+        const style = pipWin.document.createElement('style');
+        style.textContent = `
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { background: #000; overflow: hidden; font-family: 'Inter', -apple-system, sans-serif; }
+          .pip-root { position: relative; width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; }
+          video { width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
+          [data-action] { user-select: none; -webkit-user-select: none; }
+
+          /* Title bar */
+          .pip-topbar { position: absolute; top: 0; left: 0; right: 0; padding: 12px 16px 24px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
+            display: flex; align-items: center; gap: 10px; z-index: 10;
+            opacity: 0; transition: opacity 0.25s ease; }
+          .pip-root:hover .pip-topbar, .pip-root.paused .pip-topbar { opacity: 1; }
+          .pip-badge { display: inline-flex; align-items: center; gap: 5px;
+            background: #e50914; color: #fff; font-size: 9px; font-weight: 800;
+            letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; flex-shrink: 0; }
+          .pip-eq { display: flex; align-items: flex-end; gap: 2px; height: 9px; }
+          .pip-eq span { width: 2px; background: #fff; border-radius: 1px; }
+          .pip-eq span:nth-child(1) { height: 4px; animation: eq 0.8s ease-in-out infinite alternate; }
+          .pip-eq span:nth-child(2) { height: 7px; animation: eq 0.8s ease-in-out 0.15s infinite alternate; }
+          .pip-eq span:nth-child(3) { height: 5px; animation: eq 0.8s ease-in-out 0.3s infinite alternate; }
+          @keyframes eq { 0% { transform: scaleY(0.35); } 100% { transform: scaleY(1); } }
+          .pip-title { color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
+
+          /* Center controls row */
+          .pip-controls-row { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            display: flex; align-items: center; gap: 24px; z-index: 10;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+          .pip-root:hover .pip-controls-row, .pip-root.paused .pip-controls-row { opacity: 1; pointer-events: auto; }
+
+          .pip-center { width: 56px; height: 56px; border-radius: 50%; border: none;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.15s ease, background 0.15s ease; }
+          .pip-center:hover { transform: scale(1.12); background: rgba(0,0,0,0.65); }
+          .pip-center:active { transform: scale(0.92); }
+          .pip-center svg { width: 28px; height: 28px; fill: white; pointer-events: none; }
+
+          .pip-skip-btn { position: relative; width: 42px; height: 42px; border-radius: 50%; border: none;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.15s ease, background 0.15s ease; }
+          .pip-skip-btn:hover { transform: scale(1.12); background: rgba(0,0,0,0.6); }
+          .pip-skip-btn:active { transform: scale(0.9); }
+          .pip-skip-btn svg { width: 22px; height: 22px; pointer-events: none; }
+          
+          /* Add this rule for the "10" text */
+          .pip-skip-text {
+            position: absolute;
+            font-size: 8px;
+            font-weight: 700;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+          }
+
+          /* Subtitle */
+          .pip-sub { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%);
+            width: 90%; text-align: center; z-index: 8; pointer-events: none;
+            transition: bottom 0.25s ease; }
+          .pip-root:hover .pip-sub, .pip-root.paused .pip-sub { bottom: 14%; }
+          .pip-sub span { 
+            background: transparent;
+            color: #ffffff;
+            font-size: 18px; /* Slightly larger since there is no background box */
+            font-weight: 600; 
+            line-height: 1.15;
+            text-shadow: 
+              0px 0px 4px rgba(0,0,0,1),
+              1px 1px 4px rgba(0,0,0,1),
+              -1px -1px 4px rgba(0,0,0,1),
+              2px 2px 6px rgba(0,0,0,0.9),
+              0px 2px 10px rgba(0,0,0,0.8);
+            display: inline; 
+          }
+
+          /* Progress bar */
+          .pip-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+            background: rgba(255,255,255,0.15); z-index: 10; cursor: pointer; transition: height 0.2s ease; }
+          .pip-root:hover .pip-progress, .pip-root.paused .pip-progress { height: 5px; }
+          .pip-fill { height: 100%; background: linear-gradient(90deg, #e50914, #ff3d47); position: relative;
+            border-radius: 0 2px 2px 0; transition: width 0.15s linear; }
+          .pip-fill::after { content: ''; position: absolute; right: -1px; top: 50%;
+            transform: translateY(-50%) scale(0); width: 10px; height: 10px; background: #fff;
+            border-radius: 50%; box-shadow: 0 0 6px rgba(229,9,20,0.8); transition: transform 0.2s ease; }
+          .pip-root:hover .pip-fill::after, .pip-root.paused .pip-fill::after { transform: translateY(-50%) scale(1); }
+
+          /* Time display */
+          .pip-time { position: absolute; bottom: 8px; right: 12px; color: rgba(255,255,255,0.7);
+            font-size: 11px; font-weight: 600; z-index: 11; opacity: 0; transition: opacity 0.25s ease;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+          .pip-root:hover .pip-time, .pip-root.paused .pip-time { opacity: 1; }
+        `;
+        pipWin.document.head.appendChild(style);
+
+        // Build DOM
+        const root = pipWin.document.createElement('div');
+        root.className = 'pip-root';
+        pipWin.document.body.appendChild(root);
+
+        // Title bar
+        const topbar = pipWin.document.createElement('div');
+        topbar.className = 'pip-topbar';
+        topbar.innerHTML = `
+          <span class="pip-badge">
+            <span class="pip-eq"><span></span><span></span><span></span></span>
+            Now Playing
+          </span>
+          <span class="pip-title">${(title || movie.title || '').replace(/</g, '&lt;')}</span>
+        `;
+        root.appendChild(topbar);
+
+        // Save original parent for restoration
+        pipVideoContainerRef.current = videoRef.current.parentElement;
+
+        // Move the video element into PiP window
+        root.appendChild(videoRef.current);
+
+        // Build center controls via innerHTML (avoids cross-doc event issues)
+        const controlsRow = pipWin.document.createElement('div');
+        controlsRow.className = 'pip-controls-row';
+        controlsRow.innerHTML = `
+          <div class="pip-skip-btn" data-action="rewind">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span class="pip-skip-text">10</span>
+          </div>
+          <div class="pip-center" data-action="toggle">
+            <svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>
+          </div>
+          <div class="pip-skip-btn" data-action="forward">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span class="pip-skip-text">10</span>
+          </div>
+        `;
+        root.appendChild(controlsRow);
+
+        const playBtnEl = controlsRow.querySelector('[data-action="toggle"]') as HTMLElement;
+
+        const updateCenterIcon = () => {
+          if (!videoRef.current || !playBtnEl) return;
+          playBtnEl.innerHTML = videoRef.current.paused
+            ? '<svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><polygon points="6 3 20 12 6 21"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>';
+          root.classList.toggle('paused', videoRef.current.paused);
+        };
+
+        // Single delegated click handler on root — handles ALL clicks
+        root.addEventListener('click', function (e: MouseEvent) {
+          if (!videoRef.current) return;
+          const target = (e.target as Element).closest('[data-action]') as Element | null;
+
+          if (target) {
+            const action = target.getAttribute('data-action');
+            if (action === 'toggle') {
+              if (videoRef.current.paused) { videoRef.current.play().catch(() => {}); }
+              else { videoRef.current.pause(); }
+            } else if (action === 'rewind') {
+              videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+            } else if (action === 'forward') {
+              videoRef.current.currentTime = Math.min(videoRef.current.duration, videoRef.current.currentTime + 10);
+            }
+          } else if (e.target === videoRef.current || e.target === root) {
+            // Clicked on the video or empty area
+            if (videoRef.current.paused) { videoRef.current.play().catch(() => {}); }
+            else { videoRef.current.pause(); }
+          }
+        });
+
+        // Listen for play/pause state changes from video element
+        const onPlay = () => { updateCenterIcon(); setIsPlaying(true); };
+        const onPause = () => { updateCenterIcon(); setIsPlaying(false); };
+        videoRef.current.addEventListener('play', onPlay);
+        videoRef.current.addEventListener('pause', onPause);
+
+        // Subtitle overlay
+        const subEl = pipWin.document.createElement('div');
+        subEl.className = 'pip-sub';
+        root.appendChild(subEl);
+
+        // Progress bar
+        const progressBar = pipWin.document.createElement('div');
+        progressBar.className = 'pip-progress';
+        const progressFill = pipWin.document.createElement('div');
+        progressFill.className = 'pip-fill';
+        progressBar.appendChild(progressFill);
+        root.appendChild(progressBar);
+
+        // Click-to-seek on progress bar
+        progressBar.addEventListener('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          if (!videoRef.current) return;
+          const rect = progressBar.getBoundingClientRect();
+          const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          videoRef.current.currentTime = pct * videoRef.current.duration;
+        });
+
+        // Time display
+        const timeEl = pipWin.document.createElement('div');
+        timeEl.className = 'pip-time';
+        root.appendChild(timeEl);
+
+        // Sync loop: subtitles, progress, play state
+        const fmtTime = (t: number) => {
+          const m = Math.floor(t / 60);
+          const s = Math.floor(t % 60);
+          return `${m}:${s < 10 ? '0' : ''}${s}`;
+        };
+
+        const VOD_SUBTITLE_LATENCY = movie?.id === 'after-hours' ? 15 : 0;
+
+        const syncLoop = () => {
+          if (!videoRef.current || !pipWindowRef.current) return;
+          const v = videoRef.current;
+          const ct = v.currentTime;
+          const dur = v.duration || 1;
+
+          // Progress
+          progressFill.style.width = `${(ct / dur) * 100}%`;
+
+          // Time
+          const remaining = Math.max(0, dur - ct);
+          timeEl.textContent = `-${fmtTime(remaining)}`;
+
+          // Play/pause icon
+          updateCenterIcon();
+
+          // Subtitles
+          if (activeSubtitle !== -1 && movie?.subtitles) {
+            const subUrl = movie.subtitles[activeSubtitle]?.url;
+            const cues = parsedSubtitles[subUrl];
+            if (cues) {
+              const adjustedTime = ct - subtitleTimeOffset + VOD_SUBTITLE_LATENCY;
+              const activeCue = cues.filter(c => adjustedTime >= c.start && adjustedTime <= c.end && c.text.trim())
+                .sort((a, b) => a.start - b.start).pop();
+              if (activeCue) {
+                const clean = activeCue.text.replace(/<[^>]+>/g, '').trim();
+                subEl.innerHTML = `<span>${clean.replace(/\n/g, '<br>')}</span>`;
+              } else {
+                subEl.innerHTML = '';
+              }
+            } else {
+              subEl.innerHTML = '';
+            }
+          } else {
+            subEl.innerHTML = '';
+          }
+
+          pipSyncRef.current = requestAnimationFrame(syncLoop);
+        };
+        pipSyncRef.current = requestAnimationFrame(syncLoop);
+
+        // MediaSession metadata
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: title || movie.title,
+            artist: 'LSFPlus',
+            artwork: (movie.thumbnail || movie.banner)
+              ? [{ src: movie.thumbnail || movie.banner, sizes: '512x512', type: 'image/jpeg' }]
+              : []
+          });
+        }
+
+        // Cleanup on PiP close
+        pipWin.addEventListener('pagehide', () => {
+          if (pipSyncRef.current) cancelAnimationFrame(pipSyncRef.current);
+          // Remove listeners before moving video back
+          if (videoRef.current) {
+            videoRef.current.removeEventListener('play', onPlay);
+            videoRef.current.removeEventListener('pause', onPause);
+          }
+          // Move video back to the main document
+          if (videoRef.current && pipVideoContainerRef.current) {
+            pipVideoContainerRef.current.appendChild(videoRef.current);
+          }
+          pipWindowRef.current = null;
+          setIsPiP(false);
+        });
+
+      } catch (err) {
+        console.error('Document PiP failed:', err);
+      }
+    } else {
+      // Fallback: native PiP (no custom styling possible)
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else {
+          await videoRef.current.requestPictureInPicture();
+        }
+      } catch (err) {
+        console.error('Native PiP failed:', err);
+      }
+    }
+  };
+
+  // Clean up PiP on unmount
+  useEffect(() => {
+    return () => {
+      if (pipSyncRef.current) cancelAnimationFrame(pipSyncRef.current);
+      if (pipWindowRef.current) pipWindowRef.current.close();
+    };
+  }, []);
+
   const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     // If in credits-shrink mode, clicking the video brings it back to full size
     if (showRecommendation) {
@@ -1688,7 +2026,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   return (
     <div
       ref={containerRef}
-      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''}`}
+      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''} ${showXRay && isPortrait && isMobileWindow ? 'portrait-xray-mode' : ''}`}
     >
 
       {/* GPU Accelerated Ambient Glow */}
@@ -2065,36 +2403,66 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           </div>
         </div>
 
-        {/* X-Ray Panel Overlay */}
-        {showXRay && movie?.xRay && (
-          <XRayPanel xRay={movie.xRay} currentTime={currentTime} onBack={() => navigate(-1)} onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} onShowAllChange={setShowAllPanel} />
-        )}
 
         {/* X-Ray top-right back button (since the X-Ray panel covers the regular back button) */}
-        {showXRay && (
+        {showXRay && !isPortrait && (
           <button className="xray-back-button" onClick={() => navigate(-1)} aria-label="Back">
             <ArrowLeft size={42} />
           </button>
         )}
 
+        {/* Regular Center Mobile Controls */}
+        <div className={`center-mobile-controls mobile-only ${showControls && !isLoading ? 'show' : ''}`}>
+          <button
+            className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
+            onClick={skipBackward}
+            key={`back-${activeIndicator?.type === 'backward' ? activeIndicator.key : 'idle'}`}
+          >
+            <RotateCcw size={36} />
+            <span className="skip-text-inside">10</span>
+          </button>
+
+          <button
+            className={`vplayer-control-btn center-play-btn ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
+            onClick={togglePlay}
+            key={`play-${activeIndicator?.type === 'play' || activeIndicator?.type === 'pause' ? activeIndicator.key : 'idle'}`}
+          >
+            {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
+          </button>
+
+          <button
+            className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
+            onClick={skipForward}
+            key={`fwd-${activeIndicator?.type === 'forward' ? activeIndicator.key : 'idle'}`}
+          >
+            <RotateCw size={36} />
+            <span className="skip-text-inside">10</span>
+          </button>
+        </div>
+
         {/* X-Ray mobile-only top bar (title + fullscreen) */}
         {showXRay && (
-          <div className="xray-mobile-top-bar mobile-only">
-            <div className="mobile-top-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span>
+          <div className={`xray-mobile-top-bar mobile-only ${showControls ? 'show' : ''}`}>
+            <button className="back-button" onClick={() => navigate(-1)} aria-label="Back">
+              <ArrowLeft size={28} />
+            </button>
+            <div className="mobile-top-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0, padding: '0 10px' }}>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
                 {movie?.id === 'after-hours'
                   ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
                   : title}
               </span>
               {currentProgramTitle && (
-                <span style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px' }}>
+                <span style={{ fontSize: '0.7rem', color: '#ccc', fontWeight: 'normal', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
                   {currentProgramTitle}
                 </span>
               )}
             </div>
-            <button className="flag-button xray-fullscreen-btn" onClick={toggleFullscreen} aria-label="Toggle fullscreen">
-              {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-            </button>
+            <div className="top-right-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button className="flag-button xray-fullscreen-btn" onClick={toggleFullscreen} aria-label="Toggle fullscreen">
+                {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+              </button>
+            </div>
           </div>
         )}
 
@@ -2139,35 +2507,6 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             {(activeSkipPoint || recentlyPassedSkipPoint)?.label}
           </button>
         )}
-
-        {/* Center Mobile Controls (Hidden on Desktop, Fades out automatically when buffering) */}
-        <div className={`center-mobile-controls mobile-only ${showControls && !isLoading ? 'show' : ''}`}>
-          <button
-            className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'backward' ? 'animate-spin-backward' : ''}`}
-            onClick={skipBackward}
-            key={`back-${activeIndicator?.type === 'backward' ? activeIndicator.key : 'idle'}`}
-          >
-            <RotateCcw size={36} />
-            <span className="skip-text-inside">10</span>
-          </button>
-
-          <button
-            className={`vplayer-control-btn center-play-btn ${(activeIndicator?.type === 'play' || activeIndicator?.type === 'pause') ? 'animate-pop' : ''}`}
-            onClick={togglePlay}
-            key={`play-${activeIndicator?.type === 'play' || activeIndicator?.type === 'pause' ? activeIndicator.key : 'idle'}`}
-          >
-            {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
-          </button>
-
-          <button
-            className={`vplayer-control-btn center-action-btn ${activeIndicator?.type === 'forward' ? 'animate-spin-forward' : ''}`}
-            onClick={skipForward}
-            key={`fwd-${activeIndicator?.type === 'forward' ? activeIndicator.key : 'idle'}`}
-          >
-            <RotateCw size={36} />
-            <span className="skip-text-inside">10</span>
-          </button>
-        </div>
 
         {/* Controls Overlay */}
         <div className="player-controls-overlay">
@@ -2408,6 +2747,11 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
 
 
+              <button className="vplayer-control-btn tooltip" onClick={togglePiP}>
+                <PictureInPicture2 size={38} />
+                <span className="tooltip-text">{isPiP ? 'Exit PiP' : 'Mini Player'}</span>
+              </button>
+
               <button className="vplayer-control-btn" onClick={toggleFullscreen}>
                 {isFullscreen ? <Minimize size={42} /> : <Maximize size={42} />}
               </button>
@@ -2491,6 +2835,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                       ))}
                     </ul>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -2531,6 +2876,12 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           )}
         </div>
       </div>
+
+      {/* X-Ray Panel Overlay (Moved outside stage to allow portrait below-video layout) */}
+      {showXRay && movie?.xRay && (
+        <XRayPanel xRay={movie.xRay} currentTime={currentTime} isPortrait={isPortrait && isMobileWindow} onBack={() => navigate(-1)} onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} onShowAllChange={setShowAllPanel} />
+      )}
+
       {/* Clip Editor Moment UI */}
       {isClippingMode && (
         <div className="clip-editor-ui">

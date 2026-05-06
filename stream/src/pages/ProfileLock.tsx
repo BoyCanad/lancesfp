@@ -274,7 +274,9 @@ export default function ProfileLock() {
   return (
     <div className="pl-container">
       <header className="pl-header">
-        <div className="pl-logo" onClick={() => navigate('/browse')}>LSFPlus</div>
+        <div className="pl-logo" onClick={() => navigate('/browse')}>
+          <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '45px' }} />
+        </div>
         {/* Mock auth avatar at top right for exact match if desired, though omitted here for simplicity */}
       </header>
 

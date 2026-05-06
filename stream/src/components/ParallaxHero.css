@@ -1,0 +1,174 @@
+.parallax-hero-container {
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+  overflow: hidden;
+  background-color: #0d0d14; /* Deep dark base */
+  position: relative;
+  /* Prevent scrollbars if content overflows during rotation */
+  box-sizing: border-box;
+}
+
+.parallax-hero-scene {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* LAYER 1: Background */
+.parallax-layer-bg {
+  position: absolute;
+  top: -10%; left: -10%;
+  width: 120%; height: 120%;
+  background-size: cover;
+  background-position: center;
+  /* Push back and scale up so edges don't show when rotated */
+  transform: translateZ(-200px) scale(1.2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* LAYER 2: Glassmorphism Cards */
+.parallax-layer-cards {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.glass-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-left {
+  top: 30%;
+  left: 15%;
+  width: 260px;
+  /* Pop out moderately */
+  transform: translateZ(80px) rotate(-5deg);
+}
+
+.card-right {
+  bottom: 25%;
+  right: 15%;
+  width: 220px;
+  /* Pop out even more */
+  transform: translateZ(120px) rotate(3deg);
+}
+
+/* Subtle skeletons to make cards look like UI */
+.glass-skeleton {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  height: 12px;
+}
+
+.sk-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 8px;
+}
+
+.sk-line.short {
+  width: 80%;
+}
+
+.glass-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.6), rgba(229, 9, 20, 0.6));
+  margin-bottom: 8px;
+}
+
+/* LAYER 3: Foreground Text */
+.parallax-layer-foreground {
+  position: relative;
+  z-index: 3;
+  /* Pop out significantly to fly above the background and cards */
+  transform: translateZ(160px);
+  text-align: center;
+  max-width: 800px;
+  padding: 0 20px;
+  pointer-events: auto; /* Allow button clicks */
+}
+
+.ph-title {
+  font-size: clamp(48px, 8vw, 84px);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  color: #ffffff;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  /* Optional gradient text for a premium feel */
+  background: linear-gradient(to bottom right, #ffffff, #a3a3a3);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ph-subtitle {
+  font-size: clamp(20px, 2.5vw, 28px);
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 48px;
+  font-weight: 500;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.ph-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 18px 48px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.ph-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) translateZ(10px);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 15px 40px rgba(124, 58, 237, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-left {
+    left: 5%;
+    top: 20%;
+    transform: translateZ(50px) scale(0.8) rotate(-5deg);
+  }
+  .card-right {
+    right: 5%;
+    bottom: 15%;
+    transform: translateZ(70px) scale(0.8) rotate(3deg);
+  }
+  .parallax-layer-foreground {
+    transform: translateZ(100px);
+  }
+}

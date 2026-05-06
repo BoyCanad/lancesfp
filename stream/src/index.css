@@ -102,3 +102,19 @@ img {
 .fade-in  { animation: fadeIn  0.6s ease-out forwards; }
 .slide-in { animation: slideIn 0.5s ease-out forwards; }
 .scale-in { animation: scaleIn 0.5s ease-out forwards; }
+
+/* ── Coming Soon Utilities ── */
+.mdetail-btn-disabled, .hero__btn--disabled, .card__btn--disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  background-color: rgba(120, 120, 120, 0.4) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.card__coming-soon {
+  color: #e50914;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
+}

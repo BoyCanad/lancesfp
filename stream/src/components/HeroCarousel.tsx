@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, Plus, Check } from 'lucide-react';
+import { Play, Info, Plus, Check, Bell } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import type { Movie } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
@@ -184,7 +184,13 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           </div>
           <p className="hero__desc">{movie.description}</p>
           <div className="hero__actions">
-            <button className="hero__btn hero__btn--play" onClick={() => handlePlay(movie)}><Play size={15} fill="white" /> Play</button>
+            <button 
+              className={`hero__btn hero__btn--play ${movie.comingSoon ? 'hero__btn--disabled' : ''}`} 
+              onClick={() => !movie.comingSoon && handlePlay(movie)}
+              disabled={movie.comingSoon}
+            >
+              {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? 'Remind Me' : 'Play'}
+            </button>
             <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
             <HeroListButton movie={movie} />
           </div>
@@ -238,7 +244,13 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                     </div>
                     <p className="hero__desc">{movie.description}</p>
                     <div className="hero__actions">
-                      <button className="hero__btn hero__btn--play" onClick={() => handlePlay(movie)}><Play size={15} fill="white" /> Play</button>
+                      <button 
+                        className={`hero__btn hero__btn--play ${movie.comingSoon ? 'hero__btn--disabled' : ''}`} 
+                        onClick={() => !movie.comingSoon && handlePlay(movie)}
+                        disabled={movie.comingSoon}
+                      >
+                        {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? 'Remind Me' : 'Play'}
+                      </button>
                       <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
                       <HeroListButton movie={movie} />
                     </div>

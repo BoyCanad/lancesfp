@@ -24,7 +24,9 @@ export default function ManageProfile() {
   return (
     <div className="mp-container">
       <header className="mp-header">
-        <div className="mp-logo">LSFPlus</div>
+        <div className="mp-logo" onClick={() => navigate('/browse')}>
+          <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '45px', cursor: 'pointer' }} />
+        </div>
       </header>
 
       <main className="mp-main">

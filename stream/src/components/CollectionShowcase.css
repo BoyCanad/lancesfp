@@ -5,6 +5,13 @@
   background-size: cover;
   background-position: center;
   background-color: #0d0d1a;
+  background-image: var(--bg-desktop);
+}
+
+@media (max-width: 768px) {
+  .showcase {
+    background-image: var(--bg-mobile);
+  }
 }
 
 /* Full-width dark overlay on the background */
