@@ -1,0 +1,532 @@
+/* ─── Top 10 Row ───────────────────────────────────────────── */
+.top10-row {
+  padding: 0 4% 1.5vw;
+  animation: fadeIn 0.5s ease-out;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.top10-row:hover {
+  z-index: 500;
+}
+
+/* Row Header */
+.top10-row__header {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  position: relative;
+  z-index: 10;
+}
+
+.top10-row__title {
+  font-size: clamp(18px, 1.4vw, 22px);
+  font-weight: 700;
+  color: #e5e5e5;
+  letter-spacing: -0.2px;
+  margin-bottom: 4px;
+  line-height: 1.25;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.top10-row__title:hover {
+  color: #fff;
+}
+
+.top10-row__wrapper {
+  position: relative;
+}
+
+.top10-row__track {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  /* Extra vertical padding so expanded card isn't clipped */
+  padding: 160px 0 160px 0;
+  margin: -160px 0 -160px 0;
+  -ms-overflow-style: none;
+  position: relative;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.top10-row__track::-webkit-scrollbar { display: none; }
+
+/* Arrow buttons */
+.top10-row__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 200;
+  background: rgba(13, 13, 20, 0.9);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: background 0.2s, transform 0.2s, opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.top10-row:hover .top10-row__arrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.top10-row__arrow:hover {
+  background: rgba(124, 58, 237, 0.7);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.top10-row__arrow--left  { left: -20px; }
+.top10-row__arrow--right { right: -20px; }
+
+/* ─── Top 10 Card wrapper ─────────────────────────────────── */
+.top10-card {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  cursor: pointer;
+  pointer-events: auto;
+  scroll-snap-align: start;
+  z-index: 1;
+  transition: z-index 0s;
+}
+
+/* Lift the hovered card above ALL siblings so the expanded popup clears neighboring rank numbers */
+.top10-card:hover {
+  z-index: 600;
+}
+
+/* ─── Giant rank number ─────────────────────────────────────── */
+.top10-card__rank {
+  position: relative;
+  flex-shrink: 0;
+  font-size: clamp(120px, 12vw, 180px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -8px;
+  /* Hollow outline style */
+  color: transparent;
+  -webkit-text-stroke: 3px rgba(255, 255, 255, 0.8);
+  text-stroke: 3px rgba(255, 255, 255, 0.8);
+  user-select: none;
+  /* Overlap: number sits behind the thumbnail */
+  margin-right: -40px;
+  z-index: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.9));
+  align-self: flex-end;
+  padding-bottom: 8px;
+  /* Smooth transition when sibling cards shift on hover */
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Dim adjacent numbers when a card is hovered */
+.top10-card:has(~ .top10-card:hover) .top10-card__rank,
+.top10-card:hover ~ .top10-card .top10-card__rank {
+  opacity: 0.4;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* ─── Portrait thumbnail ────────────────────────────────────── */
+.top10-card__thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 130px;
+  aspect-ratio: 2 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1a1a1a;
+  z-index: 2;
+  /* Border glow on hover */
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.4s ease,
+    outline-color 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  will-change: transform;
+}
+
+.top10-card:hover .top10-card__thumb-wrap {
+  transform: scale(1.05);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+  outline-color: rgba(255, 255, 255, 0.3);
+}
+
+.top10-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  transition: transform 0.5s ease;
+}
+
+.top10-card:hover .top10-card__img {
+  transform: scale(1.04);
+}
+
+/* ─── Expanded popup card ────────────────────────────────────
+   Key fix: anchor to the thumb-wrap using a pseudo-positioned
+   container so we can scale-from-the-card correctly.
+   The popup sits on top of the thumb using transform-origin.
+───────────────────────────────────────────────────────────── */
+.top10-card__popup-anchor {
+  /* Positioned relative to .top10-card, at the bottom of where the thumb sits */
+  position: absolute;
+  /* Align horizontally with the thumb (it's z-index: 2, starts at margin-right offset) */
+  bottom: 0;
+  /* Center of the thumb approximately */
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+.top10-card__expanded {
+  /* Pop up centered above the anchor point */
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 290px;
+  background: #141414;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 30px 80px rgba(0,0,0,0.95),
+    0 10px 30px rgba(0,0,0,0.7);
+  z-index: 3000;
+  overflow: hidden;
+  pointer-events: auto;
+  /* ── The magic: scale from the bottom-center of the card ── */
+  transform-origin: bottom center;
+  animation: top10Expand 0.32s cubic-bezier(0.34, 1.48, 0.64, 1) both;
+}
+
+/* Edge-aware positioning */
+.top10-card--pos-right .top10-card__expanded {
+  left: 0;
+  transform-origin: bottom left;
+  animation-name: top10ExpandRight;
+}
+
+.top10-card--pos-left .top10-card__expanded {
+  left: auto;
+  right: 0;
+  transform-origin: bottom right;
+  animation-name: top10ExpandLeft;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────── */
+@keyframes top10Expand {
+  0% {
+    transform: translateX(-50%) scale(0.7) translateY(12px);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes top10ExpandRight {
+  0% {
+    transform: scale(0.7) translateY(12px);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes top10ExpandLeft {
+  0% {
+    transform: scale(0.7) translateY(12px);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ── Preview media area ─────────────────────────────────────── */
+.top10-card__media-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+
+.top10-card__preview,
+.top10-card__preview-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.top10-card__preview {
+  z-index: 1;
+  transition: opacity 1s ease;
+}
+
+.top10-card__preview-video {
+  z-index: 2;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Bottom gradient on preview so details blend in */
+.top10-card__media-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(20,20,20,0.9) 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.top10-card__vol-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  border: 1.5px solid rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.top10-card__vol-btn:hover {
+  background: rgba(0,0,0,0.85);
+  border-color: white;
+  transform: scale(1.12);
+}
+
+/* ── Details section ─────────────────────────────────────────── */
+.top10-card__details {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  /* Stagger children in */
+  animation: top10DetailsReveal 0.35s 0.1s ease both;
+}
+
+@keyframes top10DetailsReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.top10-card__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.top10-card__controls-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.top10-card__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, border-color 0.2s;
+}
+
+.top10-card__btn--play {
+  width: 34px;
+  height: 34px;
+  background: white;
+  border-radius: 50%;
+  padding-left: 2px;
+}
+
+.top10-card__btn--play:hover {
+  background: #e0e0e0;
+  transform: scale(1.12);
+}
+
+.top10-card__btn--icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  background: rgba(42, 42, 42, 0.7);
+}
+
+.top10-card__btn--icon:hover {
+  border-color: white;
+  background: rgba(255,255,255,0.12);
+  transform: scale(1.12);
+}
+
+.top10-card__btn--info {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  background: rgba(42, 42, 42, 0.7);
+}
+
+.top10-card__btn--info:hover {
+  border-color: white;
+  background: rgba(255,255,255,0.12);
+  transform: scale(1.12) rotate(8deg);
+}
+
+.top10-card__btn--active {
+  border-color: white !important;
+  background: rgba(255,255,255,0.15) !important;
+}
+
+.top10-card__btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Rank badge inside expanded card */
+.top10-card__rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #e50914;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.top10-card__rank-badge-num {
+  font-size: 22px;
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1.5px #e50914;
+  line-height: 1;
+}
+
+.top10-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  flex-wrap: wrap;
+}
+
+.top10-card__match { color: #46d369; }
+
+.top10-card__age {
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 1px 4px;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.top10-card__duration { color: #ccc; }
+
+.top10-card__quality {
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 1px 4px;
+  font-size: 9px;
+  border-radius: 2px;
+}
+
+.top10-card__genres {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 9.5px;
+  color: rgba(255,255,255,0.7);
+}
+
+.top10-card__genre-dot {
+  color: rgba(255,255,255,0.25);
+  margin: 0 2px;
+}
+
+/* ─── Mobile ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .top10-row {
+    padding: 0 16px 12px !important;
+    margin: 0 !important;
+  }
+
+  .top10-row__title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .top10-row__header {
+    margin-bottom: 2px !important;
+    padding: 0 4px;
+  }
+
+  .top10-row__track {
+    gap: 0 !important;
+    padding: 8px 4px !important;
+    margin: 0 !important;
+  }
+
+  .top10-card__rank {
+    font-size: clamp(70px, 18vw, 100px);
+    margin-right: -28px;
+    letter-spacing: -4px;
+    -webkit-text-stroke: 2px rgba(255,255,255,0.85);
+  }
+
+  .top10-card__thumb-wrap {
+    width: 90px;
+  }
+
+  /* No hover expansion on mobile — tap goes to detail */
+  .top10-card__expanded {
+    display: none;
+  }
+}

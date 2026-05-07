@@ -144,6 +144,53 @@ function App() {
     return () => clearTimeout(timer);
   }, [pathname, transitionProfile, location]);
 
+  useEffect(() => {
+    const pageTitles: { [key: string]: string } = {
+      '/': session ? 'Who\'s Watching?' : 'Welcome',
+      '/login': 'Login',
+      '/introduction': 'Welcome',
+      '/browse': 'Home',
+      '/my-list': 'My List',
+      '/search': 'Search',
+      '/clips': 'Clips',
+      '/music': 'Music',
+      '/live': 'Live',
+      '/account': 'Account',
+      '/my-lsfplus': 'My LSFPlus',
+      '/forgot-password': 'Reset Password',
+      '/CreateProfile': 'Create Profile',
+      '/collections/el-bimbo': 'El Bimbo Collection',
+      '/ang-huling-el-bimbo-play': 'Ang Huling El Bimbo',
+      '/ang-huling-el-bimbo': 'Ang Huling El Bimbo',
+      '/minsan': 'Minsan',
+      '/tindahan-ni-aling-nena': 'Tindahan ni Aling Nena',
+      '/alapaap-overdrive': 'Alapaap/Overdrive',
+      '/spoliarium-graduation': 'Spoliarium/Graduation',
+      '/pare-ko': 'Pare Ko',
+      '/tama-ka-ligaya': 'Tama Ka/Ligaya',
+      '/beyond-the-last-dance': 'Beyond The Last Dance',
+      '/after-hours': 'After Hours',
+      '/bukang-liwayway-takipsilim': 'Bukang Liwayway Takipsilim',
+      '/a-day-in-my-life-stem': 'A Day In My Life',
+      '/11-stem-a': '11 Stem A'
+    };
+
+    let title = pageTitles[pathname] || 'LSFPlus';
+
+    if (pathname === '/search') {
+      const query = new URLSearchParams(location.search).get('q');
+      title = query ? `Search: ${query}` : 'Search';
+    } else if (pathname.startsWith('/genre/')) {
+      title = 'Browse';
+    } else if (pathname.startsWith('/watch/') || pathname.startsWith('/xray/') || pathname.startsWith('/trailer/')) {
+      title = 'Watching';
+    } else if (pathname.startsWith('/ManageProfile/') || pathname.startsWith('/EditProfile/') || pathname.startsWith('/ProfileLock/') || pathname.startsWith('/IconPicker/')) {
+      title = 'Manage Profiles';
+    }
+
+    document.title = pathname === '/browse' ? 'Home | LSFPlus' : `${title} | LSFPlus`;
+  }, [pathname, session, location.search]);
+
   if (checkingAuth) {
     // Show spinner during auth check too
     return <LoadingSpinner visible={true} />;

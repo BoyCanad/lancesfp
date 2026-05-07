@@ -1,5 +1,6 @@
 import HeroCarousel from '../components/HeroCarousel';
 import ContentRow from '../components/ContentRow';
+import Top10Row from '../components/Top10Row';
 import CollectionShowcase from '../components/CollectionShowcase';
 import LiveStreamSection from '../components/LiveStreamSection';
 import { useState, useEffect } from 'react';
@@ -97,6 +98,11 @@ export default function Home() {
         <ContentRow
           title="G11 Archives"
           movies={rows?.archiveMovies ?? staticAllMovies}
+        />
+
+        <Top10Row
+          title="Top 10 Titles in LSFPlus Today"
+          movies={[...allMovies].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))}
         />
 
         {hasWatchedElBimbo && recommendedMovies.length > 0 && (
