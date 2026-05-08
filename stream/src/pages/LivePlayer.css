@@ -365,7 +365,7 @@
 
 @media (max-width: 896px) and (orientation: portrait) {
   .custom-subtitle-text {
-    font-size: 0.95rem; /* Smaller for vertical */
+    font-size: 0.85rem; /* Reduced for vertical */
     padding: 0 16px;
     line-height: 1.3;
   }
@@ -373,7 +373,7 @@
 
 @media (max-width: 896px) and (orientation: landscape) {
   .custom-subtitle-text {
-    font-size: 1.6rem; /* Larger for horizontal */
+    font-size: 1.3rem; /* Reduced for horizontal */
     line-height: 1.3;
   }
 }

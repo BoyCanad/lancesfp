@@ -777,20 +777,30 @@
   display: none;
 }
 
-.xray-portrait-top-pill {
+.xray-portrait-top-tabs {
   display: flex;
   justify-content: center;
+  gap: 12px;
   margin-bottom: 24px;
 }
 
-.xray-pill {
-  background-color: white;
-  color: black;
+.xray-portrait-tab {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px 24px;
   border-radius: 20px;
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.xray-portrait-tab.active {
+  background-color: white;
+  color: black;
+  font-weight: 700;
 }
 
 .xray-portrait-section {

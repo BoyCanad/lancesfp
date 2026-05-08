@@ -534,11 +534,11 @@ body { background: #000; }
 
 @media (max-width: 896px) and (orientation: portrait) {
   .cp-custom-subtitle-container { bottom: 82px; width: 95%; }
-  .cp-custom-subtitle-text { font-size: 0.95rem; }
+  .cp-custom-subtitle-text { font-size: 0.85rem; padding: 0 16px; }
 }
 
 @media (max-width: 896px) and (orientation: landscape) {
-  .cp-custom-subtitle-text { font-size: 1.6rem; }
+  .cp-custom-subtitle-text { font-size: 1.3rem; }
 }
 
 

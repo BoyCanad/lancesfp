@@ -203,6 +203,7 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
   const [activeTab, setActiveTab] = useState<'scene' | 'cast' | 'music' | 'trivia' | 'polls' | 'bonus'>('scene');
   const [expandedSong, setExpandedSong] = useState<string | null>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [portraitTab, setPortraitTab] = useState<'xray' | 'bonus'>('xray');
 
   useEffect(() => {
     onShowAllChange?.(showAll);
@@ -475,67 +476,80 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
         </div>
         
         <div className="xray-portrait-scroll">
-          <div className="xray-portrait-top-pill">
-            <span className="xray-pill">X-Ray</span>
+          <div className="xray-portrait-top-tabs">
+            <button 
+              className={`xray-portrait-tab ${portraitTab === 'xray' ? 'active' : ''}`}
+              onClick={() => setPortraitTab('xray')}
+            >
+              X-Ray
+            </button>
+            <button 
+              className={`xray-portrait-tab ${portraitTab === 'bonus' ? 'active' : ''}`}
+              onClick={() => setPortraitTab('bonus')}
+            >
+              Bonus
+            </button>
           </div>
 
-          <div className="xray-portrait-section">
-            <h3 className="xray-portrait-section-title">In this scene</h3>
-            
-            {activeSongs.length > 0 && activeSongs.map((song, idx) => (
-              <div key={idx} className="xray-portrait-row">
-                <div className="xray-portrait-song-img">
-                   <img src="/images/artwork.webp" alt={song.title} />
-                </div>
-                <div className="xray-portrait-row-info">
-                  <span className="xray-portrait-name">{song.title}</span>
-                  <div className="xray-portrait-playing-indicator">
-                    <div className="bar"></div>
-                    <div className="bar"></div>
-                    <div className="bar"></div>
+          {portraitTab === 'xray' && (
+            <>
+              <div className="xray-portrait-section">
+                <h3 className="xray-portrait-section-title">In this scene</h3>
+                
+                {activeSongs.length > 0 && activeSongs.map((song, idx) => (
+                  <div key={idx} className="xray-portrait-row">
+                    <div className="xray-portrait-song-img">
+                       <img src="/images/artwork.webp" alt={song.title} />
+                    </div>
+                    <div className="xray-portrait-row-info">
+                      <span className="xray-portrait-name">{song.title}</span>
+                      <div className="xray-portrait-playing-indicator">
+                        <div className="bar"></div>
+                        <div className="bar"></div>
+                        <div className="bar"></div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
+
+                {activePolls.length > 0 && activePolls.map((poll, idx) => (
+                  <PollView key={`poll-${idx}`} poll={poll} isPortrait={true} />
+                ))}
+
+                {activeTrivia.length > 0 && activeTrivia.map((t, idx) => {
+                  const text = typeof t === 'string' ? t : t.text;
+                  return <TriviaView key={`trivia-${idx}`} text={text} isPortrait={true} />;
+                })}
+
+                {activeActors.length > 0 && activeActors.map((actor, idx) => (
+                  <div key={idx} className="xray-portrait-row" onClick={() => onActorClick?.(actor)}>
+                    <div className="xray-portrait-actor-img">
+                      <ActorImage src={actor.image} alt={actor.name} />
+                    </div>
+                    <div className="xray-portrait-row-info">
+                      <span className="xray-portrait-name">{actor.name}</span>
+                      <span className="xray-portrait-sub">{actor.character}</span>
+                    </div>
+                    <ChevronRight size={20} className="xray-portrait-chevron" />
+                  </div>
+                ))}
               </div>
-            ))}
 
-            {activePolls.length > 0 && activePolls.map((poll, idx) => (
-              <PollView key={`poll-${idx}`} poll={poll} isPortrait={true} />
-            ))}
-
-            {activeTrivia.length > 0 && activeTrivia.map((t, idx) => {
-              const text = typeof t === 'string' ? t : t.text;
-              return <TriviaView key={`trivia-${idx}`} text={text} isPortrait={true} />;
-            })}
-
-            {activeActors.length > 0 && activeActors.map((actor, idx) => (
-              <div key={idx} className="xray-portrait-row" onClick={() => onActorClick?.(actor)}>
-                <div className="xray-portrait-actor-img">
-                  <ActorImage src={actor.image} alt={actor.name} />
-                </div>
-                <div className="xray-portrait-row-info">
-                  <span className="xray-portrait-name">{actor.name}</span>
-                  <span className="xray-portrait-sub">{actor.character}</span>
-                </div>
-                <ChevronRight size={20} className="xray-portrait-chevron" />
+              <div className="xray-portrait-section">
+                <h3 className="xray-portrait-section-title">Cast</h3>
+                {allActors.map((actor, idx) => (
+                   <div key={idx} className="xray-portrait-row" onClick={() => onActorClick?.(actor)}>
+                   <div className="xray-portrait-actor-img">
+                     <ActorImage src={actor.image} alt={actor.name} />
+                   </div>
+                   <div className="xray-portrait-row-info">
+                     <span className="xray-portrait-name">{actor.name}</span>
+                     <span className="xray-portrait-sub">{actor.character}</span>
+                   </div>
+                   <ChevronRight size={20} className="xray-portrait-chevron" />
+                 </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          <div className="xray-portrait-section">
-            <h3 className="xray-portrait-section-title">Cast</h3>
-            {allActors.map((actor, idx) => (
-               <div key={idx} className="xray-portrait-row" onClick={() => onActorClick?.(actor)}>
-               <div className="xray-portrait-actor-img">
-                 <ActorImage src={actor.image} alt={actor.name} />
-               </div>
-               <div className="xray-portrait-row-info">
-                 <span className="xray-portrait-name">{actor.name}</span>
-                 <span className="xray-portrait-sub">{actor.character}</span>
-               </div>
-               <ChevronRight size={20} className="xray-portrait-chevron" />
-             </div>
-            ))}
-          </div>
 
           <div className="xray-portrait-section">
             <h3 className="xray-portrait-section-title">Music</h3>
@@ -565,16 +579,57 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
             </div>
           )}
 
-          {allPolls.length > 0 && (
+              {allPolls.length > 0 && (
+                <div className="xray-portrait-section">
+                  <h3 className="xray-portrait-section-title">Polls</h3>
+                  {allPolls.map((poll, idx) => (
+                    <PollView key={`all-poll-${idx}`} poll={poll} isPortrait={true} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {portraitTab === 'bonus' && (
             <div className="xray-portrait-section">
-              <h3 className="xray-portrait-section-title">Polls</h3>
-              {allPolls.map((poll, idx) => (
-                <PollView key={`all-poll-${idx}`} poll={poll} isPortrait={true} />
-              ))}
+              <h3 className="xray-portrait-section-title">Set Pics (71)</h3>
+              <div className="xray-all-panel__bonus-grid" style={{ padding: 0 }}>
+                 {[...Array(71)].map((_, i) => (
+                    <BonusImage 
+                      key={i} 
+                      index={i + 1} 
+                      onClick={(src) => setEnlargedImage(src)} 
+                    />
+                 ))}
+               </div>
             </div>
           )}
 
         </div>
+
+        {/* Lightbox for Enlarged Image (Portrait) */}
+        {enlargedImage && (
+          <div 
+            className="xray-lightbox-overlay" 
+            style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setEnlargedImage(null)}
+          >
+            <button 
+              style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: '50%', padding: '8px', cursor: 'pointer' }}
+              onClick={() => setEnlargedImage(null)}
+            >
+              <X size={24} />
+            </button>
+            <img 
+              src={enlargedImage} 
+              alt="Enlarged bonus" 
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', userSelect: 'none' }} 
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
       </div>
     );
   }

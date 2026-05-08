@@ -211,15 +211,21 @@
 
 @media (max-width: 896px) and (orientation: portrait) {
   .custom-subtitle-text {
-    font-size: 0.95rem; /* Smaller for vertical */
+    font-size: 0.85rem; /* Reduced for vertical */
     padding: 0 16px;
+    line-height: 1.3;
   }
 }
 
 @media (max-width: 896px) and (orientation: landscape) {
   .custom-subtitle-text {
-    font-size: 1.6rem; /* Larger for horizontal */
+    font-size: 1.3rem; /* Reduced for horizontal */
+    line-height: 1.3;
   }
+}
+
+.xray-all-open .xray-back-button {
+  display: none;
 }
 
 .video-error-overlay {
@@ -1239,9 +1245,10 @@
   opacity: 1;
 }
 
-/* When the All panel is open, push the back button further left so it doesn't sit on top of the panel */
-.video-player-container:has(.xray-all-open) .xray-back-button {
-  right: 500px;
+/* When the All panel is open, hide the back button instead of moving it to the middle */
+.video-player-container.xray-all-open .xray-back-button {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (max-width: 896px) {
@@ -1254,8 +1261,9 @@
     width: 24px !important;
     height: 24px !important;
   }
-  .video-player-container:has(.xray-all-open) .xray-back-button {
-    right: 335px;
+  .video-player-container.xray-all-open .xray-back-button {
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* Match the fullscreen button padding/size with the back button so they align */
