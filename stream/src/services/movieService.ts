@@ -63,46 +63,46 @@ function buildRows(movies: Movie[]) {
 // ─── Map Supabase row → Movie interface ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapRow(row: any): Movie {
-  const staticEquivalent = staticAllMovies.find((m) => m.id === row.id);
+  const staticEquivalent = staticAllMovies.find((m) => m.id === row.id) || ({} as Partial<Movie>);
 
   return {
-    id: row.id,
-    title: row.title,
-    thumbnail: row.thumbnail,
-    banner: row.banner,
-    description: row.description,
-    rating: row.rating,
-    year: row.year,
-    duration: row.duration,
-    genre: row.genre ?? [],
-    ageRating: row.ageRating,
-    contentWarnings: row.contentWarnings ?? undefined,
-    isOriginal: row.isOriginal ?? false,
-    progress: row.progress ?? undefined,
-    desktopOnly: row.desktopOnly ?? false,
-    streamStatus: row.streamStatus ?? undefined,
-    quality: row.quality ?? undefined,
-    mobileThumbnail: row.mobileThumbnail ?? undefined,
-    mobileBanner: row.mobileBanner ?? undefined,
-    cardBanner: row.cardBanner ?? undefined,
-    mobileCardBanner: row.mobileCardBanner ?? undefined,
-    logo: row.logo ?? undefined,
-    videoUrl: row.videoUrl ?? undefined,
-    detailMobileBanner: row.detailMobileBanner ?? undefined,
-    detailBanner: row.detailBanner ?? undefined,
-    mobileCarouselBanner: row.mobileCarouselBanner ?? undefined,
-    subtitles: row.subtitles ?? undefined,
-    trailerUrl: row.trailerUrl ?? undefined,
-    trailerVttUrl: row.trailerVttUrl ?? undefined,
-    spriteUrl: row.spriteUrl ?? undefined,
-    spriteConfig: row.spriteConfig ?? undefined,
-    downloadUrl: row.downloadUrl ?? undefined,
-    seasons: row.seasons ?? undefined,
-    squareThumbnail: row.squareThumbnail ?? undefined,
-    tallTrailerUrl: row.tallTrailerUrl ?? undefined,
-    mediaType: row.mediaType ?? 'movie',
-    xRay: staticEquivalent?.xRay ?? row.xRay ?? undefined,
-    comingSoon: row.comingSoon || !row.videoUrl || row.videoUrl === '' || row.id === 'beyond-the-last-dance',
+    id: row.id || staticEquivalent.id || '',
+    title: row.title || staticEquivalent.title || '',
+    thumbnail: row.thumbnail || staticEquivalent.thumbnail || '',
+    banner: row.banner || staticEquivalent.banner || '',
+    description: row.description || staticEquivalent.description || '',
+    rating: row.rating || staticEquivalent.rating || '',
+    year: row.year || staticEquivalent.year || '',
+    duration: row.duration || staticEquivalent.duration || '',
+    genre: (row.genre && row.genre.length > 0) ? row.genre : (staticEquivalent.genre ?? []),
+    ageRating: row.ageRating || staticEquivalent.ageRating || '',
+    contentWarnings: row.contentWarnings ?? staticEquivalent.contentWarnings,
+    isOriginal: row.isOriginal ?? staticEquivalent.isOriginal ?? false,
+    progress: row.progress ?? staticEquivalent.progress,
+    desktopOnly: row.desktopOnly ?? staticEquivalent.desktopOnly ?? false,
+    streamStatus: row.streamStatus ?? staticEquivalent.streamStatus,
+    quality: row.quality || staticEquivalent.quality,
+    mobileThumbnail: row.mobileThumbnail || staticEquivalent.mobileThumbnail,
+    mobileBanner: row.mobileBanner || staticEquivalent.mobileBanner,
+    cardBanner: row.cardBanner || staticEquivalent.cardBanner,
+    mobileCardBanner: row.mobileCardBanner || staticEquivalent.mobileCardBanner,
+    logo: row.logo || staticEquivalent.logo,
+    videoUrl: row.videoUrl || staticEquivalent.videoUrl,
+    detailMobileBanner: row.detailMobileBanner || staticEquivalent.detailMobileBanner,
+    detailBanner: row.detailBanner || staticEquivalent.detailBanner,
+    mobileCarouselBanner: row.mobileCarouselBanner || staticEquivalent.mobileCarouselBanner,
+    subtitles: row.subtitles ?? staticEquivalent.subtitles,
+    trailerUrl: row.trailerUrl || staticEquivalent.trailerUrl,
+    trailerVttUrl: row.trailerVttUrl || staticEquivalent.trailerVttUrl,
+    spriteUrl: row.spriteUrl || staticEquivalent.spriteUrl,
+    spriteConfig: row.spriteConfig ?? staticEquivalent.spriteConfig,
+    downloadUrl: row.downloadUrl || staticEquivalent.downloadUrl,
+    seasons: row.seasons ?? staticEquivalent.seasons,
+    squareThumbnail: row.squareThumbnail || staticEquivalent.squareThumbnail,
+    tallTrailerUrl: row.tallTrailerUrl || staticEquivalent.tallTrailerUrl,
+    mediaType: row.mediaType || staticEquivalent.mediaType || 'movie',
+    xRay: row.xRay ?? staticEquivalent.xRay,
+    comingSoon: row.comingSoon ?? staticEquivalent.comingSoon ?? (!row.videoUrl && !staticEquivalent.videoUrl),
   };
 }
 
@@ -120,7 +120,15 @@ export async function fetchAllMovies(): Promise<Movie[]> {
     if (error) throw error;
     if (!data || data.length === 0) throw new Error('No movies returned');
 
-    _cache = data.map(mapRow);
+    _cache = data.map(row => {
+      const mapped = mapRow(row);
+      // Mutate the static array so that legacy imports get the synced data
+      const staticEquivalent = staticAllMovies.find(m => m.id === row.id);
+      if (staticEquivalent) {
+        Object.assign(staticEquivalent, mapped);
+      }
+      return mapped;
+    });
     _cacheTime = now;
     return _cache;
   } catch (err) {
@@ -154,7 +162,12 @@ export async function fetchMovieById(id: string): Promise<Movie | null> {
       .single();
 
     if (error) throw error;
-    return mapRow(data);
+    const mapped = mapRow(data);
+    const staticEquivalent = staticAllMovies.find(m => m.id === data.id);
+    if (staticEquivalent) {
+      Object.assign(staticEquivalent, mapped);
+    }
+    return mapped;
   } catch (err) {
     console.warn(`[movieService] Supabase fetch failed for id ${id}, using local data:`, err);
     return staticAllMovies.find((m) => m.id === id) ?? null;
