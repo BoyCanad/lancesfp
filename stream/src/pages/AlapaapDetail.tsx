@@ -240,7 +240,7 @@ export default function AlapaapDetail() {
             <span className="mdetail-badge">{movie.ageRating}</span>
             <span className="mdetail-meta-text">{movie.duration}</span>
             <span className="mdetail-badge mdetail-badge-cam">HD</span>
-            <span className="mdetail-rating">★ {movie.rating}</span>
+
           </div>
 
           <div className="mdetail-genres">

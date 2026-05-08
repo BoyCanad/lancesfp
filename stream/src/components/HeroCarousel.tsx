@@ -4,6 +4,7 @@ import { Play, Info, Plus, Check, Bell } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import type { Movie } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
+import { HDBadge, SpatialAudioBadge } from './AudioBadges';
 import './HeroCarousel.css';
 
 function HeroListButton({ movie }: { movie: Movie }) {
@@ -180,6 +181,10 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
             <div className="hero__meta">
               <span className="hero__year">{movie.year}</span>
               <span className="hero__badge">{movie.ageRating}</span>
+              <HDBadge />
+              {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
+                <SpatialAudioBadge />
+              )}
             </div>
           </div>
           <p className="hero__desc">{movie.description}</p>
@@ -240,6 +245,10 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                       <div className="hero__meta">
                         <span className="hero__year">{movie.year}</span>
                         <span className="hero__badge">{movie.ageRating}</span>
+                        <HDBadge />
+                        {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
+                          <SpatialAudioBadge />
+                        )}
                       </div>
                     </div>
                     <p className="hero__desc">{movie.description}</p>

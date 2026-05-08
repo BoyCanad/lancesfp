@@ -137,11 +137,13 @@ export async function fetchMovieRows(): Promise<MovieRows> {
 
 // ─── Single movie lookup ─────────────────────────────────────────────────────
 export async function fetchMovieById(id: string): Promise<Movie | null> {
-  // Try cache / static first for speed
-  const cached = _cache ?? staticAllMovies;
-  const hit = cached.find((m) => m.id === id);
-  if (hit) return hit;
+  // Check memory cache first
+  if (_cache) {
+    const hit = _cache.find((m) => m.id === id);
+    if (hit) return hit;
+  }
 
+  // If not in cache or cache is empty, fetch from Supabase
   try {
     const { data, error } = await supabase
       .from('movies')
@@ -151,8 +153,9 @@ export async function fetchMovieById(id: string): Promise<Movie | null> {
 
     if (error) throw error;
     return mapRow(data);
-  } catch {
-    return null;
+  } catch (err) {
+    console.warn(`[movieService] Supabase fetch failed for id ${id}, using local data:`, err);
+    return staticAllMovies.find((m) => m.id === id) ?? null;
   }
 }
 
@@ -160,4 +163,119 @@ export async function fetchMovieById(id: string): Promise<Movie | null> {
 export function invalidateMovieCache() {
   _cache = null;
   _cacheTime = 0;
+}
+
+// ─── Dynamic Home Rows ───────────────────────────────────────────────────────
+export type HomeRowType = 'standard' | 'top10' | 'collection' | 'live';
+
+export interface HomeRowConfig {
+  id: string;
+  sort_order: number;
+  row_type: HomeRowType;
+  title: string;
+  movie_ids: string[];
+  enabled: boolean;
+  subtitle?: string;
+  background_url?: string;
+  mobile_bg_url?: string;
+  logo_url?: string;
+  see_all_path?: string;
+}
+
+export interface ResolvedHomeRow extends HomeRowConfig {
+  movies: Movie[];
+}
+
+let _homeRowsCache: HomeRowConfig[] | null = null;
+let _homeRowsCacheTime = 0;
+
+export async function fetchHomeRows(): Promise<ResolvedHomeRow[]> {
+  const now = Date.now();
+
+  // Re-use cached row configs within TTL
+  if (!_homeRowsCache || now - _homeRowsCacheTime > CACHE_TTL_MS) {
+    try {
+      const { data, error } = await supabase
+        .from('home_rows')
+        .select('*')
+        .eq('enabled', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+      _homeRowsCache = data as HomeRowConfig[];
+      _homeRowsCacheTime = now;
+    } catch (err) {
+      console.warn('[movieService] home_rows fetch failed, using static fallback:', err);
+      _homeRowsCache = null;
+    }
+  }
+
+  // Fetch the movie pool
+  const allMovies = await fetchAllMovies();
+  const byId = Object.fromEntries(allMovies.map((m) => [m.id, m]));
+
+  // If Supabase home_rows are available, resolve them
+  if (_homeRowsCache && _homeRowsCache.length > 0) {
+    return _homeRowsCache.map((row) => ({
+      ...row,
+      movies: row.movie_ids.map((id) => byId[id]).filter(Boolean) as Movie[],
+    }));
+  }
+
+  // ── Static fallback (mirrors the old hardcoded Home.tsx layout) ──────────
+  const staticRows = buildRows(allMovies);
+  const fallback: ResolvedHomeRow[] = [
+    {
+      id: 'live',
+      sort_order: 10,
+      row_type: 'live',
+      title: 'Live Stream',
+      movie_ids: [],
+      enabled: true,
+      movies: [],
+    },
+    {
+      id: 'g11-archives',
+      sort_order: 20,
+      row_type: 'standard',
+      title: 'G11 Archives',
+      movie_ids: staticRows.archiveMovies.map((m) => m.id),
+      enabled: true,
+      movies: staticRows.archiveMovies,
+    },
+    {
+      id: 'top10',
+      sort_order: 30,
+      row_type: 'top10',
+      title: 'Top 10 Titles in LSFPlus Today',
+      movie_ids: [...allMovies]
+        .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+        .slice(0, 10)
+        .map((m) => m.id),
+      enabled: true,
+      movies: [...allMovies]
+        .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+        .slice(0, 10),
+    },
+    {
+      id: 'el-bimbo-collection',
+      sort_order: 40,
+      row_type: 'collection',
+      title: 'Ang Huling El Bimbo Collections',
+      movie_ids: staticRows.elBimboCollections.map((m) => m.id),
+      enabled: true,
+      movies: staticRows.elBimboCollections,
+      subtitle: 'Browse the complete collection from the world of Ang Huling El Bimbo',
+      background_url: 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection.png',
+      mobile_bg_url: 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection-m.webp',
+      logo_url: '/images/el-bimbo-logo.webp',
+      see_all_path: '/collections/el-bimbo',
+    },
+  ];
+  return fallback;
+}
+
+export function invalidateHomeRowsCache() {
+  _homeRowsCache = null;
+  _homeRowsCacheTime = 0;
 }

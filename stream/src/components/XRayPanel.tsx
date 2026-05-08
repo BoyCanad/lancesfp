@@ -275,7 +275,9 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
                 </div>
                 <div className="xray-portrait-row-info">
                   <span className="xray-portrait-name">{song.title}</span>
-                  <span className="xray-portrait-sub">{song.artist}</span>
+                  <span className="xray-portrait-sub">
+                    {song.start !== undefined ? `Starts at ${formatTime(song.start)}` : song.artist || ''}
+                  </span>
                 </div>
                 <ChevronRight size={20} className="xray-portrait-chevron" />
               </div>
@@ -288,7 +290,7 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
 
   /* ── Compact left panel ── */
   return (
-    <div className={`xray-panel ${expanded ? 'xray-panel--expanded' : ''}`}>
+    <div className={`xray-panel ${expanded ? 'xray-panel--expanded' : 'xray-panel--collapsed'}`}>
       <div className="xray-panel__inner">
         {/* Header */}
         <div className="xray-panel__header">

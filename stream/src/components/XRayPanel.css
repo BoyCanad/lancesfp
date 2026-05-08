@@ -28,6 +28,11 @@
   opacity: 1;
 }
 
+/* Hide the gradient when the panel is collapsed via the toggle button */
+.xray-panel--collapsed .xray-panel__inner::before {
+  opacity: 0;
+}
+
 /* 1. Remove background and fix pointer events on the inner wrapper */
 .xray-panel__inner {
   height: 100%;
@@ -46,10 +51,10 @@
   top: 0; left: 0; right: 0; bottom: 0;
   background: linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 45%, rgba(0,0,0,0) 100%);
   z-index: -1;
-  /* This creates a perfectly soft, seamless fade at the bottom edge so it never cuts off harshly */
   -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%);
   mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%);
-  transition: bottom 0.3s ease-in-out;
+  transition: bottom 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  opacity: 1;
 }
 
 /* 3. Restore interactivity to the actual X-Ray content so buttons still work */
@@ -389,8 +394,7 @@
   overflow-y: auto;
   padding-bottom: 80px;
   scrollbar-width: none;
-  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 180px), transparent calc(100% - 60px));
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 180px), transparent calc(100% - 60px));
+  /* No bottom fade — the all-panel has a solid background so content scrolls cleanly */
 }
 
 .xray-all-panel__content::-webkit-scrollbar {

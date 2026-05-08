@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Play, Plus, Check, ThumbsUp, ChevronDown, Vo
 import type { Movie } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import { supabase } from '../supabaseClient';
+import { HDBadge, SpatialAudioBadge } from './AudioBadges';
 import './Top10Row.css';
 
 interface Top10RowProps {
@@ -51,6 +52,7 @@ function Top10Card({
   const [isLiked, setIsLiked] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setInMyList(isInMyList(movie.id));
@@ -95,9 +97,20 @@ function Top10Card({
     }
   };
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
     if (window.innerWidth <= 768) return;
     setIsHovered(true);
+
+    // Replicate ContentRow's dynamic transform-origin based on screen edge
+    const rect = e.currentTarget.getBoundingClientRect();
+    const edgeThreshold = 120;
+    let origin = 'center calc(50% + 5px)';
+    if (rect.left < edgeThreshold) {
+      origin = 'left calc(50% + 5px)';
+    } else if (window.innerWidth - rect.right < edgeThreshold) {
+      origin = 'right calc(50% + 5px)';
+    }
+    e.currentTarget.style.setProperty('--origin', origin);
 
     if (movie.trailerUrl) {
       hoverTimerRef.current = setTimeout(() => {
@@ -152,138 +165,144 @@ function Top10Card({
 
   return (
     <div
+      ref={cardRef}
       className={`top10-card ${posClass}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleCardClick}
     >
       {/* Big rank number */}
-      <span className="top10-card__rank">{rank}</span>
+      <span className={`top10-card__rank ${rank === 1 ? 'top10-card__rank--one' : ''}`}>{rank}</span>
 
-      {/* Portrait thumbnail */}
-      <div className="top10-card__thumb-wrap">
-        <img
-          src={movie.mobileThumbnail || movie.thumbnail}
-          alt={movie.title}
-          className="top10-card__img"
-          loading="lazy"
-        />
-      </div>
+      {/* Portrait thumbnail + expanded popup — share a positioning context */}
+      <div className="top10-card__thumb-container">
+        <div className="top10-card__thumb-wrap">
+          <img
+            src={movie.mobileThumbnail || movie.thumbnail}
+            alt={movie.title}
+            className="top10-card__img"
+            loading="lazy"
+          />
+        </div>
 
-      {/* Expanded hover card — anchored at bottom of .top10-card so
-          transform-origin: bottom center scales up from the card */}
-      {isHovered && (
-        <div className={`top10-card__expanded ${posClass}`}>
+        {/* Expanded hover card — scales from thumbnail footprint */}
+        {isHovered && (
+          <div className={`top10-card__expanded ${posClass} ${isPlayingTrailer ? 'top10-card__expanded--playing' : ''}`}>
 
-          {/* ── Media area ── */}
-          <div className="top10-card__media-wrap">
-            {/* Static banner (always present as base layer) */}
-            <img
-              src={movie.cardBanner || movie.banner || movie.thumbnail}
-              alt=""
-              className="top10-card__preview"
-              style={{ opacity: isPlayingTrailer ? 0 : 1 }}
-            />
-
-            {/* Trailer video fades in over the banner */}
-            {movie.trailerUrl && (
-              <video
-                ref={videoRef}
-                src={movie.trailerUrl}
-                muted={isMuted}
-                playsInline
-                preload="auto"
-                className="top10-card__preview-video"
-                onEnded={() => setIsPlayingTrailer(false)}
-                style={{ opacity: isPlayingTrailer ? 1 : 0 }}
+            {/* ── Media area ── */}
+            <div className="top10-card__media-wrap">
+              {/* Static banner (always present as base layer) */}
+              <img
+                src={movie.cardBanner || movie.banner || movie.thumbnail}
+                alt=""
+                className="top10-card__preview"
+                style={{ opacity: isPlayingTrailer ? 0 : 1 }}
               />
-            )}
 
-            {/* Vol toggle */}
-            {movie.trailerUrl && (
-              <button
-                className="top10-card__vol-btn"
-                onClick={(e) => { e.stopPropagation(); setIsMuted(m => !m); }}
-              >
-                {isMuted ? <VolumeX size={14} color="white" /> : <Volume2 size={14} color="white" />}
-              </button>
-            )}
-          </div>
+              {/* Trailer video fades in over the banner */}
+              {movie.trailerUrl && (
+                <video
+                  ref={videoRef}
+                  src={movie.trailerUrl}
+                  muted={isMuted}
+                  playsInline
+                  preload="auto"
+                  className="top10-card__preview-video"
+                  onEnded={() => setIsPlayingTrailer(false)}
+                  style={{ opacity: isPlayingTrailer ? 1 : 0 }}
+                />
+              )}
 
-          {/* ── Details ── */}
-          <div className="top10-card__details">
-
-            {/* Mini rank badge */}
-            <div className="top10-card__rank-badge">
-              <span className="top10-card__rank-badge-num">#{rank}</span>
-              <span>in LSFPlus Today</span>
+              {/* Vol toggle */}
+              {movie.trailerUrl && (
+                <button
+                  className="top10-card__vol-btn"
+                  onClick={(e) => { e.stopPropagation(); setIsMuted(m => !m); }}
+                >
+                  {isMuted ? <VolumeX size={14} color="white" /> : <Volume2 size={14} color="white" />}
+                </button>
+              )}
             </div>
 
-            {/* Playback controls */}
-            <div className="top10-card__controls">
-              <div className="top10-card__controls-left">
+            {/* ── Details ── */}
+            <div className="top10-card__details">
+
+              {/* Mini rank badge */}
+              <div className="top10-card__rank-badge">
+                <span className="top10-card__rank-badge-num">#{rank}</span>
+                <span>in LSFPlus Today</span>
+              </div>
+
+              {/* Playback controls */}
+              <div className="top10-card__controls">
+                <div className="top10-card__controls-left">
+                  <button
+                    className={`top10-card__btn top10-card__btn--play ${movie.comingSoon ? 'top10-card__btn--disabled' : ''}`}
+                    onClick={handlePlay}
+                    disabled={movie.comingSoon}
+                  >
+                    {movie.comingSoon
+                      ? <Bell size={13} color="black" fill="black" />
+                      : <Play size={12} fill="black" color="black" />}
+                  </button>
+                  <button
+                    className={`top10-card__btn top10-card__btn--icon ${inMyList ? 'top10-card__btn--active' : ''}`}
+                    onClick={handleListToggle}
+                    title={inMyList ? 'Remove from My List' : 'Add to My List'}
+                  >
+                    {inMyList ? <Check size={13} color="white" /> : <Plus size={13} color="white" />}
+                  </button>
+                  <button
+                    className="top10-card__btn top10-card__btn--icon"
+                    onClick={handleLikeToggle}
+                  >
+                    <ThumbsUp
+                      size={12}
+                      color={isLiked ? '#46d369' : 'white'}
+                      fill={isLiked ? '#46d369' : 'transparent'}
+                    />
+                  </button>
+                </div>
                 <button
-                  className={`top10-card__btn top10-card__btn--play ${movie.comingSoon ? 'top10-card__btn--disabled' : ''}`}
-                  onClick={handlePlay}
-                  disabled={movie.comingSoon}
+                  className="top10-card__btn top10-card__btn--info"
+                  onClick={(e) => { e.stopPropagation(); onClick(movie); }}
                 >
-                  {movie.comingSoon
-                    ? <Bell size={13} color="black" fill="black" />
-                    : <Play size={12} fill="black" color="black" />}
-                </button>
-                <button
-                  className={`top10-card__btn top10-card__btn--icon ${inMyList ? 'top10-card__btn--active' : ''}`}
-                  onClick={handleListToggle}
-                  title={inMyList ? 'Remove from My List' : 'Add to My List'}
-                >
-                  {inMyList ? <Check size={13} color="white" /> : <Plus size={13} color="white" />}
-                </button>
-                <button
-                  className="top10-card__btn top10-card__btn--icon"
-                  onClick={handleLikeToggle}
-                >
-                  <ThumbsUp
-                    size={12}
-                    color={isLiked ? '#46d369' : 'white'}
-                    fill={isLiked ? '#46d369' : 'transparent'}
-                  />
+                  <ChevronDown size={15} color="white" />
                 </button>
               </div>
-              <button
-                className="top10-card__btn top10-card__btn--info"
-                onClick={(e) => { e.stopPropagation(); onClick(movie); }}
-              >
-                <ChevronDown size={15} color="white" />
-              </button>
-            </div>
 
-            {/* Match / age / duration */}
-            <div className="top10-card__meta-row">
-              {movie.comingSoon
-                ? <span style={{ color: '#e5a00d', fontSize: '10px', fontWeight: 700 }}>COMING SOON</span>
-                : <span className="top10-card__match">98% Match</span>}
-              <span className="top10-card__age">{movie.ageRating || '13+'}</span>
-              <span className="top10-card__duration">
-                {movie.comingSoon ? 'TBA' : movie.duration}
-              </span>
-              <span className="top10-card__quality">HD</span>
-            </div>
-
-            {/* Genres */}
-            <div className="top10-card__genres">
-              {movie.genre.slice(0, 3).map((g, i, arr) => (
-                <span key={g}>
-                  {g}
-                  {i < arr.length - 1 && <span className="top10-card__genre-dot">•</span>}
+              {/* Match / age / duration */}
+              <div className="top10-card__meta-row">
+                {movie.comingSoon && <span className="top10-card__coming-soon">COMING SOON</span>}
+                <span className="top10-card__age">{movie.ageRating || '13+'}</span>
+                <span className="top10-card__duration">
+                  {movie.comingSoon ? 'TBA' : movie.duration}
                 </span>
-              ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <HDBadge isSmall={true} />
+                  {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
+                    <SpatialAudioBadge isSmall={true} />
+                  )}
+                </div>
+              </div>
+
+              {/* Genres */}
+              <div className="top10-card__genres">
+                {movie.genre.slice(0, 3).map((g, i, arr) => (
+                  <span key={g}>
+                    {g}
+                    {i < arr.length - 1 && <span className="top10-card__genre-dot">•</span>}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
+
 
 // ─── Top 10 Row ─────────────────────────────────────────────
 export default function Top10Row({

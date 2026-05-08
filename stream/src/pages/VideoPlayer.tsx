@@ -30,6 +30,8 @@ import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
 import { supabase } from '../supabaseClient';
 import { updateWatchProgress, getWatchProgress, deleteWatchProgress, addToRecentlyWatched } from '../services/profileService';
+import { fetchMovieById } from '../services/movieService';
+import type { Movie } from '../data/movies';
 import XRayPanel from '../components/XRayPanel';
 import './VideoPlayer.css';
 
@@ -256,6 +258,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
+  const [audioTracks, setAudioTracks] = useState<any[]>([]);
+  const [activeAudioTrack, setActiveAudioTrack] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isNativePlayer, setIsNativePlayer] = useState(false);
   const [parsedSubtitles, setParsedSubtitles] = useState<Record<string, ParsedCue[]>>({});
@@ -465,9 +469,23 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
   // Mock Data fallback
   const allMovies = [...featuredMovies, afterHours, makingOfLegacy];
-  const baseMovie = useMemo(() => {
+  const baseMovieFromId = useMemo(() => {
     return allMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
   }, [id]);
+
+  const [dbMovie, setDbMovie] = useState<Movie | null>(null);
+
+  useEffect(() => {
+    if (id) {
+      fetchMovieById(id).then(m => {
+        if (m) {
+          setDbMovie(m);
+        }
+      });
+    }
+  }, [id]);
+
+  const baseMovie = dbMovie || baseMovieFromId;
 
   const movie = useMemo(() => {
     if (location.state?.subtitlesUrl) {
@@ -999,6 +1017,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         });
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (hls && hls.audioTracks && hls.audioTracks.length > 0) {
+            setAudioTracks(hls.audioTracks);
+            setActiveAudioTrack(hls.audioTrack);
+          }
           setVideoError(null);
           setIsLoading(false);
           videoRef.current?.play()
@@ -1015,6 +1037,17 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               }
             })
             .catch(err => console.warn("Autoplay blocked or failed:", err));
+        });
+
+        hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
+          if (data.audioTracks && data.audioTracks.length > 0) {
+            setAudioTracks(data.audioTracks);
+            if (hls) setActiveAudioTrack(hls.audioTrack);
+          }
+        });
+
+        hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_event, data) => {
+          setActiveAudioTrack(data.id);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -1857,6 +1890,13 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
   };
 
+  const handleAudioTrackChange = (index: number) => {
+    if (hlsRef.current) {
+      hlsRef.current.audioTrack = index;
+      setActiveAudioTrack(index);
+    }
+  };
+
 
 
   // Shared seek calculation: pure linear from wrapper rect.
@@ -2405,7 +2445,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
 
         {/* X-Ray top-right back button (since the X-Ray panel covers the regular back button) */}
-        {showXRay && !isPortrait && (
+        {showXRay && !isPortrait && !isMobileWindow && (
           <button className="xray-back-button" onClick={() => navigate(-1)} aria-label="Back">
             <ArrowLeft size={42} />
           </button>
@@ -2443,9 +2483,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         {/* X-Ray mobile-only top bar (title + fullscreen) */}
         {showXRay && (
           <div className={`xray-mobile-top-bar mobile-only ${showControls ? 'show' : ''}`}>
-            <button className="back-button" onClick={() => navigate(-1)} aria-label="Back">
-              <ArrowLeft size={28} />
-            </button>
+
             <div className="mobile-top-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0, padding: '0 10px' }}>
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
                 {movie?.id === 'after-hours'
@@ -2458,9 +2496,12 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 </span>
               )}
             </div>
-            <div className="top-right-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="top-right-controls" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
               <button className="flag-button xray-fullscreen-btn" onClick={toggleFullscreen} aria-label="Toggle fullscreen">
                 {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+              </button>
+              <button className="back-button" onClick={() => navigate(-1)} aria-label="Back" style={{ background: 'none', border: 'none', padding: '8px' }}>
+                <ArrowLeft size={28} />
               </button>
             </div>
           </div>
@@ -2670,10 +2711,27 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                       <h4 className="menu-header">Audio</h4>
                       <div className="scrollable-list">
                         <ul className="menu-list">
-                          <li className="menu-item active">
-                            <Check size={20} className="check-icon" />
-                            <span>Filipino [Original]</span>
-                          </li>
+                          {audioTracks.length > 0 ? (
+                            audioTracks.map((track, idx) => (
+                              <li
+                                key={idx}
+                                className={`menu-item ${activeAudioTrack === idx ? "active" : ""}`}
+                                onClick={() => handleAudioTrackChange(idx)}
+                              >
+                                {activeAudioTrack === idx ? <Check size={20} className="check-icon" /> : <span className="spacer-icon" />}
+                                <span>{
+                                  track.name === 'audio_1' ? 'Filipino [Original]' :
+                                  track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
+                                  (track.name || `Track ${idx + 1}`)
+                                }</span>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="menu-item active">
+                              <Check size={20} className="check-icon" />
+                              <span>Filipino [Original]</span>
+                            </li>
+                          )}
                         </ul>
                       </div>
                     </div>
@@ -2796,12 +2854,31 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                   <h4>Audio</h4>
                   <div className="mobile-scroll-container">
                     <ul className="mobile-menu-list">
-                      <li className="mobile-menu-item active">
-                        <div className="mobile-menu-item-left">
-                          <Check size={20} className="mobile-check-icon" />
-                          <span>Filipino [Original]</span>
-                        </div>
-                      </li>
+                      {audioTracks.length > 0 ? (
+                        audioTracks.map((track, idx) => (
+                          <li
+                            key={idx}
+                            className={`mobile-menu-item ${activeAudioTrack === idx ? 'active' : ''}`}
+                            onClick={() => { handleAudioTrackChange(idx); setShowSubtitlesMenu(false); }}
+                          >
+                            <div className="mobile-menu-item-left">
+                              {activeAudioTrack === idx ? <Check size={20} className="mobile-check-icon" /> : <div className="mobile-spacer-icon" />}
+                              <span>{
+                                track.name === 'audio_1' ? 'Filipino [Original]' :
+                                track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
+                                (track.name || `Track ${idx + 1}`)
+                              }</span>
+                            </div>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="mobile-menu-item active">
+                          <div className="mobile-menu-item-left">
+                            <Check size={20} className="mobile-check-icon" />
+                            <span>Filipino [Original]</span>
+                          </div>
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </div>

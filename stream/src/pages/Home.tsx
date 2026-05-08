@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Movie } from '../data/movies';
 import { getWatchProgress, getRecentlyWatched, getProfiles } from '../services/profileService';
-import { fetchMovieRows, type MovieRows } from '../services/movieService';
+import { fetchAllMovies, fetchHomeRows, type ResolvedHomeRow } from '../services/movieService';
 import { allMovies as staticAllMovies } from '../data/movies';
 import type { Profile } from '../services/profileService';
 import './Home.css';
@@ -17,10 +17,13 @@ export default function Home() {
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [dynamicContinueWatching, setDynamicContinueWatching] = useState<Movie[]>([]);
   const [hasWatchedElBimbo, setHasWatchedElBimbo] = useState(false);
-  const [rows, setRows] = useState<MovieRows | null>(null);
+  const [homeRows, setHomeRows] = useState<ResolvedHomeRow[]>([]);
+  const [allMovies, setAllMovies] = useState<Movie[]>(staticAllMovies);
 
+  // Fetch all home rows from Supabase (with static fallback)
   useEffect(() => {
-    fetchMovieRows().then(setRows);
+    fetchHomeRows().then(setHomeRows);
+    fetchAllMovies().then(setAllMovies);
   }, []);
 
   useEffect(() => {
@@ -34,8 +37,6 @@ export default function Home() {
       setActiveProfile(activeP);
 
       if (activeP) {
-        const allMovies = rows?.all ?? staticAllMovies;
-
         // Fetch Continue Watching
         const progress = await getWatchProgress(activeP.id);
         const watchedCW = progress
@@ -56,8 +57,9 @@ export default function Home() {
         setHasWatchedElBimbo(didWatch);
       }
     });
-  }, [rows]);
+  }, [allMovies]);
 
+  // "Because you watched" row (only shown after watching El Bimbo)
   const recommendedIds = [
     'beyond-the-last-dance',
     'minsan',
@@ -66,8 +68,6 @@ export default function Home() {
     'tama-ka-ligaya',
     'tindahan-ni-aling-nena',
   ];
-
-  const allMovies = rows?.all ?? staticAllMovies;
   const recommendedMovies = recommendedIds
     .map((id) => allMovies.find((m) => m.id === id))
     .filter((m): m is Movie => !!m);
@@ -85,6 +85,7 @@ export default function Home() {
 
       {/* Content Rows */}
       <div className="app__rows">
+        {/* Continue Watching — always first, profile-specific */}
         {dynamicContinueWatching.length > 0 && (
           <ContentRow
             title={`Continue Watching for ${activeProfile?.name || 'User'}`}
@@ -93,34 +94,54 @@ export default function Home() {
           />
         )}
 
-        <LiveStreamSection />
+        {/* Dynamic rows fetched from Supabase home_rows table */}
+        {homeRows.map((row) => {
+          if (row.row_type === 'live') {
+            return <LiveStreamSection key={row.id} />;
+          }
 
-        <ContentRow
-          title="G11 Archives"
-          movies={rows?.archiveMovies ?? staticAllMovies}
-        />
+          if (row.row_type === 'top10') {
+            return (
+              <Top10Row
+                key={row.id}
+                title={row.title}
+                movies={row.movies}
+              />
+            );
+          }
 
-        <Top10Row
-          title="Top 10 Titles in LSFPlus Today"
-          movies={[...allMovies].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))}
-        />
+          if (row.row_type === 'collection') {
+            return (
+              <CollectionShowcase
+                key={row.id}
+                title={row.title}
+                subtitle={row.subtitle ?? ''}
+                backgroundImage={row.background_url ?? ''}
+                mobileBackgroundImage={row.mobile_bg_url ?? ''}
+                logoImage={row.logo_url ?? ''}
+                movies={row.movies}
+                onSeeAll={() => navigate(row.see_all_path ?? '/browse')}
+              />
+            );
+          }
 
+          // Default: standard ContentRow
+          return (
+            <ContentRow
+              key={row.id}
+              title={row.title}
+              movies={row.movies}
+            />
+          );
+        })}
+
+        {/* "Because you watched" row — conditional, not managed via home_rows */}
         {hasWatchedElBimbo && recommendedMovies.length > 0 && (
           <ContentRow
             title="Because you watched Ang Huling El Bimbo Play"
             movies={recommendedMovies}
           />
         )}
-
-        <CollectionShowcase
-          title="Ang Huling El Bimbo Collections"
-          subtitle="Browse the complete collection from the world of Ang Huling El Bimbo"
-          backgroundImage="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection.png"
-          mobileBackgroundImage="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/collection-m.webp"
-          logoImage="/images/el-bimbo-logo.webp"
-          movies={rows?.elBimboCollections ?? []}
-          onSeeAll={() => navigate('/collections/el-bimbo')}
-        />
       </div>
     </main>
   );

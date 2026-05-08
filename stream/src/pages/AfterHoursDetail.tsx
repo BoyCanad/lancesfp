@@ -183,7 +183,7 @@ export default function AfterHoursDetail() {
             <span className="mdetail-badge">{movie.ageRating}</span>
             <span className="mdetail-meta-text" style={{ color: '#e50914', fontWeight: 700 }}>{movie.duration}</span>
             <span className="mdetail-badge mdetail-badge-cam">HD</span>
-            <span className="mdetail-rating">★ {movie.rating}</span>
+
           </div>
 
           <div className="mdetail-genres">

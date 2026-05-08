@@ -12,6 +12,7 @@ import ContentRow from '../components/ContentRow';
 import RateButton from '../components/RateButton';
 import BarkadaSection from '../components/BarkadaSection';
 import BehindTheScenesSection from '../components/BehindTheScenesSection';
+import { HDBadge, SpatialAudioBadge } from '../components/AudioBadges';
 import './MovieDetail.css';
 import './MinsanDetail.css'; // Reuse Minsan's cinematic detail styles
 
@@ -271,8 +272,12 @@ export default function MovieDetail() {
             <span className="mdetail-meta-text">{movie.year}</span>
             <span className="mdetail-badge">{movie.ageRating}</span>
             <span className="mdetail-meta-text">{movie.duration}</span>
-            <span className="mdetail-badge mdetail-badge-cam">HD</span>
-            <span className="mdetail-rating">★ {movie.rating}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <HDBadge />
+              {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
+                <SpatialAudioBadge />
+              )}
+            </div>
           </div>
 
           <div className="mdetail-genres">

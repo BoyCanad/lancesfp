@@ -122,7 +122,6 @@
   /* Hollow outline style */
   color: transparent;
   -webkit-text-stroke: 3px rgba(255, 255, 255, 0.8);
-  text-stroke: 3px rgba(255, 255, 255, 0.8);
   user-select: none;
   /* Overlap: number sits behind the thumbnail */
   margin-right: -40px;
@@ -135,6 +134,10 @@
   transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
+.top10-card__rank--one {
+  margin-right: -22px; /* Less overlap for '1' so it moves left relative to the thumbnail, preventing cutoff */
+}
+
 /* Dim adjacent numbers when a card is hovered */
 .top10-card:has(~ .top10-card:hover) .top10-card__rank,
 .top10-card:hover ~ .top10-card .top10-card__rank {
@@ -142,29 +145,30 @@
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 
+/* ─── Shared positioning wrapper for thumb + expanded popup ─── */
+.top10-card__thumb-container {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
 /* ─── Portrait thumbnail ────────────────────────────────────── */
 .top10-card__thumb-wrap {
   position: relative;
-  flex-shrink: 0;
   width: 130px;
   aspect-ratio: 2 / 3;
   border-radius: 8px;
   overflow: hidden;
   background: #1a1a1a;
-  z-index: 2;
-  /* Border glow on hover */
   outline: 2px solid transparent;
   outline-offset: 0;
   transition:
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
     box-shadow 0.4s ease,
     outline-color 0.3s ease;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-  will-change: transform;
 }
 
 .top10-card:hover .top10-card__thumb-wrap {
-  transform: scale(1.05);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
   outline-color: rgba(255, 255, 255, 0.3);
 }
@@ -200,11 +204,12 @@
 }
 
 .top10-card__expanded {
-  /* Pop up centered above the anchor point */
   position: absolute;
-  bottom: 0;
+  top: 0;
+  /* Center the 260px landscape card over the 130px portrait thumb */
   left: 50%;
-  width: 290px;
+  transform: translateX(-50%);
+  width: 260px;
   background: #141414;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.08);
@@ -215,67 +220,44 @@
   z-index: 3000;
   overflow: hidden;
   pointer-events: auto;
-  /* ── The magic: scale from the bottom-center of the card ── */
-  transform-origin: bottom center;
-  animation: top10Expand 0.32s cubic-bezier(0.34, 1.48, 0.64, 1) both;
+  transform-origin: var(--origin, center calc(50% + 5px));
+  animation: top10Expand 0.25s forwards cubic-bezier(0.2, 0, 0.2, 1);
 }
 
-/* Edge-aware positioning */
+/* Edge-aware: first card — expand to the right */
 .top10-card--pos-right .top10-card__expanded {
   left: 0;
-  transform-origin: bottom left;
-  animation-name: top10ExpandRight;
+  transform: none;
+  transform-origin: left calc(50% + 5px);
 }
 
+/* Edge-aware: last cards — expand to the left */
 .top10-card--pos-left .top10-card__expanded {
   left: auto;
   right: 0;
-  transform-origin: bottom right;
-  animation-name: top10ExpandLeft;
+  transform: none;
+  transform-origin: right calc(50% + 5px);
 }
 
-/* ── Keyframes ─────────────────────────────────────────────── */
+/* ── Keyframe: scale from thumbnail footprint ──────────────── */
 @keyframes top10Expand {
-  0% {
-    transform: translateX(-50%) scale(0.7) translateY(12px);
-    opacity: 0;
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(-50%) scale(1) translateY(0);
-    opacity: 1;
-  }
+  0%   { transform: translateX(-50%) scale(1);    opacity: 0; }
+  100% { transform: translateX(-50%) scale(1.35); opacity: 1; }
 }
 
-@keyframes top10ExpandRight {
-  0% {
-    transform: scale(0.7) translateY(12px);
-    opacity: 0;
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+/* Edge variants don't need translateX */
+.top10-card--pos-right .top10-card__expanded,
+.top10-card--pos-left .top10-card__expanded {
+  animation-name: top10ExpandEdge;
 }
 
-@keyframes top10ExpandLeft {
-  0% {
-    transform: scale(0.7) translateY(12px);
-    opacity: 0;
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+@keyframes top10ExpandEdge {
+  0%   { transform: scale(1);    opacity: 0; }
+  100% { transform: scale(1.35); opacity: 1; }
 }
+
+
+
 
 /* ── Preview media area ─────────────────────────────────────── */
 .top10-card__media-wrap {
@@ -500,29 +482,41 @@
   .top10-row__title {
     font-size: 15px !important;
     font-weight: 700 !important;
-    margin-bottom: 0 !important;
+    margin-bottom: 0px !important;
+    line-height: 1.25;
+    white-space: normal;
   }
 
   .top10-row__header {
     margin-bottom: 2px !important;
     padding: 0 4px;
+    align-items: flex-start;
   }
 
   .top10-row__track {
-    gap: 0 !important;
-    padding: 8px 4px !important;
+    gap: 16px !important;
+    padding: 8px 16px !important;
     margin: 0 !important;
   }
 
   .top10-card__rank {
-    font-size: clamp(70px, 18vw, 100px);
-    margin-right: -28px;
-    letter-spacing: -4px;
-    -webkit-text-stroke: 2px rgba(255,255,255,0.85);
+    font-size: clamp(100px, 30vw, 160px);
+    margin-right: -20px; /* Reduced overlap to make it more visible */
+    letter-spacing: -6px;
+    -webkit-text-stroke: 3px rgba(255,255,255,1);
+    color: transparent;
+    margin-bottom: -15px; /* lower it slightly to align with bottom of thumbnail */
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8)); /* Add shadow for extra visibility */
+  }
+
+  .top10-card__rank--one {
+    margin-right: -5px; /* Rank 1 offset */
   }
 
   .top10-card__thumb-wrap {
-    width: 90px;
+    width: 140px;
+    aspect-ratio: 3 / 4;
+    border-radius: 12px;
   }
 
   /* No hover expansion on mobile — tap goes to detail */

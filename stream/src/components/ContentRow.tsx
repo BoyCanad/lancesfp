@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Play, Plus, Check, X, ThumbsUp, ChevronDown,
 import type { Movie } from '../data/movies';
 import { supabase } from '../supabaseClient';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
+import { HDBadge, SpatialAudioBadge } from './AudioBadges';
 import './ContentRow.css';
 
 interface ContentRowProps {
@@ -326,16 +327,19 @@ export const MovieCard = memo(({
             ) : (
               <>
                 <div className="card__metadata-row">
-                  {movie.comingSoon ? (
+                  {movie.comingSoon && (
                     <span className="card__coming-soon">COMING SOON</span>
-                  ) : (
-                    <span className="card__match">98% Match</span>
                   )}
                   <span className="card__age">{movie.ageRating || '13+'}</span>
                   <span className="card__duration">
                     {movie.comingSoon ? 'TBA' : (movie.duration.includes('s') ? `${parseDurationToMin(movie.duration)}m` : movie.duration)}
                   </span>
-                  <span className="card__quality-badge">{movie.quality || 'HD'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <HDBadge isSmall={true} />
+                    {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
+                      <SpatialAudioBadge isSmall={true} />
+                    )}
+                  </div>
                 </div>
                 
                 <div className="card__genres-row">
