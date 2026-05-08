@@ -295,6 +295,99 @@
   text-overflow: ellipsis;
 }
 
+/* Prime Video Premium Trivia Styles */
+.prime-trivia-card {
+  background-color: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.prime-trivia-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.prime-trivia-icon {
+  color: #aaa;
+}
+
+.prime-trivia-body {
+  color: #e5e5e5;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Base override for existing classes */
+.xray-panel__trivia {
+  margin: 8px 18px 16px;
+}
+
+/* Polls (Desktop) */
+.xray-panel__section-title {
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 12px 18px 8px;
+}
+
+.xray-panel__poll {
+  background-color: rgba(255,255,255,0.05);
+  padding: 16px;
+  margin: 0 18px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.xray-panel__poll-question {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.xray-panel__poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xray-panel__poll-option {
+  background-color: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.xray-panel__poll-option:hover {
+  background-color: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.xray-panel__poll-option:active {
+  background-color: rgba(255,255,255,0.25);
+}
+
 /* ── Expanded "All" Panel (right side) ── */
 .xray-all-overlay {
   position: fixed;
@@ -510,6 +603,14 @@
   padding: 12px 14px;
 }
 
+.xray-all-panel__bonus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding: 0 20px 20px 20px;
+}
+
 .xray-all-panel__row--expanded:hover {
   background: rgba(77, 168, 218, 0.12);
 }
@@ -603,6 +704,12 @@
   .xray-all-panel__tab {
     font-size: 0.78rem;
     padding: 8px 12px 6px;
+  }
+
+  .xray-all-panel__bonus-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 0 12px 12px 12px;
   }
 }
 
@@ -791,35 +898,48 @@
 }
 
 .xray-portrait-trivia {
-  display: flex;
-  gap: 16px;
-  background-color: rgba(255,255,255,0.05);
-  padding: 16px;
-  border-radius: 8px;
   margin-top: 16px;
 }
 
-.xray-portrait-trivia-img {
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-  overflow: hidden;
-  flex-shrink: 0;
+/* ── Portrait Polls ── */
+.xray-portrait-poll {
+  background-color: rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 
-.xray-portrait-trivia-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.xray-portrait-trivia-text {
-  flex: 1;
-  color: #ddd;
-  font-size: 0.9rem;
+.xray-portrait-poll-question {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
   line-height: 1.4;
 }
 
-.xray-portrait-trivia-text strong {
+.xray-portrait-poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xray-portrait-poll-option {
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
   color: white;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.xray-portrait-poll-option:hover {
+  background-color: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.xray-portrait-poll-option:active {
+  background-color: rgba(255,255,255,0.3);
 }

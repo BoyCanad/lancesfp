@@ -532,10 +532,16 @@ body { background: #000; }
   text-shadow: 0px 0px 7px rgba(0,0,0,1), 0px 0px 4px rgba(0,0,0,1);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 896px) and (orientation: portrait) {
   .cp-custom-subtitle-container { bottom: 82px; width: 95%; }
-  .cp-custom-subtitle-text { font-size: 1rem; }
+  .cp-custom-subtitle-text { font-size: 0.95rem; }
 }
+
+@media (max-width: 896px) and (orientation: landscape) {
+  .cp-custom-subtitle-text { font-size: 1.6rem; }
+}
+
+
 
 .cp-time {
   color: #e5e5e5;

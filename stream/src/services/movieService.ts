@@ -63,6 +63,8 @@ function buildRows(movies: Movie[]) {
 // ─── Map Supabase row → Movie interface ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapRow(row: any): Movie {
+  const staticEquivalent = staticAllMovies.find((m) => m.id === row.id);
+
   return {
     id: row.id,
     title: row.title,
@@ -99,7 +101,7 @@ function mapRow(row: any): Movie {
     squareThumbnail: row.squareThumbnail ?? undefined,
     tallTrailerUrl: row.tallTrailerUrl ?? undefined,
     mediaType: row.mediaType ?? 'movie',
-    xRay: row.xRay ?? undefined,
+    xRay: staticEquivalent?.xRay ?? row.xRay ?? undefined,
     comingSoon: row.comingSoon || !row.videoUrl || row.videoUrl === '' || row.id === 'beyond-the-last-dance',
   };
 }

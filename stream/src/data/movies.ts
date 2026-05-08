@@ -34,7 +34,8 @@ export interface XRayScene {
   end: number;
   actors?: XRayActor[];
   songs?: XRaySong[];
-  trivia?: string;
+  trivia?: ({ text: string; start?: number; end?: number } | string)[];
+  polls?: { question: string; options: string[]; start?: number; end?: number }[];
 }
 
 export interface XRayData {
@@ -267,6 +268,9 @@ export const featuredMovies: Movie[] = [
             { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 97, end: 349 }] },
             { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 97, end: 349 }] },
             { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 165, end: 349 }] }
+          ],
+          trivia: [
+            { text: "Fun Fact: Every sound you hear is a digital playback. The entire theater audio is actually pre-recorded for a flawless, studio-quality performance.", start: 140, end: 160 }
           ]
         },
         {
@@ -285,6 +289,9 @@ export const featuredMovies: Movie[] = [
             { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 447, end: 709 }] },
             { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 447, end: 709 }] },
             { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 447, end: 709 }] }
+          ],
+          trivia: [
+            { text: "Fun Fact: The moment where the three friends grab and destroy Aling Nena's store was completely unplanned and unscripted.", start: 644, end: 664 }
           ]
         },
         {
@@ -301,6 +308,18 @@ export const featuredMovies: Movie[] = [
             { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 733, end: 1072 }] },
             { name: "Mark Jerzel Tria", character: "Jazzy", image: "/images/xray/jazzy-xray.webp", timeRanges: [{ start: 733, end: 1072 }] },
             { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 759, end: 1072 }] }
+          ],
+          trivia: [
+            { text: "Trivia: Did you know? Some character voices are actually provided by other actors who filled in when the original performers were absent during the recording session.", start: 730, end: 750 },
+            { text: "Trivia: Did you know? The music production and recording sessions were completed in just 4 to 5 days.", start: 974, end: 994 }
+          ],
+          polls: [
+            {
+              question: "Who in the Barkada is your most favorite?",
+              options: ["Marco", "Joy", "Pok", "Xian", "Edrian"],
+              start: 920,
+              end: 940
+            }
           ]
         },
         {
@@ -315,6 +334,9 @@ export const featuredMovies: Movie[] = [
             { name: "Lance Dominguez", character: "Pok", image: "/images/xray/pok-xray.webp", timeRanges: [{ start: 1079, end: 1170 }] },
             { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 1079, end: 1099 }] },
             { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 1079, end: 1099 }] }
+          ],
+          trivia: [
+            { text: "Trivia: Did you know? This entire theater performance was filmed by only three people and edited by just one person.", start: 1169, end: 1189 }
           ]
         },
         {
@@ -343,6 +365,9 @@ export const featuredMovies: Movie[] = [
             { name: "Merv Pring", character: "Marco", image: "/images/xray/marco-xray.webp", timeRanges: [{ start: 1489, end: 1809 }] },
             { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 1523, end: 1556 }, { start: 1673, end: 1687 }, { start: 1763, end: 1809 }] },
             { name: "Edrian Lee Catalan", character: "Edrian", image: "/images/xray/edrian-xray.webp", timeRanges: [{ start: 1673, end: 1687 }, { start: 1763, end: 1809 }] }
+          ],
+          trivia: [
+            { text: "Trivia: Did you know? Some of the songs Marco sings were actually recorded by Edrian because Marco was dealing with vocal injuries during the session.", start: 1493, end: 1513 }
           ]
         },
         {
@@ -367,6 +392,9 @@ export const featuredMovies: Movie[] = [
             { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 1860, end: 2043 }] },
             { name: "Juliana Faith Cordovez", character: "Aling Nena", image: "/images/xray/nena-xray.webp", timeRanges: [{ start: 1868, end: 2005 }] },
             { name: "Dancers", character: "Ensemble", image: "/images/xray/dancers.jpg", timeRanges: [{ start: 2005, end: 2043 }] }
+          ],
+          trivia: [
+            { text: "Fun Fact: Ang Huling El Bimbo Play was the very first production to perform at Teatro Bonifacio.", start: 1941, end: 1961 }
           ]
         },
         {
@@ -398,6 +426,19 @@ export const featuredMovies: Movie[] = [
             { name: "Rich Ann Capuli", character: "Joy", image: "/images/xray/joy-xray.webp", timeRanges: [{ start: 2440, end: 2795 }] },
             { name: "Jan Xian Castro", character: "Xian", image: "/images/xray/xian-xray.webp", timeRanges: [{ start: 2756, end: 2795 }] },
             { name: "Juliana Faith Cordovez", character: "Aling Nena", image: "/images/xray/nena-xray.webp", timeRanges: [{ start: 2756, end: 2795 }] }
+          ],
+          trivia: [
+            { text: "Fun Fact: The entire choreography was finalized just days before the actual performance.", start: 2477, end: 2497 },
+            { text: "Fun Fact: The girls with white strings were originally supposed to appear in this scene, but they were left out by mistake and the production ultimately chose not to include them.", start: 2679, end: 2699 },
+            { text: "Trivia: Did you know? Merv Pring is the one who choreographed the entire performance.", start: 2735, end: 2755 }
+          ],
+          polls: [
+            {
+              question: "Which song is your favorite throughout the entire theater performance?",
+              options: ["Minsan", "Tindahan ni Aling Nena", "Alapaap/Overdrive", "Spoliarium", "Pare Ko", "Tama Ka/Ligaya", "Ang Huling El Bimbo"],
+              start: 2782,
+              end: 2802
+            }
           ]
         },
         {
@@ -406,7 +447,15 @@ export const featuredMovies: Movie[] = [
           songs: [
             { title: "Ang Huling El Bimbo Orchestral Arrangement", artist: "Eraserheads", start: 2799, end: 2980 }
           ],
-          actors: []
+          actors: [],
+          polls: [
+            {
+              question: "Which song is your favorite throughout the entire theater performance?",
+              options: ["Minsan", "Tindahan ni Aling Nena", "Alapaap/Overdrive", "Spoliarium", "Pare Ko", "Tama Ka/Ligaya", "Ang Huling El Bimbo"],
+              start: 2782,
+              end: 2802
+            }
+          ]
         }
       ]
     }

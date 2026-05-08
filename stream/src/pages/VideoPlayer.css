@@ -209,6 +209,19 @@
   }
 }
 
+@media (max-width: 896px) and (orientation: portrait) {
+  .custom-subtitle-text {
+    font-size: 0.95rem; /* Smaller for vertical */
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 896px) and (orientation: landscape) {
+  .custom-subtitle-text {
+    font-size: 1.6rem; /* Larger for horizontal */
+  }
+}
+
 .video-error-overlay {
   position: absolute;
   top: 50%;
