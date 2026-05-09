@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { getProfiles } from '../services/profileService';
 import type { Profile } from '../services/profileService';
 import './IconPicker.css';
