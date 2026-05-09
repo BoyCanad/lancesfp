@@ -140,7 +140,7 @@ const renderKaraokeSubtitle = (text: string, movieId?: string) => {
     }
     
     // Override color for ang-huling-el-bimbo-play: change 0030ff to 00ff83
-    if (movieId === 'ang-huling-el-bimbo-play' && color === '#0030ff') {
+    if ((movieId === 'ang-huling-el-bimbo-play' || movieId === 'ang-huling-el-bimbo-play-xray') && color === '#0030ff') {
       color = '#00ff83';
     }
     
@@ -665,7 +665,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
       // Sync "Mark as Done" with the same logic used for recommendation triggers
       let isAtCredits = false;
-      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'f1' || movie?.id === 'eb1') {
+      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
         isAtCredits = time >= 2910;
       } else if (duration > 0 && (duration - time) <= 15) {
         // Default: 15 seconds before the end
@@ -1760,7 +1760,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
       if (movie?.id && movieTriggers[movie.id]) {
         shouldShowRecommendation = time >= movieTriggers[movie.id];
-      } else if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'f1' || movie?.id === 'eb1') {
+      } else if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
         const floorTime = Math.floor(time);
 
         // Age Rating Timestamps trigger
@@ -2066,7 +2066,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   return (
     <div
       ref={containerRef}
-      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''} ${showXRay && isPortrait && isMobileWindow ? 'portrait-xray-mode' : ''}`}
+      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''} ${showXRay && !isExpandingTrailer && !showRecommendation && isPortrait && isMobileWindow ? 'portrait-xray-mode' : ''}`}
     >
 
       {/* GPU Accelerated Ambient Glow */}
@@ -2172,7 +2172,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               className={`inline-trailer-video ${isTrailerVideoVisible ? 'fade-in' : 'hidden-video'}`}
               playsInline
               autoPlay={false}
-              muted={true}
+              muted={false}
               onTimeUpdate={handleTrailerTimeUpdate}
               onEnded={handleTrailerEnded}
             >
@@ -2186,7 +2186,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               className="inline-trailer-subtitle-overlay"
               style={{
                 position: 'absolute',
-                bottom: showControls ? (isMobileWindow ? '12%' : '15%') : '5%',
+                bottom: isMobileWindow ? '12%' : '7%',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 width: '90%',
@@ -2200,7 +2200,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 className="inline-trailer-subtitle-text"
                 style={{
                   color: 'white',
-                  fontSize: isMobileWindow ? '1.1rem' : '1.5rem',
+                  fontSize: isMobileWindow ? (isPortrait ? '0.85rem' : '1.1rem') : '2.2rem',
                   fontWeight: 600,
                   textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5)',
                   lineHeight: 1.2
@@ -2243,7 +2243,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           </div>
 
           {/* Bottom Branding (Desktop Right, Mobile Left) */}
-          <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} fade-in-actions`}>
+          <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} ${!isTrailerVideoVisible ? 'static-banner-state' : ''} fade-in-actions`}>
             {nextMovie.logo ? (
               <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
             ) : (
@@ -2432,7 +2432,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         )}
 
         {/* Age Rating Overlay - Netflix Style */}
-        <div className={`age-rating-overlay${showXRay ? ' age-rating-overlay--xray' : ''} ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
+        <div className={`age-rating-overlay${showXRay && !isExpandingTrailer && !showRecommendation ? ' age-rating-overlay--xray' : ''} ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
           <div className="age-rating-content">
             <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
             {movie.contentWarnings && movie.contentWarnings.length > 0 && (
@@ -2445,7 +2445,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
 
         {/* X-Ray top-right back button (since the X-Ray panel covers the regular back button) */}
-        {showXRay && !isPortrait && !isMobileWindow && (
+        {showXRay && !isPortrait && !isMobileWindow && !isExpandingTrailer && !showRecommendation && (
           <button className="xray-back-button" onClick={() => navigate(-1)} aria-label="Back">
             <ArrowLeft size={42} />
           </button>
@@ -2481,7 +2481,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         </div>
 
         {/* X-Ray mobile-only top bar (title + fullscreen) */}
-        {showXRay && (
+        {showXRay && !isExpandingTrailer && !showRecommendation && (
           <div className={`xray-mobile-top-bar mobile-only ${showControls ? 'show' : ''}`}>
 
             <div className="mobile-top-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0, padding: '0 10px' }}>
@@ -2955,7 +2955,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       </div>
 
       {/* X-Ray Panel Overlay (Moved outside stage to allow portrait below-video layout) */}
-      {showXRay && movie?.xRay && (
+      {showXRay && movie?.xRay && !isExpandingTrailer && !showRecommendation && (
         <XRayPanel xRay={movie.xRay} currentTime={currentTime} isPortrait={isPortrait && isMobileWindow} onBack={() => navigate(-1)} onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} onShowAllChange={setShowAllPanel} />
       )}
 

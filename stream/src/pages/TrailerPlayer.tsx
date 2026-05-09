@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Play, Info } from 'lucide-react';
+import { ArrowLeft, Play, Info, Volume2, VolumeX } from 'lucide-react';
 import { featuredMovies } from '../data/movies';
 import './TrailerPlayer.css';
 
@@ -9,6 +9,14 @@ export default function TrailerPlayer() {
   const { id } = useParams();
   const movie = featuredMovies.find((m) => m.id === id);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
 
   // Fallback to Minsan trailer if not provided
   const trailerUrl = movie?.trailerUrl || "https://ebrdhrulyjxleytptrpf.supabase.co/storage/v1/object/public/titles/Minsan/MINSAN_TRAILER_MOBILE.mp4";
@@ -25,6 +33,7 @@ export default function TrailerPlayer() {
         src={trailerUrl}
         autoPlay
         playsInline
+        muted={isMuted}
         controls={false}
       />
       
@@ -35,6 +44,10 @@ export default function TrailerPlayer() {
           </div>
           <span className="trailer-back-text">Back to Browse</span>
         </div>
+
+        <button className="trailer-mute-btn" onClick={toggleMute}>
+          {isMuted ? <VolumeX size={24} color="white" /> : <Volume2 size={24} color="white" />}
+        </button>
 
         <div className="trailer-bottom-right">
           {movie.logo ? (

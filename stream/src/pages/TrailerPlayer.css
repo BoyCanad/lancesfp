@@ -63,6 +63,29 @@
   text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
+.trailer-mute-btn {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background-color: transparent;
+  border: 1.5px solid white;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  pointer-events: auto;
+  transition: all 0.2s;
+}
+
+.trailer-mute-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
 .trailer-bottom-right {
   position: absolute;
   bottom: 50px;
@@ -154,6 +177,16 @@
   }
   .trailer-movie-logo {
     max-width: 200px;
+  }
+  .trailer-mute-btn {
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+  }
+  .trailer-mute-btn svg {
+    width: 20px;
+    height: 20px;
   }
   .trailer-btn {
     padding: 8px 16px;
