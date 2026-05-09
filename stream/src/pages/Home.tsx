@@ -10,10 +10,12 @@ import { getWatchProgress, getRecentlyWatched, getProfiles } from '../services/p
 import { fetchAllMovies, fetchHomeRows, type ResolvedHomeRow } from '../services/movieService';
 import { allMovies as staticAllMovies } from '../data/movies';
 import type { Profile } from '../services/profileService';
+import { useLanguage } from '../i18n/LanguageContext';
 import './Home.css';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [dynamicContinueWatching, setDynamicContinueWatching] = useState<Movie[]>([]);
   const [hasWatchedElBimbo, setHasWatchedElBimbo] = useState(false);
@@ -78,6 +80,18 @@ export default function Home() {
     allMovies.find((m) => m.id === 'minsan'),
   ].filter((m): m is Movie => !!m);
 
+  const getTranslatedRowTitle = (title: string) => {
+    const titleKeyMap: Record<string, string> = {
+      'Top 10 Titles in LSFPlus Today': 'row.top10',
+      'Trending Now': 'row.trending',
+      'G11 Archive': 'row.g11_archive',
+      'Top 10': 'row.top10',
+      'The El Bimbo Collection': 'row.el_bimbo_collection'
+    };
+    const key = titleKeyMap[title];
+    return key ? t(key) : title;
+  };
+
   return (
     <main className="app__main">
       {/* Hero Carousel */}
@@ -88,7 +102,7 @@ export default function Home() {
         {/* Continue Watching — always first, profile-specific */}
         {dynamicContinueWatching.length > 0 && (
           <ContentRow
-            title={`Continue Watching for ${activeProfile?.name || 'User'}`}
+            title={t('home.continue_watching', { name: activeProfile?.name || 'User' })}
             movies={dynamicContinueWatching}
             showProgress
           />
@@ -104,7 +118,7 @@ export default function Home() {
             return (
               <Top10Row
                 key={row.id}
-                title={row.title}
+                title={getTranslatedRowTitle(row.title)}
                 movies={row.movies}
               />
             );
@@ -114,7 +128,7 @@ export default function Home() {
             return (
               <CollectionShowcase
                 key={row.id}
-                title={row.title}
+                title={getTranslatedRowTitle(row.title)}
                 subtitle={row.subtitle ?? ''}
                 backgroundImage={row.background_url ?? ''}
                 mobileBackgroundImage={row.mobile_bg_url ?? ''}
@@ -129,7 +143,7 @@ export default function Home() {
           return (
             <ContentRow
               key={row.id}
-              title={row.title}
+              title={getTranslatedRowTitle(row.title)}
               movies={row.movies}
             />
           );
@@ -138,7 +152,7 @@ export default function Home() {
         {/* "Because you watched" row — conditional, not managed via home_rows */}
         {hasWatchedElBimbo && recommendedMovies.length > 0 && (
           <ContentRow
-            title="Because you watched Ang Huling El Bimbo Play"
+            title={t('home.because_watched', { title: 'Ang Huling El Bimbo Play' })}
             movies={recommendedMovies}
           />
         )}

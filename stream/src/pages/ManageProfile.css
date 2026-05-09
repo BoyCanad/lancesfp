@@ -2,24 +2,8 @@
   min-height: 100vh;
   background-color: #f3f3f3;
   color: #333;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   width: 100%;
-}
-
-.mp-header {
-  height: 68px;
-  background-color: white;
-  border-bottom: 1px solid #e5e5e5;
-  display: flex;
-  align-items: center;
-  padding: 0 4%;
-}
-
-.mp-logo {
-  color: #e50914;
-  font-size: 1.5rem;
-  font-weight: bold;
-  letter-spacing: 1px;
 }
 
 .mp-main {
@@ -50,7 +34,7 @@
 
 .mp-title {
   font-size: 2rem;
-  font-weight: 500;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -104,7 +88,7 @@
 
 .mp-row-title {
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 700;
   color: #333;
 }
 
@@ -121,7 +105,7 @@
 
 .mp-section-title {
   font-size: 1.1rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #333;
   margin-bottom: 12px;
 }

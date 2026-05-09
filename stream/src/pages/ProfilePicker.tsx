@@ -4,11 +4,13 @@ import { Lock, Pencil, X, Plus } from 'lucide-react';
 import { getProfiles } from '../services/profileService';
 import type { Profile } from '../services/profileService';
 import { elBimboFeatured } from '../data/movies';
+import { useLanguage } from '../i18n/LanguageContext';
 import './ProfilePicker.css';
 
 export default function ProfilePicker() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const [isManaging, setIsManaging] = useState(false);
 
   useEffect(() => {
@@ -74,6 +76,7 @@ export default function ProfilePicker() {
         setShowPinModal(true);
       } else {
         localStorage.setItem('activeProfile', JSON.stringify(profile));
+        window.dispatchEvent(new Event('profileChanged'));
         // Small delay for visual feedback before navigation starts
         setTimeout(() => navigate('/browse', { state: { fromProfileSwap: true, profileImage: profile.image } }), 400);
       }
@@ -97,6 +100,7 @@ export default function ProfilePicker() {
       if (fullTyped.length === 4) {
         if (fullTyped === selectedProfile?.pin || selectedProfile?.pin === undefined) {
            localStorage.setItem('activeProfile', JSON.stringify(selectedProfile));
+           window.dispatchEvent(new Event('profileChanged'));
            setShowPinModal(false);
            setTimeout(() => {
              navigate('/browse', { state: { fromProfileSwap: true, profileImage: selectedProfile?.image } });
@@ -142,8 +146,8 @@ export default function ProfilePicker() {
           </div>
         )}
 
-        <h1 className="profile-picker__title">
-          {isMobile ? "Choose Your Profile" : "Who's watching?"}
+        <h1 className="profile-picker__title" key={isManaging ? 'manage' : 'choose'}>
+          {isManaging ? t('profile.manage') : (isMobile ? "Choose Your Profile" : t('profile.whos_watching'))}
         </h1>
 
         <ul className="profile-picker__list">
@@ -159,16 +163,12 @@ export default function ProfilePicker() {
                     alt={profile.name}
                     className="profile-picker__avatar"
                   />
-                  {profile.locked && !isManaging && (
-                    <div className="profile-picker__lock-overlay">
-                      <Lock size={16} color="white" />
-                    </div>
-                  )}
-                  {isManaging && (
-                    <div className="profile-picker__edit-overlay">
-                      <Pencil size={32} color="white" />
-                    </div>
-                  )}
+                  <div className={`profile-picker__lock-overlay ${profile.locked && !isManaging ? 'active' : ''}`}>
+                    <Lock size={16} color="white" />
+                  </div>
+                  <div className={`profile-picker__edit-overlay ${isManaging ? 'active' : ''}`}>
+                    <Pencil size={32} color="white" />
+                  </div>
                 </div>
                 <div className="profile-picker__info">
                   <span className="profile-picker__name">{profile.name}</span>
@@ -179,14 +179,14 @@ export default function ProfilePicker() {
               </button>
             </li>
           ))}
-          {isMobile && profiles.length < 5 && !isManaging && (
+          {profiles.length < 5 && (
             <li className="profile-picker__item">
               <button className="profile-picker__btn" onClick={() => navigate('/CreateProfile')}>
-                <div className="profile-picker__avatar-wrapper profile-picker__grid-action-wrapper">
-                  <Plus size={40} color="#a3a3a3" />
+                <div className="profile-picker__avatar-wrapper profile-picker__grid-action-wrapper profile-picker__add-wrapper">
+                  <Plus size={isMobile ? 32 : 48} color="#141414" strokeWidth={3} />
                 </div>
                 <div className="profile-picker__info">
-                  <span className="profile-picker__name">Add Profile</span>
+                  <span className="profile-picker__name">{t('profile.add')}</span>
                 </div>
               </button>
             </li>
@@ -206,21 +206,12 @@ export default function ProfilePicker() {
         </ul>
 
         <div className="profile-picker__actions">
-          {!isMobile && profiles.length < 5 && (
-            <button
-              className="profile-picker__manage-btn"
-              onClick={() => navigate('/CreateProfile')}
-              style={{ marginRight: '1rem' }}
-            >
-              Add Profile
-            </button>
-          )}
           {isManaging ? (
             <button
               className="profile-picker__done-btn"
               onClick={() => setIsManaging(false)}
             >
-              Done
+              {t('profile.done')}
             </button>
           ) : (
             !isMobile && (
@@ -228,7 +219,7 @@ export default function ProfilePicker() {
                 className="profile-picker__manage-btn"
                 onClick={() => setIsManaging(true)}
               >
-                Manage Profiles
+                {t('profile.manage')}
               </button>
             )
           )}

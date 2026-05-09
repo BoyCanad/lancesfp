@@ -3,12 +3,14 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
+import { useLanguage } from '../i18n/LanguageContext';
 
 import CategorySelector from './CategorySelector';
 import './Navbar.css';
 
 export default function Navbar() {
   const location = useLocation();
+  const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -153,13 +155,13 @@ export default function Navbar() {
           </div>
           
           <ul className="navbar__menu">
-            <li className="navbar__menu-item fw-bold" onClick={() => navigate('/browse')}>Home</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/genre/shows')}>Shows</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/genre/movies')}>Movies</li>
-            <li className="navbar__menu-item">Games</li>
-            <li className="navbar__menu-item">New & Popular</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/my-list')}>My List</li>
-            <li className="navbar__menu-item">Browse by Languages</li>
+            <li className="navbar__menu-item fw-bold" onClick={() => navigate('/browse')}>{t('nav.home')}</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/genre/shows')}>{t('nav.shows')}</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/genre/movies')}>{t('nav.movies')}</li>
+            <li className="navbar__menu-item">{t('nav.games')}</li>
+            <li className="navbar__menu-item">{t('nav.new_popular')}</li>
+            <li className="navbar__menu-item" onClick={() => navigate('/my-list')}>{t('nav.mylist')}</li>
+            <li className="navbar__menu-item">{t('nav.browse_lang')}</li>
           </ul>
         </div>
 
@@ -244,7 +246,7 @@ export default function Navbar() {
                           <div className="navbar__dropdown-avatar-wrapper navbar__dropdown-avatar-plus">
                             <Plus size={20} color="#b3b3b3" />
                           </div>
-                          <span className="navbar__dropdown-text">Add Profile</span>
+                          <span className="navbar__dropdown-text">{t('profile.add')}</span>
                         </div>
                       )}
                     </div>
@@ -255,7 +257,7 @@ export default function Navbar() {
                         <div className="navbar__dropdown-icon-wrapper">
                           <Pencil size={20} color="#b3b3b3" />
                         </div>
-                        <span className="navbar__dropdown-text">Manage Profiles</span>
+                        <span className="navbar__dropdown-text">{t('profile.manage')}</span>
                       </div>
                       <div className="navbar__dropdown-item">
                         <div className="navbar__dropdown-icon-wrapper">

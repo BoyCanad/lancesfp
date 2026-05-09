@@ -513,14 +513,57 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
   useEffect(() => {
     if (movie?.subtitles && movie.subtitles.length > 0) {
-      const filIndex = movie.subtitles.findIndex(s => s.label.toLowerCase() === 'filipino');
-      if (filIndex !== -1) {
-        setActiveSubtitle(filIndex);
+      let matchedIndex = -1;
+      
+      if (activeProfileId) {
+        const storedAudioSubStr = localStorage.getItem(`lsfplus_audio_sub_${activeProfileId}`);
+        if (storedAudioSubStr) {
+          try {
+            let preferredLangs: string[] = JSON.parse(storedAudioSubStr);
+            // Prioritize non-English languages over English
+            preferredLangs = preferredLangs.sort((a, b) => {
+              if (a === 'English') return 1;
+              if (b === 'English') return -1;
+              return 0;
+            });
+            const langMap: Record<string, string[]> = {
+              '中文': ['chinese (simplified)', 'chinese', '中文'],
+              '한국어': ['korean', '한국어'],
+              '日本語': ['japanese', '日本語'],
+              'español': ['spanish', 'español'],
+              'français': ['french', 'français'],
+              'deutsch': ['german', 'deutsch'],
+              'português': ['portuguese', 'português'],
+              'italiano': ['italian', 'italiano'],
+              'filipino': ['filipino', 'tagalog']
+            };
+
+            for (const pref of preferredLangs) {
+              const prefLower = pref.toLowerCase();
+              const possibleMatches = langMap[prefLower] || [prefLower];
+              
+              matchedIndex = movie.subtitles.findIndex(s => 
+                possibleMatches.includes(s.label.toLowerCase())
+              );
+              
+              if (matchedIndex !== -1) break;
+            }
+          } catch(e) {}
+        }
+      }
+
+      if (matchedIndex !== -1) {
+        setActiveSubtitle(matchedIndex);
       } else {
-        setActiveSubtitle(0);
+        const filIndex = movie.subtitles.findIndex(s => s.label.toLowerCase() === 'filipino');
+        if (filIndex !== -1) {
+          setActiveSubtitle(filIndex);
+        } else {
+          setActiveSubtitle(0);
+        }
       }
     }
-  }, [movie]);
+  }, [movie, activeProfileId]);
 
   useEffect(() => {
     if (!isClippingMode) {

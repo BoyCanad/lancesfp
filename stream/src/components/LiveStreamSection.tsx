@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getLiveSchedule, subscribeToScheduleChanges } from '../services/epgService';
 import type { EPGProgram } from '../services/epgService';
+import { useLanguage } from '../i18n/LanguageContext';
 import './LiveStreamSection.css';
 
 export default function LiveStreamSection() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [, setEpg] = useState<EPGProgram[]>([]);
   const [isCurrentlyLive, setIsCurrentlyLive] = useState(false);
   const [currentProgram, setCurrentProgram] = useState<EPGProgram | null>(null);
@@ -41,7 +43,7 @@ export default function LiveStreamSection() {
   return (
     <section className="live-row">
       <div className="live-row__header">
-        <h2 className="live-row__title">Live Stream</h2>
+        <h2 className="live-row__title">{t('live.title')}</h2>
       </div>
       
       <div className="live-banner">
@@ -58,12 +60,12 @@ export default function LiveStreamSection() {
                   <div className="pulse-dot"></div>
                   <div className="pulse-ring"></div>
                 </div>
-                LIVE NOW
+                {t('live.now')}
               </div>
             ) : (
               <div className="upcoming-badge">
                 <Star size={12} fill="white" />
-                PREMIERE
+                {t('live.premiere')}
               </div>
             )}
             <img 
@@ -77,7 +79,7 @@ export default function LiveStreamSection() {
               </h3>
             )}
             <p className="live-banner__desc">
-              Join the crew for an exclusive behind-the-scenes live session. Chat, hang out, and see what happens after the show.
+              {t('live.desc')}
             </p>
             <div className="live-banner__actions">
               <button 
@@ -85,13 +87,13 @@ export default function LiveStreamSection() {
                 onClick={() => navigate('/live')}
               >
                 <Play size={20} fill="currentColor" />
-                Watch Now
+                {t('live.watch')}
               </button>
               <button 
                 className="live-banner__btn live-banner__btn--secondary"
                 onClick={() => navigate('/after-hours')}
               >
-                More Info
+                {t('live.more')}
               </button>
             </div>
           </div>

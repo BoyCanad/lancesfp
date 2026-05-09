@@ -20,6 +20,12 @@
   font-size: 3.5rem;
   font-weight: 500;
   margin-bottom: 2rem;
+  animation: titleSwap 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes titleSwap {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .profile-picker__list {
@@ -81,6 +87,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+}
+
+.profile-picker__edit-overlay.active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
 .profile-picker__avatar {
@@ -357,6 +373,15 @@
   background: rgba(0, 0, 0, 0.4);
   padding: 2px;
   border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.profile-picker__lock-overlay.active {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .profile-picker__grid-action-wrapper {
@@ -364,6 +389,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.profile-picker__add-wrapper {
+  background-color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.profile-picker__add-wrapper::before {
+  content: '';
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  background-color: #808080;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  z-index: 1;
+}
+
+/* On mobile, shrink the circle further */
+@media (max-width: 768px) {
+  .profile-picker__add-wrapper::before {
+    width: 45px;
+    height: 45px;
+  }
+}
+
+.profile-picker__btn:hover .profile-picker__add-wrapper::before {
+  background-color: #e5e5e5;
+}
+
+/* Ensure the Plus icon is above the pseudo-element circle */
+.profile-picker__add-wrapper svg {
+  position: relative;
+  z-index: 2;
 }
 
 @media (max-width: 768px) {

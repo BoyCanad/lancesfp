@@ -4,7 +4,7 @@
   min-height: 100vh;
   color: #fff;
   padding-bottom: 40px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .edit-profile__header {
@@ -220,7 +220,7 @@ input:checked + .netflix-slider:before {
   background-color: #fff;
   min-height: 100vh;
   color: #333;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   padding-bottom: 50px;
 }
 

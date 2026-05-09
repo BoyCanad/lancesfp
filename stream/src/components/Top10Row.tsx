@@ -213,14 +213,19 @@ function Top10Card({
                 />
               )}
 
-              {/* Vol toggle */}
-              {movie.trailerUrl && (
-                <button
-                  className="top10-card__vol-btn"
-                  onClick={(e) => { e.stopPropagation(); setIsMuted(m => !m); }}
-                >
-                  {isMuted ? <VolumeX size={14} color="white" /> : <Volume2 size={14} color="white" />}
-                </button>
+              {/* Vol toggle & Logo */}
+              {movie.trailerUrl && isPlayingTrailer && (
+                <>
+                  <button
+                    className="top10-card__vol-btn"
+                    onClick={(e) => { e.stopPropagation(); setIsMuted(m => !m); }}
+                  >
+                    {isMuted ? <VolumeX size={14} color="white" /> : <Volume2 size={14} color="white" />}
+                  </button>
+                  {movie.logo && (
+                    <img src={movie.logo} alt="" className="top10-card__video-logo" />
+                  )}
+                </>
               )}
             </div>
 

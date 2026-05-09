@@ -187,6 +187,11 @@ export const featuredMovies: Movie[] = [
         label: "Karaoke",
         srclang: "fil",
         url: "https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/(KARAOKE)AngHulingElBimboPlay.vtt"
+      },
+      {
+        label: "中文",
+        srclang: "zh",
+        url: "https://boycanad.github.io/stream-storage-1/AngHulingElBimboPlayEnglish.vtt"
       }
     ],
     spriteUrl: "/images/storyboards/sprite_5s_hq_synced.jpg",
@@ -240,6 +245,11 @@ export const featuredMovies: Movie[] = [
         label: "Karaoke",
         srclang: "fil",
         url: "https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/(KARAOKE)AngHulingElBimboPlay.vtt"
+      },
+      {
+        label: "中文",
+        srclang: "zh",
+        url: "https://boycanad.github.io/stream-storage-1/AngHulingElBimboPlayEnglish.vtt"
       }
     ],
     spriteUrl: "/images/storyboards/sprite_5s_hq_synced.jpg",

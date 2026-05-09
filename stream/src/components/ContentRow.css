@@ -123,6 +123,7 @@
   display: flex;
   gap: 14px;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   /* Adjusted paddings to favor upward expansion, minimizing blank page bottoms */
   padding: 150px 0 150px 0;
@@ -151,22 +152,20 @@
 /* Arrows */
 .row__arrow {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 150px;
+  bottom: 150px;
   z-index: 50;
-  background: rgba(13, 13, 20, 0.85);
-  border: 1px solid var(--border);
   color: white;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 4%;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
-  transition: background 0.2s, transform 0.2s, opacity 0.3s ease;
+  transition: opacity 0.3s ease, background 0.3s ease;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .row:hover .row__arrow {
@@ -174,13 +173,27 @@
   pointer-events: auto;
 }
 
-.row__arrow:hover {
-  background: rgba(124, 58, 237, 0.6);
-  transform: translateY(-50%) scale(1.08);
+.row__arrow--left {
+  left: 0;
+  background: linear-gradient(to right, rgba(20, 20, 20, 0.7) 0%, transparent 100%);
 }
 
-.row__arrow--left  { left: -18px; }
-.row__arrow--right { right: -18px; }
+.row__arrow--right {
+  right: 0;
+  background: linear-gradient(to left, rgba(20, 20, 20, 0.7) 0%, transparent 100%);
+}
+
+.row__arrow:hover {
+  background: rgba(20, 20, 20, 0.85);
+}
+
+.row__arrow svg {
+  transition: transform 0.2s ease;
+}
+
+.row__arrow:hover svg {
+  transform: scale(1.4);
+}
 
 
 /* ─── Card ────────────────────────────────────────────────── */

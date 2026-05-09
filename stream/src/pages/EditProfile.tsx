@@ -5,8 +5,6 @@ import {
   Pencil, 
   ShieldAlert, 
   Lock, 
-  Languages, 
-  MessageSquareText, 
   Type, 
   Trash2,
   Gamepad2,
@@ -15,12 +13,15 @@ import {
 import { useState, useEffect } from 'react';
 import { getProfiles, updateProfile, deleteProfile as deleteProfileService } from '../services/profileService';
 import type { Profile } from '../services/profileService';
+import { useLanguage } from '../i18n/LanguageContext';
+import SettingsHeader from '../components/SettingsHeader';
 import './EditProfile.css';
 
 export default function EditProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState('');
   const [image, setImage] = useState('');
@@ -92,7 +93,7 @@ export default function EditProfile() {
           >
             <ArrowLeft size={28} color="white" />
           </button>
-          <h1 className="edit-profile__title">{loading ? 'Saving...' : 'Edit Profile'}</h1>
+          <h1 className="edit-profile__title">{loading ? t('settings.saving') : t('edit.title')}</h1>
         </header>
 
         <main className="edit-profile__content">
@@ -133,28 +134,6 @@ export default function EditProfile() {
                 <div className="edit-profile__item-text">
                   <span className="edit-profile__item-title">Profile lock</span>
                   <span className="edit-profile__item-sub">Add a 4-digit PIN to this profile</span>
-                </div>
-              </div>
-              <ChevronRight size={24} color="#666" />
-            </div>
-
-            <div className="edit-profile__item">
-              <div className="edit-profile__item-left">
-                <Languages size={24} color="#e5e5e5" />
-                <div className="edit-profile__item-text">
-                  <span className="edit-profile__item-title">Display Language</span>
-                  <span className="edit-profile__item-sub">Change the language of the text you see on LSFPlus across all devices.</span>
-                </div>
-              </div>
-              <ChevronRight size={24} color="#666" />
-            </div>
-
-            <div className="edit-profile__item">
-              <div className="edit-profile__item-left">
-                <MessageSquareText size={24} color="#e5e5e5" />
-                <div className="edit-profile__item-text">
-                  <span className="edit-profile__item-title">Audio & Subtitle Languages</span>
-                  <span className="edit-profile__item-sub">Choose the languages you like to watch shows and movies in.</span>
                 </div>
               </div>
               <ChevronRight size={24} color="#666" />
@@ -204,7 +183,7 @@ export default function EditProfile() {
             <div className="edit-profile__footer">
               <button className="edit-profile__delete-btn" onClick={handleDelete}>
                 <Trash2 size={24} />
-                <span>Delete Profile</span>
+                <span>{t('manage.delete')}</span>
               </button>
             </div>
           )}
@@ -216,18 +195,14 @@ export default function EditProfile() {
   // --- Desktop Version ---
   return (
     <div className="ep-container">
-      <header className="ep-header">
-        <div className="ep-logo" onClick={() => navigate('/browse')}>
-          <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '45px' }} />
-        </div>
-      </header>
+      <SettingsHeader />
 
       <main className="ep-main">
         <div className="ep-back-title">
           <button className="ep-back-btn" onClick={() => navigate(`/ManageProfile/${profile.id}`)}>
              <ArrowLeft size={24} />
           </button>
-          <h1 className="ep-title">Edit Profile</h1>
+          <h1 className="ep-title">{t('edit.title')}</h1>
         </div>
 
         <div className="ep-card">
@@ -243,7 +218,7 @@ export default function EditProfile() {
             </div>
 
             <div className="ep-input-group">
-              <label className="ep-label">Profile name</label>
+              <label className="ep-label">{t('edit.name_label')}</label>
               <input
                 type="text"
                 className="ep-input"
@@ -258,8 +233,8 @@ export default function EditProfile() {
               <div className="ep-contact-left">
                 <Gamepad2 size={24} color="#333" />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span className="ep-contact-label">Game Handle</span>
-                  <span className="ep-contact-sub">Set a game handle to connect with others</span>
+                  <span className="ep-contact-label">{t('edit.game_handle')}</span>
+                  <span className="ep-contact-sub">{t('edit.game_sub')}</span>
                 </div>
               </div>
               <ChevronRight size={20} color="#737373" />
@@ -279,14 +254,14 @@ export default function EditProfile() {
 
           <div className="ep-action-buttons" style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
             <button className="ep-save-btn" onClick={handleSave} disabled={loading}>
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? t('settings.saving') : t('settings.save')}
             </button>
             <button className="ep-cancel-btn" onClick={() => navigate(`/ManageProfile/${profile.id}`)}>
-              Cancel
+              {t('settings.cancel')}
             </button>
             {profile.display_order !== 0 && (
               <button className="ep-delete-btn" onClick={handleDelete} style={{ marginLeft: 'auto' }}>
-                <Trash2 size={20} /> Delete Profile
+                <Trash2 size={20} /> {t('manage.delete')}
               </button>
             )}
           </div>

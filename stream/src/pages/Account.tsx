@@ -10,14 +10,14 @@ import {
   ChevronRight, 
   Layers, 
   Mail,
-  Zap,
   Lock,
   Check,
   MonitorSmartphone,
   ShieldAlert,
-  Users
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { getProfiles, type Profile } from '../services/profileService';
+import SettingsHeader from '../components/SettingsHeader';
 import './Account.css';
 
 export default function Account() {
@@ -25,6 +25,7 @@ export default function Account() {
   const location = useLocation() as any;
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [activeProfile, setActiveProfile] = useState<any>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'membership' | 'security' | 'devices' | 'profiles'>('overview');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   
@@ -36,15 +37,27 @@ export default function Account() {
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [signOutAll, setSignOutAll] = useState(true);
 
+  const [memberSince, setMemberSince] = useState<string>('April 2020');
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserEmail(user.email ?? null);
+      if (user) {
+        setUserEmail(user.email ?? null);
+        if (user.created_at) {
+          const date = new Date(user.created_at);
+          const month = date.toLocaleString('default', { month: 'long' });
+          const year = date.getFullYear();
+          setMemberSince(`${month} ${year}`);
+        }
+      }
     });
 
     const stored = localStorage.getItem('activeProfile');
     if (stored) {
       setActiveProfile(JSON.parse(stored));
     }
+
+    getProfiles().then(setProfiles).catch(console.error);
 
     // Check if we arrived here via a password recovery link
     if (location.state?.recover) {
@@ -135,16 +148,10 @@ export default function Account() {
             <section className="mobile-account-section">
               <h2 className="mobile-section-title">Membership Details</h2>
               <div className="mobile-card">
-                <div className="mobile-card-badge">Member since April 2020</div>
+                <div className="mobile-card-badge">Member since {memberSince}</div>
                 <div className="mobile-card-main">
-                  <h3 className="mobile-plan-name">Premium plan</h3>
-                  <p className="mobile-payment-info">Next payment: May 4, 2026</p>
-                  <div className="mobile-payment-method">
-                    <div className="mobile-provider-logo">
-                        <Zap size={14} fill="#0d68b1" color="#0d68b1" />
-                    </div>
-                    <span>Celcom *** *** ***0499</span>
-                  </div>
+                  <h3 className="mobile-plan-name">Free plan</h3>
+                  <p className="mobile-payment-info">{userEmail || 'zedsmash154@gmail.com'}</p>
                 </div>
                 
                 <div className="mobile-card-links">
@@ -183,16 +190,6 @@ export default function Account() {
                     </div>
                     <ChevronRight size={20} color="#333" />
                 </button>
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <Smartphone size={22} color="#333" />
-                      <div className="mobile-link-text">
-                        <span>Mobile phone</span>
-                        <p>016-742 8352</p>
-                      </div>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
-                </button>
               </div>
             </section>
 
@@ -211,6 +208,33 @@ export default function Account() {
 
             <section className="mobile-account-section">
               <h2 className="mobile-section-title">Profiles</h2>
+              <div className="mobile-profiles-list">
+                {profiles.map((p) => (
+                  <div key={p.id} className="mobile-profile-item" onClick={() => navigate(`/ManageProfile/${p.id}`)}>
+                    <div className="mobile-profile-left">
+                      <img src={p.image} alt={p.name} className="mobile-profile-avatar" />
+                      <div className="mobile-profile-info">
+                        <span className="mobile-profile-name">{p.name}</span>
+                        <span className="mobile-profile-sub">All Maturity Ratings</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} color="#333" />
+                  </div>
+                ))}
+                
+                {profiles.length < 5 && (
+                  <button className="mobile-add-profile-btn" onClick={() => navigate('/CreateProfile')}>
+                    <div className="mobile-add-icon-wrapper">
+                      <span className="mobile-add-plus">+</span>
+                    </div>
+                    <span>Add Profile</span>
+                  </button>
+                )}
+              </div>
+            </section>
+
+            <section className="mobile-account-section">
+              <h2 className="mobile-section-title">Parental Controls</h2>
               <div className="mobile-card">
                 <button className="mobile-card-link mobile-card-link--large">
                     <div className="mobile-card-link-left">
@@ -223,13 +247,6 @@ export default function Account() {
                     <div className="mobile-card-link-left">
                       <ShieldCheck size={22} color="#333" />
                       <span>Privacy and data settings</span>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
-                </button>
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <Users size={22} color="#333" />
-                      <span>Profile Transfer</span>
                     </div>
                     <ChevronRight size={20} color="#333" />
                 </button>
@@ -319,24 +336,7 @@ export default function Account() {
       <MobileAccountView />
       
       <div className="desktop-account-layout">
-        {/* Top Navbar */}
-        <nav className="account-nav">
-        <div className="account-nav__left">
-          <div className="account-nav__logo" onClick={() => navigate('/browse')}>
-            <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '35px' }} />
-          </div>
-        </div>
-        <div className="account-nav__right">
-          <div className="account-nav__profile">
-            <img 
-              src={activeProfile?.image || "/images/avatar-1.png"} 
-              alt="Profile" 
-              className="account-nav__avatar" 
-            />
-            <span className="account-nav__caret">▼</span>
-          </div>
-        </div>
-      </nav>
+        <SettingsHeader />
 
       <div className={`account-layout ${isChangingPassword ? 'changing-password' : ''}`}>
         {/* Sidebar */}
@@ -469,21 +469,13 @@ export default function Account() {
                   <section className="account-section">
                     <div className="account-card">
                       <div className="account-badge">
-                        Member since April 2020
+                        Member since {memberSince}
                       </div>
                       
                       <div className="account-card__body">
                         <div className="account-plan-info">
-                          <h2 className="account-plan-title">Premium plan</h2>
-                          <p className="account-payment-date">Next payment: 4 May 2026</p>
-                          
-                          <div className="account-payment-method">
-                            <div className="celcom-logo">
-                              <div className="celcom-icon"><Zap size={14} fill="#0d68b1" color="#0d68b1" /></div>
-                              <span>Celcom</span>
-                            </div>
-                            <span className="account-masked-number">*** *** ***0499</span>
-                          </div>
+                          <h2 className="account-plan-title">Free plan</h2>
+                          <p className="account-payment-date">{userEmail || 'zedsmash154@gmail.com'}</p>
                         </div>
                       </div>
 
@@ -608,7 +600,73 @@ export default function Account() {
             </>
           )}
 
-              {(activeTab !== 'overview' && activeTab !== 'security') && (
+              {activeTab === 'profiles' && (
+                <>
+                  <h1 className="account-title">Profiles</h1>
+                  <p className="account-subtitle">Manage profiles and parental controls for your account.</p>
+
+                  <section className="account-section">
+                    <div className="account-quick-links-card">
+                       <button className="account-link-item">
+                        <div className="account-link-item__left">
+                          <Smile size={22} className="account-link-icon" />
+                          <div className="account-link-text-stack">
+                            <span>Transfer a profile</span>
+                            <p className="account-link-desc">Copy a profile to another account</p>
+                          </div>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+                      <button className="account-link-item">
+                        <div className="account-link-item__left">
+                          <ShieldAlert size={22} className="account-link-icon" />
+                          <div className="account-link-text-stack">
+                            <span>Adjust parental controls</span>
+                            <p className="account-link-desc">Set maturity ratings and block titles for all profiles.</p>
+                          </div>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+                    </div>
+                  </section>
+
+                  <p className="account-section-label">Profile Settings</p>
+                  
+                  <section className="account-section">
+                    <div className="account-quick-links-card account-profiles-card">
+                      {profiles.map((p) => (
+                        <button key={p.id} className="account-link-item" onClick={() => navigate(`/ManageProfile/${p.id}`)}>
+                          <div className="account-link-item__left">
+                            <img src={p.image} alt={p.name} className="account-profile-avatar" />
+                            <div className="account-link-text-stack">
+                              <div className="account-profile-name-row">
+                                <span>{p.name}</span>
+                                {activeProfile?.id === p.id && (
+                                  <span className="account-profile-badge">Your Profile</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight size={20} color="#666" />
+                        </button>
+                      ))}
+
+                      {profiles.length < 5 && (
+                        <div className="account-add-profile-section">
+                          <button className="account-add-profile-btn-large" onClick={() => navigate('/CreateProfile')}>
+                            Add Profile
+                          </button>
+                          <p className="account-add-profile-caption">
+                            Add up to 5 profiles for anyone who lives with you.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {(activeTab !== 'overview' && activeTab !== 'security' && activeTab !== 'profiles') && (
                 <div className="account-placeholder">
                   <h1 className="account-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
                   <p className="account-subtitle">Coming soon...</p>

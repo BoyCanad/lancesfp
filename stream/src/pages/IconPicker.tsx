@@ -25,52 +25,63 @@ const elBimboIcons = [
   'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/images/icon/8.webp',
 ];
 
+const avataaarsIcons = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka&backgroundColor=ffdfbf',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sasha&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Toby&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&backgroundColor=ffdfbf',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Coco&backgroundColor=d1d4f9',
+];
+
+const personasIcons = [
+  'https://api.dicebear.com/7.x/personas/svg?seed=Lucky&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Garfield&backgroundColor=ffdfbf',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Cuddles&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Midnight&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Shadow&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Oliver&backgroundColor=ffdfbf',
+];
+
+const loreleiIcons = [
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=Bear&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=Lilly&backgroundColor=ffdfbf',
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=Peanut&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=Simba&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=Daisy&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=Nala&backgroundColor=ffdfbf',
+];
+
+const bigEarsIcons = [
+  'https://api.dicebear.com/7.x/big-ears/svg?seed=Boots&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/big-ears/svg?seed=Tiger&backgroundColor=ffdfbf',
+  'https://api.dicebear.com/7.x/big-ears/svg?seed=Oscar&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/big-ears/svg?seed=Gracie&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/big-ears/svg?seed=Ziggy&backgroundColor=b6e3f4',
+];
+
+const pixelIcons = [
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Mario&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Luigi&backgroundColor=ffdfbf',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Yoshi&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Peach&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Toad&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Bowser&backgroundColor=ffdfbf',
+];
+
 function IconRow({
   icons,
   label,
-  showArrows,
   onSelect,
 }: {
   icons: string[];
   label: string;
-  showArrows: boolean;
   onSelect: (icon: string) => void;
 }) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const checkScroll = () => {
-    const el = rowRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  };
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, [icons]);
-
-  const scrollLeft = () => rowRef.current?.scrollBy({ left: -360, behavior: 'smooth' });
-  const scrollRight = () => rowRef.current?.scrollBy({ left: 360, behavior: 'smooth' });
-
-  const showLeft = showArrows && canScrollLeft;
-  const showRight = showArrows && canScrollRight;
-
   return (
     <div className="ip-icon-row-wrapper">
-      {showLeft && (
-        <div className="ip-left-scroll" onClick={scrollLeft}>
-          <ChevronLeft size={28} />
-        </div>
-      )}
-      <div
-        className="ip-icon-row"
-        ref={rowRef}
-        onScroll={checkScroll}
-      >
+      <div className="ip-icon-row">
         {icons.map((icon, idx) => (
           <img
             key={idx}
@@ -81,11 +92,6 @@ function IconRow({
           />
         ))}
       </div>
-      {showRight && (
-        <div className="ip-right-scroll" onClick={scrollRight}>
-          <ChevronRight size={28} />
-        </div>
-      )}
     </div>
   );
 }
@@ -150,20 +156,45 @@ export default function IconPicker() {
           {historyIcons.length > 0 && (
             <div className="ip-category">
               <h2 className="ip-category-title">History</h2>
-              <IconRow icons={historyIcons} label="History" showArrows={true} onSelect={handleSelect} />
+              <IconRow icons={historyIcons} label="History" onSelect={handleSelect} />
             </div>
           )}
 
           <div className="ip-category">
             <h2 className="ip-category-title">The Classics</h2>
-            <IconRow icons={classicsIcons} label="Classic" showArrows={false} onSelect={handleSelect} />
+            <IconRow icons={classicsIcons} label="Classic" onSelect={handleSelect} />
           </div>
 
           <div className="ip-category">
             <div className="ip-category-header">
-              <img src="/images/el-bimbo-logo.webp" alt="Ang Huling El Bimbo" className="ip-category-logo" />
+              <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/el-bimbo-p.webp" alt="Ang Huling El Bimbo" className="ip-category-logo" />
             </div>
-            <IconRow icons={elBimboIcons} label="Ang Huling El Bimbo" showArrows={true} onSelect={handleSelect} />
+            <IconRow icons={elBimboIcons} label="Ang Huling El Bimbo" onSelect={handleSelect} />
+          </div>
+
+          <div className="ip-category">
+            <h2 className="ip-category-title">Avataaars</h2>
+            <IconRow icons={avataaarsIcons} label="Avataaar" onSelect={handleSelect} />
+          </div>
+
+          <div className="ip-category">
+            <h2 className="ip-category-title">Personas</h2>
+            <IconRow icons={personasIcons} label="Persona" onSelect={handleSelect} />
+          </div>
+
+          <div className="ip-category">
+            <h2 className="ip-category-title">Lorelei</h2>
+            <IconRow icons={loreleiIcons} label="Lorelei" onSelect={handleSelect} />
+          </div>
+
+          <div className="ip-category">
+            <h2 className="ip-category-title">Big Ears</h2>
+            <IconRow icons={bigEarsIcons} label="Big Ear" onSelect={handleSelect} />
+          </div>
+
+          <div className="ip-category">
+            <h2 className="ip-category-title">Pixel Art</h2>
+            <IconRow icons={pixelIcons} label="Pixel" onSelect={handleSelect} />
           </div>
         </div>
       </main>

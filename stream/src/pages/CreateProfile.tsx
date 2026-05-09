@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
-import { createProfile } from '../services/profileService';
+import { createProfile, getProfiles } from '../services/profileService';
 import './CreateProfile.css';
 
 const iconCategories = {
@@ -31,6 +31,14 @@ export default function CreateProfile() {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    getProfiles().then(profiles => {
+      if (profiles.length >= 5) {
+        navigate('/');
+      }
+    });
+  }, [navigate]);
 
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,48 +91,6 @@ export default function CreateProfile() {
               </div>
             </div>
 
-            {/* Inline Icon Picker */}
-            {showIconPicker && (
-              <div className="cp-icon-picker">
-                <p className="cp-icon-picker-label">Choose a profile icon</p>
-                
-                <div className="cp-picker-section">
-                  <h3 className="cp-picker-category-title">The Classics</h3>
-                  <div className="cp-icon-grid">
-                    {iconCategories.classics.map((icon, idx) => (
-                      <img
-                        key={idx}
-                        src={icon}
-                        alt={`Classic Icon ${idx + 1}`}
-                        className={`cp-icon-option ${selectedIcon === icon ? 'cp-icon-option--selected' : ''}`}
-                        onClick={() => {
-                          setSelectedIcon(icon);
-                          setShowIconPicker(false);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="cp-picker-section">
-                  <h3 className="cp-picker-category-title">Ang Huling El Bimbo</h3>
-                  <div className="cp-icon-grid">
-                    {iconCategories.elBimbo.map((icon, idx) => (
-                      <img
-                        key={idx}
-                        src={icon}
-                        alt={`El Bimbo Icon ${idx + 1}`}
-                        className={`cp-icon-option ${selectedIcon === icon ? 'cp-icon-option--selected' : ''}`}
-                        onClick={() => {
-                          setSelectedIcon(icon);
-                          setShowIconPicker(false);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="cp-actions">
               <button
@@ -145,6 +111,56 @@ export default function CreateProfile() {
           </form>
         </div>
       </div>
+      
+      {/* Icon Picker Popup */}
+      {showIconPicker && (
+        <div className="cp-modal-overlay" onClick={() => setShowIconPicker(false)}>
+          <div className="cp-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="cp-modal-header">
+              <h2 className="cp-modal-title">Choose your avatar</h2>
+              <button className="cp-modal-close" onClick={() => setShowIconPicker(false)}>×</button>
+            </div>
+            
+            <div className="cp-icon-picker-scroll">
+              <div className="cp-picker-section">
+                <h3 className="cp-picker-category-title">The Classics</h3>
+                <div className="cp-icon-grid">
+                  {iconCategories.classics.map((icon, idx) => (
+                    <img
+                      key={idx}
+                      src={icon}
+                      alt={`Classic Icon ${idx + 1}`}
+                      className={`cp-icon-option ${selectedIcon === icon ? 'cp-icon-option--selected' : ''}`}
+                      onClick={() => {
+                        setSelectedIcon(icon);
+                        setShowIconPicker(false);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="cp-picker-section">
+                <h3 className="cp-picker-category-title">Ang Huling El Bimbo</h3>
+                <div className="cp-icon-grid">
+                  {iconCategories.elBimbo.map((icon, idx) => (
+                    <img
+                      key={idx}
+                      src={icon}
+                      alt={`El Bimbo Icon ${idx + 1}`}
+                      className={`cp-icon-option ${selectedIcon === icon ? 'cp-icon-option--selected' : ''}`}
+                      onClick={() => {
+                        setSelectedIcon(icon);
+                        setShowIconPicker(false);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

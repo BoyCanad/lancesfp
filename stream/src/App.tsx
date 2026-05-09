@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import LoadingSpinner from './components/LoadingSpinner';
+import { useLanguage } from './i18n/LanguageContext';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
 import ElBimboCollection from './pages/ElBimboCollection';
@@ -32,19 +33,21 @@ import Account from './pages/Account';
 import MyNetflix from './pages/MyNetflix';
 import ForgotPassword from './pages/ForgotPassword';
 import Introduction from './pages/Introduction';
+import LanguageSettings from './pages/LanguageSettings';
 import './App.css';
 
 function App() {
   const location = useLocation();
   const { pathname } = location;
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
 
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
-  const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock');
+  const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock') || pathname.startsWith('/LanguageSettings');
   const isAuth = pathname === '/login' || pathname === '/introduction';
   const isForgotPassword = pathname === '/forgot-password';
   const isAccount = pathname === '/account';
@@ -243,6 +246,7 @@ function App() {
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
         <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
       </Routes>
 
       {showNavAndFooter && (
@@ -253,7 +257,7 @@ function App() {
                 <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '32px' }} />
               </div>
               <p className="app__footer-text">
-                © 2025 LSFPlus, Inc. All rights reserved.
+                © 2025 LSFPlus, Inc. {t('footer.rights')}
               </p>
             </footer>
           )}

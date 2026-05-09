@@ -130,21 +130,73 @@
   margin-top: 8px;
 }
 
-/* Inline Icon Picker */
-.cp-icon-picker {
-  background: #1e1e1e;
-  border-radius: 6px;
-  padding: 1.2rem 1.5rem;
-  animation: fadeIn 0.2s ease;
+/* Modal Popup */
+.cp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(8px);
+  animation: cpFadeIn 0.3s ease;
 }
 
-.cp-icon-picker-label {
-  font-size: 1.2rem;
-  color: white;
-  font-weight: 500;
-  margin: 0 0 1.5rem 0;
+.cp-modal-content {
+  background: #141414;
+  width: 90%;
+  max-width: 750px;
+  max-height: 80vh;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,1);
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-modal-header {
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #333;
-  padding-bottom: 0.5rem;
+}
+
+.cp-modal-title {
+  font-size: 2rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.cp-modal-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: transform 0.2s;
+}
+
+.cp-modal-close:hover {
+  transform: scale(1.1);
+}
+
+.cp-icon-picker-scroll {
+  padding: 2rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.cp-icon-picker-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cp-icon-picker-scroll::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
 }
 
 .cp-picker-section {
@@ -241,6 +293,11 @@
 .cp-cancel-btn:hover {
   border-color: white;
   color: white;
+}
+
+@keyframes cpFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes fadeIn {

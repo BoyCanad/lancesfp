@@ -5,9 +5,11 @@ import { supabase } from '../supabaseClient';
 import type { Movie } from '../data/movies';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import { HDBadge, SpatialAudioBadge } from './AudioBadges';
+import { useLanguage } from '../i18n/LanguageContext';
 import './HeroCarousel.css';
 
 function HeroListButton({ movie }: { movie: Movie }) {
+  const { t } = useLanguage();
   const [inList, setInList] = useState(() => isInMyList(movie.id));
 
   useEffect(() => {
@@ -26,7 +28,7 @@ function HeroListButton({ movie }: { movie: Movie }) {
   return (
     <button className="hero__btn hero__btn--secondary" onClick={toggleList}>
       {inList ? <Check size={15} strokeWidth={2.5} /> : <Plus size={15} strokeWidth={2.5} />} 
-      My List
+      {t('hero.my_list')}
     </button>
   );
 }
@@ -46,6 +48,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const movies = allMovies.filter(m => !isMobile || !m.desktopOnly);
 
@@ -194,9 +197,9 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
               onClick={() => !movie.comingSoon && handlePlay(movie)}
               disabled={movie.comingSoon}
             >
-              {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? 'Remind Me' : 'Play'}
+              {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? t('hero.remind_me') : t('hero.play')}
             </button>
-            <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
+            <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> {t('hero.more_info')}</button>
             <HeroListButton movie={movie} />
           </div>
         </div>
@@ -258,9 +261,9 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                         onClick={() => !movie.comingSoon && handlePlay(movie)}
                         disabled={movie.comingSoon}
                       >
-                        {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? 'Remind Me' : 'Play'}
+                        {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? t('hero.remind_me') : t('hero.play')}
                       </button>
-                      <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> More Info</button>
+                      <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> {t('hero.more_info')}</button>
                       <HeroListButton movie={movie} />
                     </div>
                   </div>
