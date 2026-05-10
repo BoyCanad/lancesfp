@@ -11,6 +11,22 @@ export default defineConfig({
       injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
+        // Exclude assets that are too large to precache reliably:
+        //   - storyboard sprites (11–12 MB JPGs) → Cache.put() stream failure
+        //   - GIFs (AFTER HOURS.gif = 22 MB, also has a space in the name)
+        //   - Large PNGs (pok.png 11MB, joy.png 10MB, marco.png 8MB, artwork.png 3.5MB)
+        //     These are lazy-loaded and covered by the runtime local-images-cache rule.
+        globIgnores: [
+          '**/images/storyboards/**',
+          '**/*.gif',
+          '**/images/pok.png',
+          '**/images/joy.png',
+          '**/images/marco.png',
+          '**/images/artwork.png',
+          '**/images/collection.png',
+          // Space in filename corrupts the Workbox precache URL key
+          '**/images/AFTER HOURS-logo.png',
+        ],
         maximumFileSizeToCacheInBytes: 20000000,
         navigateFallback: 'index.html',
         // Exclude API-like paths from the SPA fallback
