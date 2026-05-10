@@ -16,6 +16,10 @@ export default defineConfig({
         // 2. Reduce file size limit to 3MB
         maximumFileSizeToCacheInBytes: 3000000,
         
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        
         navigateFallback: 'index.html',
         // Exclude API-like paths from the SPA fallback
         navigateFallbackDenylist: [/^\/sw/, /^\/workbox/, /\.(?:m3u8|ts|aac|vtt|json|xml)$/i],
