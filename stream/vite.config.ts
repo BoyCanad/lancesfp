@@ -10,21 +10,19 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
-        globIgnores: [
-          '**/images/**',
-          '**/*.gif',
-          '**/*.png',
-          '**/*.jpg',
-          '**/*.jpeg',
-          '**/*.webp',
-        ],
-        // Lowered to 5MB to prevent precache stream timeouts
-        maximumFileSizeToCacheInBytes: 5000000,
+        // 1. ONLY precache the absolute essentials to guarantee install success
+        globPatterns: ['**/*.{js,css,html,ico}'],
+        
+        // 2. Reduce file size limit to 3MB
+        maximumFileSizeToCacheInBytes: 3000000,
+        
         navigateFallback: 'index.html',
         // Exclude API-like paths from the SPA fallback
         navigateFallbackDenylist: [/^\/sw/, /^\/workbox/, /\.(?:m3u8|ts|aac|vtt|json|xml)$/i],
-        importScripts: ['sw-hls.js'],
+        
+        // Temporarily remove importScripts to ensure your custom SW isn't crashing the install
+        // importScripts: ['sw-hls.js'],
+        
         runtimeCaching: [
           // HLS streams from GitHub Pages — ONLY match actual media file extensions.
           {
@@ -34,7 +32,6 @@ export default defineConfig({
               cacheName: 'hls-offline-v1',
               networkTimeoutSeconds: 5,
               expiration: { maxEntries: 5000, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              // Removed 0. Caching opaque video chunks can be unstable.
               cacheableResponse: { statuses: [200] }
             }
           },
@@ -56,7 +53,7 @@ export default defineConfig({
             options: {
               cacheName: 'google-fonts-cache',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] } // 0 is okay here for fonts
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
           // Google Fonts files
@@ -87,7 +84,6 @@ export default defineConfig({
             options: {
               cacheName: 'supabase-storage-cache',
               expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              // Removed 0 for massive storage bucket items
               cacheableResponse: { statuses: [200] }
             }
           },
@@ -146,7 +142,7 @@ export default defineConfig({
         background_color: "#000000"
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Disabled to avoid the "Vite Dev Mode Trap"
         type: 'module',
       }
     })
