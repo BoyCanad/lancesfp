@@ -11,7 +11,7 @@ export default defineConfig({
       injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
-        maximumFileSizeToCacheInBytes: 10000000,
+        maximumFileSizeToCacheInBytes: 20000000,
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
