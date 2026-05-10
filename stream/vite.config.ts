@@ -13,7 +13,30 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         maximumFileSizeToCacheInBytes: 20000000,
         navigateFallback: '/index.html',
+        importScripts: ['/sw-hls.js'],
         runtimeCaching: [
+          // HLS streams + subtitles from GitHub Pages (sw-hls.js handles offline fallback)
+          {
+            urlPattern: /^https:\/\/boycanad\.github\.io\/stream-storage-.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'hls-offline-v1',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 5000, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          // Supabase-hosted subtitle VTT files
+          {
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/.*\.vtt$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'hls-offline-v1',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
           // Google Fonts stylesheet
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

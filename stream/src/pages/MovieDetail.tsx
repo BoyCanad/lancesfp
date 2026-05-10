@@ -13,6 +13,7 @@ import RateButton from '../components/RateButton';
 import BarkadaSection from '../components/BarkadaSection';
 import BehindTheScenesSection from '../components/BehindTheScenesSection';
 import { HDBadge, SpatialAudioBadge } from '../components/AudioBadges';
+import DownloadButton from '../components/DownloadButton';
 import './MovieDetail.css';
 import './MinsanDetail.css'; // Reuse Minsan's cinematic detail styles
 
@@ -317,6 +318,10 @@ export default function MovieDetail() {
                 <span>Share</span>
               </button>
             </div>
+
+            {movie.videoUrl && (
+              <DownloadButton movie={movie} variant="full" />
+            )}
           </div>
         </div>
       </div>

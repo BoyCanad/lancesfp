@@ -1,0 +1,223 @@
+/* ── DownloadButton.css ─────────────────────────────────────────────────── */
+
+/* === Full Variant === */
+.dl-btn-full {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.dl-full-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  width: 100%;
+  letter-spacing: 0.02em;
+}
+
+.dl-full-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.dl-full-btn:active {
+  transform: scale(0.97);
+}
+
+.dl-full-btn.dl-full-done {
+  border-color: #00e676;
+  background: rgba(0, 230, 118, 0.12);
+  color: #00e676;
+}
+
+.dl-full-btn.dl-full-loading {
+  border-color: rgba(255, 255, 255, 0.15);
+  cursor: default;
+}
+
+.dl-full-btn.dl-full-error {
+  border-color: #ff5252;
+  background: rgba(255, 82, 82, 0.1);
+  color: #ff5252;
+}
+
+.dl-full-label {
+  flex: 1;
+  text-align: left;
+}
+
+.dl-cancel-hint {
+  font-size: 11px;
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+/* Progress bar under the button */
+.dl-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dl-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e50914, #ff6b6b);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.dl-error-msg {
+  font-size: 12px;
+  color: #ff5252;
+  margin: 2px 0 0;
+}
+
+/* === Confirm Delete Popup (Full) === */
+.dl-confirm-delete {
+  background: rgba(20, 20, 20, 0.95);
+  border: 1.5px solid rgba(255, 82, 82, 0.4);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dl-confirm-text {
+  font-size: 13px;
+  color: #ddd;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.dl-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dl-btn-delete {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #e50914;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dl-btn-delete:hover {
+  background: #ff1f2c;
+}
+
+.dl-btn-cancel {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dl-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* === Compact Variant (player control bar) === */
+.dl-btn-compact {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dl-compact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.dl-compact-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.dl-compact-btn:active {
+  transform: scale(0.92);
+}
+
+.dl-compact-btn.dl-done {
+  color: #00e676;
+}
+
+.dl-compact-btn.dl-loading {
+  cursor: default;
+}
+
+.dl-compact-btn.dl-error {
+  color: #ff5252;
+}
+
+/* Confirm delete for compact variant */
+.dl-confirm-delete-compact {
+  display: flex;
+  gap: 4px;
+  background: rgba(15, 15, 15, 0.95);
+  border: 1px solid rgba(255, 82, 82, 0.4);
+  border-radius: 8px;
+  padding: 4px 8px;
+  animation: fade-in 0.15s ease;
+}
+
+.dl-confirm-yes {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: none;
+  background: #e50914;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dl-confirm-no {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}

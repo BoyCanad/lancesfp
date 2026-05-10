@@ -32,6 +32,7 @@ import { supabase } from '../supabaseClient';
 import { updateWatchProgress, getWatchProgress, deleteWatchProgress, addToRecentlyWatched } from '../services/profileService';
 import { fetchMovieById } from '../services/movieService';
 import type { Movie } from '../data/movies';
+import { isMovieOffline, getOfflinePlaybackUrl } from '../services/hlsDownloadService';
 import XRayPanel from '../components/XRayPanel';
 import './VideoPlayer.css';
 
@@ -670,7 +671,18 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       return;
     }
 
-    // PRIORITY 2: Check standard source
+    // PRIORITY 2: Check offline cache (if navigator is offline or download exists)
+    if (id) {
+      const offlineUrl = getOfflinePlaybackUrl(id);
+      if (offlineUrl && (isMovieOffline(id) || !navigator.onLine)) {
+        console.log('[Player] Playing from HLS offline cache:', offlineUrl);
+        setActiveSource(offlineUrl);
+        setIsUsingOfflineSource(true);
+        return;
+      }
+    }
+
+    // PRIORITY 3: Use standard network source
     setActiveSource(videoSrc);
     setIsUsingOfflineSource(false);
 
@@ -680,7 +692,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         URL.revokeObjectURL(activeSource);
       }
     };
-  }, [videoSrc, movie, location.state, activeSource]);
+  }, [videoSrc, movie, location.state, id]);
 
   useEffect(() => {
     if (!activeProfileId || !id) return;
