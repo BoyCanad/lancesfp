@@ -96,21 +96,22 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      // Use a very strong password so Supabase doesn't throw a weak_password 422 error
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
-        password: 'check_only_password_123'
+        password: 'Check_0nly_P@ssw0rd_123!'
       });
 
       const errorMessage = error?.message?.toLowerCase() || '';
       const errorStatus = error?.status;
+      const errorCode = (error as any)?.code;
       
-      // If error is 422, registered, or security related - they exist.
+      // If error is specifically user_already_exists, or general 422 not related to password
       const isRegistered = 
-        errorStatus === 422 ||
+        errorCode === 'user_already_exists' ||
         errorMessage.includes('registered') || 
         errorMessage.includes('security') || 
-        errorMessage.includes('seconds') ||
-        (data.user && (!data.user.identities || data.user.identities.length === 0));
+        errorMessage.includes('seconds');
 
       if (isRegistered) {
         setIsSignUp(false);
