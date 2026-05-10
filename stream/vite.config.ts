@@ -9,6 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      filename: 'sw.js',
       workbox: {
         // 1. ONLY precache the absolute essentials to guarantee install success
         globPatterns: ['**/*.{js,css,html,ico}'],
