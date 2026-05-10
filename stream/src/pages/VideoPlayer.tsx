@@ -1131,9 +1131,35 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
           if (data.fatal) {
             switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                hls?.startLoad();
+              case Hls.ErrorTypes.NETWORK_ERROR: {
+                // ── Manifest / level failures ────────────────────────────────────
+                // These mean the stream URL itself is unreachable (offline, bad URL,
+                // or video not downloaded). Calling startLoad() just re-requests the
+                // same broken URL in an infinite loop → player stuck forever.
+                // Show an immediate, user-friendly error instead.
+                const isManifestError =
+                  data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+                  data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT ||
+                  data.details === Hls.ErrorDetails.MANIFEST_PARSING_ERROR ||
+                  data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR ||
+                  data.details === Hls.ErrorDetails.LEVEL_LOAD_TIMEOUT;
+
+                if (isManifestError) {
+                  const offline = !navigator.onLine;
+                  console.warn('[HLS] Manifest/level error — not retrying:', data.details);
+                  setVideoError(
+                    offline
+                      ? 'This video is not available offline. Please download it first while you have a connection.'
+                      : 'Unable to load the video stream. The source URL may be invalid or temporarily down.'
+                  );
+                  setIsLoading(false);
+                  playPendingRef.current = false;
+                } else {
+                  // Segment stall / transient failure — startLoad() is safe here
+                  hls?.startLoad();
+                }
                 break;
+              }
               case Hls.ErrorTypes.MEDIA_ERROR:
                 if (data.details === 'bufferStalledError') {
                   hls?.startLoad();

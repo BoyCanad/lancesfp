@@ -16,8 +16,10 @@ export default defineConfig({
         importScripts: ['/sw-hls.js'],
         runtimeCaching: [
           // HLS streams + subtitles from GitHub Pages (sw-hls.js handles offline fallback)
+          // NOTE: pattern is broad (/boycanad.github.io/) because the m3u8 URL path
+          // varies per movie (e.g. /el-bimbo-play/master.m3u8, /stream-storage-*/...).
           {
-            urlPattern: /^https:\/\/boycanad\.github\.io\/stream-storage-.*/i,
+            urlPattern: /^https:\/\/boycanad\.github\.io\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'hls-offline-v1',
@@ -47,12 +49,15 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // Google Fonts files
+          // Google Fonts files — NetworkFirst with short timeout prevents uncaught
+          // "no-response" rejections when the font is not yet in cache and offline.
+          // CacheFirst would fail immediately with no network fallback path.
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'gstatic-fonts-cache',
+              networkTimeoutSeconds: 3,
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] }
             }
