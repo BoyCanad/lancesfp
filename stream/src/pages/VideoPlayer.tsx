@@ -1046,19 +1046,27 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         setVideoError(null);
         let mediaErrorRecoveries = 0;
 
+        // IMPORTANT: When offline (served from SW cache), DISABLE the HLS.js Web Worker.
+        // Web Workers are NOT intercepted by Service Workers, so segment fetches from
+        // the worker context bypass the SW cache and fail with a network error — causing
+        // the player to get stuck on loading with no visible error on mobile Chrome.
+        // Running HLS.js on the main thread ensures all fetches go through the SW.
+        const isOffline = !navigator.onLine || isUsingOfflineSource;
+
         hls = new Hls({
-          enableWorker: true,
+          enableWorker: !isOffline,   // ← must be false when offline
           autoStartLoad: true,
           lowLatencyMode: false,
           maxBufferLength: 60,
           maxMaxBufferLength: 90,
-          fragLoadingTimeOut: 45000,
-          manifestLoadingTimeOut: 30000,
-          levelLoadingTimeOut: 30000,
-          fragLoadingMaxRetry: 10,
-          fragLoadingRetryDelay: 1500,
+          // Use shorter timeouts offline so we fail fast instead of hanging
+          fragLoadingTimeOut: isOffline ? 10000 : 45000,
+          manifestLoadingTimeOut: isOffline ? 8000 : 30000,
+          levelLoadingTimeOut: isOffline ? 8000 : 30000,
+          fragLoadingMaxRetry: isOffline ? 3 : 10,
+          fragLoadingRetryDelay: isOffline ? 500 : 1500,
           startLevel: 0,
-          levelLoadingRetryDelay: 1000,
+          levelLoadingRetryDelay: isOffline ? 500 : 1000,
           nudgeMaxRetry: 5,
           nudgeOffset: 0.1,
           enableSoftwareAES: true
@@ -1190,7 +1198,25 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
        setVolume(1);
     }
 
+    // Safety timeout: if still loading after 20s, show an error instead of
+    // hanging forever. This catches silent SW cache misses on mobile Chrome.
+    const loadingGuard = window.setTimeout(() => {
+      setIsLoading(prev => {
+        if (prev) {
+          console.warn('[VideoPlayer] Loading timeout — showing error');
+          setVideoError(
+            navigator.onLine
+              ? 'The video is taking too long to load. Please check your connection.'
+              : 'This video is not available offline. Please download it first.'
+          );
+          return false;
+        }
+        return prev;
+      });
+    }, 20000);
+
     return () => {
+      window.clearTimeout(loadingGuard);
       if (hls) {
         hls.destroy();
       }
@@ -1203,7 +1229,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       setIsExpandingTrailer(false);
       setNextCountdown(10);
     };
-  }, [activeSource]);
+  }, [activeSource, isUsingOfflineSource]);
 
   useEffect(() => {
     if (isMobileWindow || !previewVideoRef.current || !videoSrc) return;
