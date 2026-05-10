@@ -96,51 +96,33 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // Use a very strong password so Supabase doesn't throw a weak_password 422 error
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
-        password: 'Check_0nly_P@ssw0rd_123!'
+        password: 'check_only_password_123'
       });
 
       const errorMessage = error?.message?.toLowerCase() || '';
       const errorStatus = error?.status;
-      const errorCode = (error as any)?.code;
       
-      // If error is specifically user_already_exists, or general 422 not related to password
+      // If error is 422, registered, or security related - they exist.
       const isRegistered = 
-        errorCode === 'user_already_exists' ||
+        errorStatus === 422 ||
         errorMessage.includes('registered') || 
         errorMessage.includes('security') || 
-        errorMessage.includes('seconds');
+        errorMessage.includes('seconds') ||
+        (data.user && (!data.user.identities || data.user.identities.length === 0));
 
       if (isRegistered) {
         setIsSignUp(false);
         setAuthMethod('password');
         setStep(2);
       } else if (!error && data.user) {
-        // It's a new user!
-        // Delete the temporary user if possible? (Client can't easily do this, 
-        // but we'll switch them to the OTP flow which is what the USER wants)
+        // It's a new user! 
+        // The dummy signUp above actually created them with 'check_only_password_123'.
         await supabase.auth.signOut();
         setIsSignUp(true);
-        setAuthMethod('code');
-        
-        // Trigger OTP send for signup
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: normalizedEmail,
-          options: { shouldCreateUser: true }
-        });
-
-        if (otpError) throw otpError;
-
-        setResendCooldown(30);
+        setAuthMethod('password');
         setStep(2);
-        setModal({
-          isOpen: true,
-          title: 'Welcome!',
-          message: 'We\'ve sent a sign-in code to your email to help you get started.',
-          type: 'success'
-        });
       } else {
         setIsSignUp(false);
         setAuthMethod('password');
@@ -254,26 +236,49 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({ 
-          email, 
-          password,
-          options: { data: { email } }
+        // Because the dummy signup in step 1 already created the user with a placeholder password,
+        // we must sign them in with that placeholder, then update their password to the real one.
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email,
+          password: 'check_only_password_123'
+        });
+        
+        if (signInErr) {
+          // If this fails, maybe they are an existing user who stumbled into the signup flow?
+          // Fallback: try normal sign in just in case.
+          const { error: fallbackErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (fallbackErr) throw new Error('Account setup failed. Please refresh the page and try logging in.');
+          navigate('/');
+          return;
+        }
+
+        const { data, error } = await supabase.auth.updateUser({ 
+          password: password,
+          data: { email } 
         });
         if (error) throw error;
         
-        if (data.session) {
-          navigate('/CreateProfile');
-        } else {
-          setModal({
-            isOpen: true,
-            title: 'Welcome!',
-            message: 'Your account has been created. Please check your email to verify your account.',
-            type: 'success'
-          });
-        }
+        navigate('/CreateProfile');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        
+        if (error) {
+          // Check for abandoned signup: if normal login fails, do they still have the dummy password?
+          const { error: dummyErr } = await supabase.auth.signInWithPassword({ 
+            email, 
+            password: 'check_only_password_123' 
+          });
+          
+          if (!dummyErr) {
+            // Yes! They are an abandoned signup. Set their real password now.
+            const { error: updateErr } = await supabase.auth.updateUser({ password });
+            if (updateErr) throw updateErr;
+            navigate('/CreateProfile');
+            return;
+          }
+          
+          throw error;
+        }
         navigate('/');
       }
     } catch (error: any) {
