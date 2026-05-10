@@ -38,6 +38,7 @@ export async function getProfiles(): Promise<Profile[]> {
 }
 
 export async function createProfile(name: string, image: string): Promise<Profile> {
+  if (!navigator.onLine) return {} as any;
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
@@ -64,6 +65,7 @@ export async function updateProfile(
   id: string,
   updates: Partial<Pick<Profile, 'name' | 'image' | 'locked' | 'pin' | 'icon_history'>>
 ): Promise<Profile> {
+  if (!navigator.onLine) return {} as any;
   // If updating image, handle history
   if (updates.image) {
     const { data: current } = await supabase
@@ -91,6 +93,7 @@ export async function updateProfile(
 }
 
 export async function deleteProfile(id: string): Promise<void> {
+  if (!navigator.onLine) return;
   const { error } = await supabase.from('profiles').delete().eq('id', id);
   if (error) throw error;
 }
@@ -111,6 +114,7 @@ export async function updateWatchProgress(
   progressMs: number,
   durationMs: number
 ): Promise<void> {
+  if (!navigator.onLine) return;
   const { error } = await supabase
     .from('watch_progress')
     .upsert({
@@ -124,6 +128,7 @@ export async function updateWatchProgress(
   if (error) throw error;
 }
 export async function deleteWatchProgress(profileId: string, movieId: string): Promise<void> {
+  if (!navigator.onLine) return;
   const { error } = await supabase
     .from('watch_progress')
     .delete()
@@ -156,6 +161,7 @@ export async function getRecentlyWatched(profileId: string): Promise<RecentlyWat
 }
 
 export async function addToRecentlyWatched(profileId: string, movieId: string, episodeInfo?: string): Promise<void> {
+  if (!navigator.onLine) return;
   try {
     const { error } = await supabase
       .from('recently_watched')
@@ -199,6 +205,7 @@ export async function getLikedMovies(profileId: string): Promise<string[]> {
 }
 
 export async function toggleLike(profileId: string, movieId: string): Promise<boolean> {
+  if (!navigator.onLine) return false;
   try {
     const { data: existing, error: fetchError } = await supabase
       .from('liked_movies')
