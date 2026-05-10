@@ -114,13 +114,37 @@ export default function Auth() {
 
       if (isRegistered) {
         setIsSignUp(false);
+        setAuthMethod('password');
+        setStep(2);
       } else if (!error && data.user) {
+        // It's a new user!
+        // Delete the temporary user if possible? (Client can't easily do this, 
+        // but we'll switch them to the OTP flow which is what the USER wants)
         await supabase.auth.signOut();
         setIsSignUp(true);
+        setAuthMethod('code');
+        
+        // Trigger OTP send for signup
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: normalizedEmail,
+          options: { shouldCreateUser: true }
+        });
+
+        if (otpError) throw otpError;
+
+        setResendCooldown(30);
+        setStep(2);
+        setModal({
+          isOpen: true,
+          title: 'Welcome!',
+          message: 'We\'ve sent a sign-in code to your email to help you get started.',
+          type: 'success'
+        });
       } else {
-        setIsSignUp(false); // Default to login if ambiguous
+        setIsSignUp(false);
+        setAuthMethod('password');
+        setStep(2);
       }
-      setStep(2);
     } catch (err) {
       setStep(2);
     } finally {
@@ -136,8 +160,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          shouldCreateUser: false,
-          // Some versions of Supabase might need specific redirectUrls or other options
+          shouldCreateUser: true,
         }
       });
       
