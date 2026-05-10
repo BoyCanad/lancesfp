@@ -41,15 +41,18 @@ jobs:
           WASMER_TOKEN: ${{ secrets.WASMER_TOKEN }}
 
       - name: Purge Cloudflare cache for entry point files
-        # Only purge the files that must NEVER be stale:
-        # - index.html (app entry point)
-        # - sw.js (service worker — must update immediately)
-        # - manifest.webmanifest (PWA manifest)
-        # Hashed /assets/* are intentionally NOT purged (immutable, content-addressed).
-        if: secrets.CLOUDFLARE_ZONE_ID != '' && secrets.CLOUDFLARE_API_TOKEN != ''
+        env:
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          if [ -z "$CF_ZONE_ID" ] || [ -z "$CF_API_TOKEN" ]; then
+            echo "Cloudflare secrets not set, skipping purge."
+            exit 0
+          fi
+          
+          echo "Purging Cloudflare cache..."
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data '{
               "files": [
