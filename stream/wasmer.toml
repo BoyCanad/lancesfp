@@ -22,10 +22,6 @@ main-args = [
     "--root=/opt/static_app",
     "--log-level=info",
     "--port=8080",
-    "--page404=/opt/static_app/index.html",
-    "--header=index.html: Cache-Control: no-store, no-cache, must-revalidate",
-    "--header=sw.js: Cache-Control: no-store, no-cache, must-revalidate",
-    "--header=manifest.webmanifest: Cache-Control: public, max-age=86400",
-    "--header=assets/*: Cache-Control: public, max-age=31536000, immutable"
+    "--page404=/opt/static_app/index.html"
 ]
 
