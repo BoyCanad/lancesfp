@@ -20,5 +20,12 @@ main-args = [
     "--root=/opt/static_app",
     "--log-level=info",
     "--port=8080",
-    "--page404=/opt/static_app/index.html"
+    "--page404=/opt/static_app/index.html",
+    # index.html & sw.js: NEVER cache — Cloudflare must always revalidate these
+    "--header=index.html: Cache-Control: no-store, no-cache, must-revalidate",
+    "--header=sw.js: Cache-Control: no-store, no-cache, must-revalidate",
+    "--header=manifest.webmanifest: Cache-Control: public, max-age=86400",
+    # Hashed assets are content-addressed — safe to cache forever
+    "--header=assets/*: Cache-Control: public, max-age=31536000, immutable"
 ]
+
