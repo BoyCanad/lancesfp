@@ -191,6 +191,16 @@ export async function downloadHlsStream(
 /**
  * Fetches a URL and stores it in the cache under the given key.
  * Skips if already cached.
+ *
+ * WHY we buffer into ArrayBuffer before cache.put():
+ * ─────────────────────────────────────────────────
+ * cache.put(key, liveResponse) pipes a *live network stream* directly into
+ * the Cache API.  If the CDN redirects mid-flight, the connection drops, or
+ * the CORS stream is tainted, Chrome throws:
+ *   "Failed to execute 'put' on 'Cache': Cache.put() encountered a network error"
+ *
+ * By reading the entire body into memory first (arrayBuffer()), we hand the
+ * Cache API a *finished*, in-memory Response — nothing can fail mid-stream.
  */
 async function cacheWithKey(
   cache: Cache,
@@ -201,9 +211,19 @@ async function cacheWithKey(
   const existing = await cache.match(key);
   if (existing) return;
 
-  const res = await fetch(url, { signal });
+  // Follow redirects explicitly so the final resolved URL is what we cache
+  const res = await fetch(url, { signal, redirect: 'follow' });
   if (!res.ok) throw new Error(`Failed to fetch: ${url} (${res.status})`);
-  await cache.put(key, res);
+
+  // Buffer the entire body into memory — eliminates "Cache.put() network error"
+  // that occurs when the live stream is interrupted during cache.put().
+  const buffer = await res.arrayBuffer();
+  const buffered = new Response(buffer, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers,
+  });
+  await cache.put(key, buffered);
 }
 
 /**
