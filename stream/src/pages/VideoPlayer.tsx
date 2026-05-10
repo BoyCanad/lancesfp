@@ -1132,11 +1132,6 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR: {
-                // ── Manifest / level failures ────────────────────────────────────
-                // These mean the stream URL itself is unreachable (offline, bad URL,
-                // or video not downloaded). Calling startLoad() just re-requests the
-                // same broken URL in an infinite loop → player stuck forever.
-                // Show an immediate, user-friendly error instead.
                 const isManifestError =
                   data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
                   data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT ||
@@ -1144,18 +1139,36 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                   data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR ||
                   data.details === Hls.ErrorDetails.LEVEL_LOAD_TIMEOUT;
 
+                // ── Fatal fragment errors while offline ──────────────────────────
+                // fragLoadError/fragLoadTimeout means a specific .ts segment cannot
+                // be loaded. When offline this means the segment is absent from the
+                // SW cache (incomplete download). startLoad() just re-requests the
+                // same missing segment in an infinite loop → stuck buffering forever.
+                const isFragError =
+                  data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR ||
+                  data.details === Hls.ErrorDetails.FRAG_LOAD_TIMEOUT;
+
+                const offline = !navigator.onLine || isUsingOfflineSource;
+
                 if (isManifestError) {
-                  const offline = !navigator.onLine;
                   console.warn('[HLS] Manifest/level error — not retrying:', data.details);
                   setVideoError(
                     offline
-                      ? 'This video is not available offline. Please download it first while you have a connection.'
+                      ? 'This video is not available offline. Please download it first.'
                       : 'Unable to load the video stream. The source URL may be invalid or temporarily down.'
                   );
                   setIsLoading(false);
                   playPendingRef.current = false;
+                } else if (isFragError && offline) {
+                  // Segment missing from offline cache — retrying is pointless
+                  console.warn('[HLS] Fatal frag error offline — segment not in cache:', data.details);
+                  setVideoError(
+                    'Some parts of this video are missing from the offline download. Please re-download it.'
+                  );
+                  setIsLoading(false);
+                  playPendingRef.current = false;
                 } else {
-                  // Segment stall / transient failure — startLoad() is safe here
+                  // Online transient failure or buffering stall — retry is safe
                   hls?.startLoad();
                 }
                 break;
