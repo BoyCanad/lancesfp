@@ -298,6 +298,10 @@ export default function MovieDetail() {
               {movie.comingSoon ? <Bell size={18} fill="white" /> : <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} />} {movie.comingSoon ? 'Remind Me' : (progress ? 'Resume' : 'Play')}
             </button>
 
+            {movie.videoUrl && (
+              <DownloadButton movie={movie} variant="full" className="mdetail-mobile-dl-btn" />
+            )}
+
             {progress && (
               <div className="mdetail-progress-section">
                 <div className="mdetail-progress-bar">
@@ -318,10 +322,6 @@ export default function MovieDetail() {
                 <span>Share</span>
               </button>
             </div>
-
-            {movie.videoUrl && (
-              <DownloadButton movie={movie} variant="full" />
-            )}
           </div>
         </div>
       </div>
