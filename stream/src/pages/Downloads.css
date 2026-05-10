@@ -1,0 +1,186 @@
+.downloads-page {
+  padding: 120px 4vw 60px;
+  min-height: 100vh;
+  background-color: #0b0b12;
+}
+
+.downloads-header {
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.downloads-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.downloads-storage-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a3a3a3;
+  font-size: 14px;
+}
+
+/* Empty State */
+.downloads-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 20px;
+  color: #666;
+}
+
+.downloads-empty-icon {
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.downloads-empty-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #e5e5e5;
+  margin-bottom: 12px;
+}
+
+.downloads-empty-text {
+  font-size: 16px;
+  max-width: 400px;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.downloads-browse-btn {
+  background: white;
+  color: black;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.downloads-browse-btn:hover {
+  background: #e5e5e5;
+}
+
+/* Grid Layout */
+.downloads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 30px 20px;
+}
+
+.downloads-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.downloads-card-wrapper {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+
+.downloads-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.downloads-item:hover .downloads-overlay {
+  opacity: 1;
+}
+
+.downloads-action-btn {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.downloads-action-btn.delete:hover {
+  background: #e50914;
+  border-color: #e50914;
+  transform: scale(1.1);
+}
+
+.downloads-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.downloads-item-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.downloads-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #a3a3a3;
+}
+
+.downloads-item-meta .dot {
+  font-size: 18px;
+  line-height: 0;
+}
+
+.downloads-footer-tip {
+  margin-top: 60px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .downloads-page {
+    padding-top: 100px;
+  }
+  
+  .downloads-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px 12px;
+  }
+  
+  .downloads-title {
+    font-size: 24px;
+  }
+  
+  .downloads-overlay {
+    opacity: 1; /* Always show delete on mobile */
+  }
+}

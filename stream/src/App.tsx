@@ -16,6 +16,7 @@ import StemADetail from './pages/StemADetail';
 import Search from './pages/Search';
 import MyList from './pages/MyList';
 import CategoryPage from './pages/CategoryPage';
+import Downloads from './pages/Downloads';
 
 import VideoPlayer from './pages/VideoPlayer';
 import XRayVideoPlayer from './pages/XRayVideoPlayer';
@@ -52,6 +53,7 @@ function App() {
   const isForgotPassword = pathname === '/forgot-password';
   const isAccount = pathname === '/account';
   const isMyNetflix = pathname === '/my-lsfplus';
+  const isDownloads = pathname === '/downloads';
   const isDetailPage = [
     '/ang-huling-el-bimbo-play',
     '/ang-huling-el-bimbo-play-xray',
@@ -72,7 +74,7 @@ function App() {
 
   const isGenrePage = pathname.startsWith('/genre');
 
-  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage;
+  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage || isDownloads;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
@@ -160,6 +162,7 @@ function App() {
       '/live': 'Live',
       '/account': 'Account',
       '/my-lsfplus': 'My LSFPlus',
+      '/downloads': 'Downloads',
       '/forgot-password': 'Reset Password',
       '/CreateProfile': 'Create Profile',
       '/collections/el-bimbo': 'El Bimbo Collection',
@@ -246,6 +249,7 @@ function App() {
         <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
         <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
         <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
       </Routes>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus, X } from 'lucide-react';
+import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, RefreshCw, Lock, Plus, X, Download } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles } from '../services/profileService';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -195,6 +195,10 @@ export default function Navbar() {
               )}
             </div>
           
+          <div className="navbar__icon-wrapper" onClick={() => navigate('/downloads')} style={{ cursor: 'pointer' }} title="Downloads">
+            <Download size={22} color="white" />
+          </div>
+          
           <div className="navbar__icon-wrapper">
             <Bell size={24} color="white" />
           </div>
@@ -341,6 +345,9 @@ export default function Navbar() {
                ) : (
                   <Search size={24} color="white" onClick={() => navigate('/search')} />
                )}
+            </div>
+            <div className="navbar__mobile-icon-wrapper" onClick={() => navigate('/downloads')}>
+               <Download size={24} color="white" />
             </div>
           </div>
         </div>
