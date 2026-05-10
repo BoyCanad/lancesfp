@@ -12,7 +12,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         maximumFileSizeToCacheInBytes: 20000000,
-        navigateFallback: '/index.html',
+        navigateFallback: 'index.html',
+        // Exclude API-like paths from the SPA fallback
+        navigateFallbackDenylist: [/^\/sw/, /^\/workbox/, /\.(?:m3u8|ts|aac|vtt|json|xml)$/i],
         importScripts: ['/sw-hls.js'],
         runtimeCaching: [
           // HLS streams from GitHub Pages — ONLY match actual media file extensions.
