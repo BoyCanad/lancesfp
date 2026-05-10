@@ -200,7 +200,7 @@ export default function Auth() {
 
     try {
       // 1. Try normal sign in first
-      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -223,7 +223,7 @@ export default function Auth() {
           }
 
           // 3. Not an abandoned signup, try creating a new account
-          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          const { error: signUpErr } = await supabase.auth.signUp({
             email,
             password
           });
