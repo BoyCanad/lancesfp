@@ -182,7 +182,7 @@ export default function MyNetflix() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('activeProfile');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
 

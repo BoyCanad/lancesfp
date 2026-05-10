@@ -69,7 +69,7 @@ export default function ForgotPassword() {
         <button className="auth-signout-btn" onClick={async () => {
           await supabase.auth.signOut();
           localStorage.removeItem('activeProfile');
-          window.location.href = '/login';
+          navigate('/login');
         }}>
           Sign Out
         </button>

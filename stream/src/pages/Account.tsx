@@ -112,7 +112,7 @@ export default function Account() {
         setTimeout(async () => {
           await supabase.auth.signOut({ scope: 'global' });
           localStorage.removeItem('activeProfile');
-          window.location.href = '/login';
+          navigate('/login');
         }, 2000);
         return;
       }

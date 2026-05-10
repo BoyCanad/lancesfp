@@ -289,7 +289,7 @@ export default function Navbar() {
                         onClick={async () => {
                           await supabase.auth.signOut();
                           localStorage.removeItem('activeProfile');
-                          window.location.href = '/login';
+                          navigate('/login');
                         }}
                       >
                         Sign out of LSFPlus
