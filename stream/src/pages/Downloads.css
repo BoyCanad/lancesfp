@@ -88,8 +88,14 @@
 .downloads-card-wrapper {
   position: relative;
   border-radius: 4px;
-  overflow: hidden;
+  /* Removed overflow: hidden to prevent clipping of MovieCard expansion */
   aspect-ratio: 16/9;
+  z-index: 1;
+  transition: z-index 0.3s;
+}
+
+.downloads-card-wrapper:hover {
+  z-index: 100;
 }
 
 .downloads-overlay {
