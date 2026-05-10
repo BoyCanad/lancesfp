@@ -15,11 +15,13 @@ export default defineConfig({
         navigateFallback: '/index.html',
         importScripts: ['/sw-hls.js'],
         runtimeCaching: [
-          // HLS streams + subtitles from GitHub Pages (sw-hls.js handles offline fallback)
-          // NOTE: pattern is broad (/boycanad.github.io/) because the m3u8 URL path
-          // varies per movie (e.g. /el-bimbo-play/master.m3u8, /stream-storage-*/...).
+          // HLS streams from GitHub Pages — ONLY match actual media file extensions.
+          // Do NOT use a broad /boycanad.github.io\/.*/  pattern: the app itself is
+          // also hosted on boycanad.github.io, so a broad rule intercepts page
+          // navigation requests and routes them to hls-offline-v1 (where they don't
+          // exist), bypassing navigateFallback and showing the browser offline page.
           {
-            urlPattern: /^https:\/\/boycanad\.github\.io\/.*/i,
+            urlPattern: /^https:\/\/boycanad\.github\.io\/.*\.(m3u8|ts|aac)(\?.*)?$/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'hls-offline-v1',
