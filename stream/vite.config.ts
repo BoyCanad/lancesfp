@@ -31,13 +31,9 @@ export default defineConfig({
         navigateFallback: 'index.html',
         // Exclude API-like paths from the SPA fallback
         navigateFallbackDenylist: [/^\/sw/, /^\/workbox/, /\.(?:m3u8|ts|aac|vtt|json|xml)$/i],
-        importScripts: ['/sw-hls.js'],
+        importScripts: ['sw-hls.js'],
         runtimeCaching: [
           // HLS streams from GitHub Pages — ONLY match actual media file extensions.
-          // Do NOT use a broad /boycanad.github.io\/.*/  pattern: the app itself is
-          // also hosted on boycanad.github.io, so a broad rule intercepts page
-          // navigation requests and routes them to hls-offline-v1 (where they don't
-          // exist), bypassing navigateFallback and showing the browser offline page.
           {
             urlPattern: /^https:\/\/boycanad\.github\.io\/.*\.(m3u8|ts|aac)(\?.*)?$/i,
             handler: 'NetworkFirst',
@@ -50,7 +46,7 @@ export default defineConfig({
           },
           // Supabase-hosted subtitle VTT files
           {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/.*\.vtt$/i,
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*\.vtt$/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'hls-offline-v1',
@@ -69,9 +65,7 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] }
             }
           },
-          // Google Fonts files — NetworkFirst with short timeout prevents uncaught
-          // "no-response" rejections when the font is not yet in cache and offline.
-          // CacheFirst would fail immediately with no network fallback path.
+          // Google Fonts files
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'NetworkFirst',
@@ -93,30 +87,30 @@ export default defineConfig({
             }
           },
           // Supabase storage (images, GIFs, thumbnails, banners)
+          // Using StaleWhileRevalidate so UI images load instantly from cache
           {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/.*/i,
-            handler: 'NetworkFirst',
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*/i,
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'supabase-storage-cache',
-              networkTimeoutSeconds: 5,
               expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
           // Supabase REST API (movie metadata, profiles)
+          // Using StaleWhileRevalidate ensures profiles load INSTANTLY offline
           {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'NetworkFirst',
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'supabase-api-cache',
-              networkTimeoutSeconds: 5,
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
           // Supabase Auth (allow offline graceful fail)
           {
-            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/auth\/v1\/.*/i,
+            urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/v1\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-auth-cache',
