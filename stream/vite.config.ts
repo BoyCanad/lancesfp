@@ -11,11 +11,6 @@ export default defineConfig({
       injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
-        // Exclude assets that are too large to precache reliably:
-        //   - storyboard sprites (11–12 MB JPGs) → Cache.put() stream failure
-        //   - GIFs (AFTER HOURS.gif = 22 MB, also has a space in the name)
-        //   - Large PNGs (pok.png 11MB, joy.png 10MB, marco.png 8MB, artwork.png 3.5MB)
-        //     These are lazy-loaded and covered by the runtime local-images-cache rule.
         globIgnores: [
           '**/images/**',
           '**/*.gif',
@@ -24,7 +19,8 @@ export default defineConfig({
           '**/*.jpeg',
           '**/*.webp',
         ],
-        maximumFileSizeToCacheInBytes: 20000000,
+        // Lowered to 5MB to prevent precache stream timeouts
+        maximumFileSizeToCacheInBytes: 5000000,
         navigateFallback: 'index.html',
         // Exclude API-like paths from the SPA fallback
         navigateFallbackDenylist: [/^\/sw/, /^\/workbox/, /\.(?:m3u8|ts|aac|vtt|json|xml)$/i],
@@ -38,7 +34,8 @@ export default defineConfig({
               cacheName: 'hls-offline-v1',
               networkTimeoutSeconds: 5,
               expiration: { maxEntries: 5000, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] }
+              // Removed 0. Caching opaque video chunks can be unstable.
+              cacheableResponse: { statuses: [200] }
             }
           },
           // Supabase-hosted subtitle VTT files
@@ -49,7 +46,7 @@ export default defineConfig({
               cacheName: 'hls-offline-v1',
               networkTimeoutSeconds: 5,
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [200] }
             }
           },
           // Google Fonts stylesheet
@@ -59,7 +56,7 @@ export default defineConfig({
             options: {
               cacheName: 'google-fonts-cache',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [0, 200] } // 0 is okay here for fonts
             }
           },
           // Google Fonts files
@@ -80,29 +77,28 @@ export default defineConfig({
             options: {
               cacheName: 'local-images-cache',
               expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [200] }
             }
           },
           // Supabase storage (images, GIFs, thumbnails, banners)
-          // Using StaleWhileRevalidate so UI images load instantly from cache
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*/i,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'supabase-storage-cache',
               expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] }
+              // Removed 0 for massive storage bucket items
+              cacheableResponse: { statuses: [200] }
             }
           },
           // Supabase REST API (movie metadata, profiles)
-          // Using StaleWhileRevalidate ensures profiles load INSTANTLY offline
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'supabase-api-cache',
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [200] }
             }
           },
           // Supabase Auth (allow offline graceful fail)
@@ -113,7 +109,7 @@ export default defineConfig({
               cacheName: 'supabase-auth-cache',
               networkTimeoutSeconds: 5,
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [200] }
             }
           },
           // Raw GitHub (external images)
