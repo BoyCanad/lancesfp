@@ -98,16 +98,16 @@ export default function Auth() {
     try {
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
-        password: 'check_only_password_123'
+        password: 'Check_Only_Password_123!'
       });
 
       const errorMessage = error?.message?.toLowerCase() || '';
       const errorStatus = error?.status;
       
-      // If error is 422, registered, or security related - they exist.
+      // If error indicates user exists or rate limit for signups
       const isRegistered = 
-        errorStatus === 422 ||
-        errorMessage.includes('registered') || 
+        (errorStatus === 422 && errorMessage.includes('registered')) ||
+        errorMessage.includes('already registered') || 
         errorMessage.includes('security') || 
         errorMessage.includes('seconds') ||
         (data.user && (!data.user.identities || data.user.identities.length === 0));
@@ -240,7 +240,7 @@ export default function Auth() {
         // we must sign them in with that placeholder, then update their password to the real one.
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email,
-          password: 'check_only_password_123'
+          password: 'Check_Only_Password_123!'
         });
         
         if (signInErr) {
@@ -266,7 +266,7 @@ export default function Auth() {
           // Check for abandoned signup: if normal login fails, do they still have the dummy password?
           const { error: dummyErr } = await supabase.auth.signInWithPassword({ 
             email, 
-            password: 'check_only_password_123' 
+            password: 'Check_Only_Password_123!' 
           });
           
           if (!dummyErr) {
