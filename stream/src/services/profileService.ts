@@ -28,13 +28,50 @@ export interface RecentlyWatched {
   episode_info?: string;
 }
 
+const PROFILES_CACHE_KEY = 'lsfplus_profiles_cache';
+
+export function getCachedProfiles(): Profile[] {
+  try {
+    const raw = localStorage.getItem(PROFILES_CACHE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setCachedProfiles(profiles: Profile[]) {
+  try {
+    localStorage.setItem(PROFILES_CACHE_KEY, JSON.stringify(profiles));
+  } catch {
+    // storage quota exceeded — ignore
+  }
+}
+
 export async function getProfiles(): Promise<Profile[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('display_order', { ascending: true });
-  if (error) throw error;
-  return data || [];
+  // If offline, serve from cache immediately
+  if (!navigator.onLine) {
+    const cached = getCachedProfiles();
+    if (cached.length > 0) return cached;
+    // No cache available — throw so caller knows
+    throw new Error('offline');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('display_order', { ascending: true });
+    if (error) throw error;
+    const profiles = data || [];
+    // Persist to cache for offline use
+    setCachedProfiles(profiles);
+    return profiles;
+  } catch (err) {
+    // Network failed despite navigator.onLine — try cache as fallback
+    const cached = getCachedProfiles();
+    if (cached.length > 0) return cached;
+    throw err;
+  }
 }
 
 export async function createProfile(name: string, image: string): Promise<Profile> {

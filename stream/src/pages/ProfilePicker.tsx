@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Pencil, X, Plus } from 'lucide-react';
-import { getProfiles } from '../services/profileService';
+import { getProfiles, getCachedProfiles } from '../services/profileService';
 import type { Profile } from '../services/profileService';
 import { elBimboFeatured } from '../data/movies';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -44,7 +44,15 @@ export default function ProfilePicker() {
           setProfiles(data);
         }
       })
-      .catch(() => navigate('/CreateProfile'))
+      .catch(() => {
+        // Network failed — check if we have cached profiles before giving up
+        const cached = getCachedProfiles();
+        if (cached.length > 0) {
+          setProfiles(cached);
+        } else {
+          navigate('/CreateProfile');
+        }
+      })
       .finally(() => setLoading(false));
 
     const handleResize = () => setIsMobile(window.innerWidth <= 768);

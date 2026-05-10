@@ -77,11 +77,48 @@ function App() {
   const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage || isDownloads;
 
   useEffect(() => {
+    // Helper: check if Supabase already persisted a valid session in localStorage
+    // Supabase v2 stores tokens under keys like 'sb-<ref>-auth-token'
+    const getPersistedSession = (): Session | null => {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              // Check if access_token exists and not expired
+              if (parsed?.access_token && parsed?.expires_at) {
+                const expiresAt = parsed.expires_at * 1000; // convert to ms
+                if (Date.now() < expiresAt) {
+                  return parsed as Session;
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
+      return null;
+    };
+
+    // If offline, use persisted session immediately
+    if (!navigator.onLine) {
+      const persisted = getPersistedSession();
+      setSession(persisted);
+      setCheckingAuth(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session);
       setCheckingAuth(false);
     }).catch((error) => {
       console.error("Error getting session:", error);
+      // Network error — fall back to persisted session
+      const persisted = getPersistedSession();
+      setSession(persisted);
       setCheckingAuth(false);
     });
 
