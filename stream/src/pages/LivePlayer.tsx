@@ -331,7 +331,7 @@ export default function LivePlayer() {
           playsInline
           autoPlay
           muted={isMuted}
-          poster="/images/AFTER%20HOURS-banner.gif"
+          poster="/images/after-hours.gif"
           style={{ pointerEvents: 'auto' }}
         />
         

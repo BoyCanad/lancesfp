@@ -121,7 +121,7 @@ export const makingOfLegacy: Movie = {
 export const afterHours: Movie = {
   id: "after-hours",
   title: "After Hours",
-  logo: "/images/AFTER%20HOURS-logo.png",
+  logo: "/images/after-hours-logo.png",
   thumbnail: "/images/after-hours.webp",
   mobileThumbnail: "/images/after-hours-mobile.webp",
   banner: "/images/AFTERHOURS-banner.png",

@@ -69,7 +69,7 @@ export default function LiveStreamSection() {
               </div>
             )}
             <img 
-              src="/images/AFTER%20HOURS-logo.png" 
+              src="/images/after-hours-logo.png" 
               alt="After Hours" 
               className="live-banner__logo" 
             />

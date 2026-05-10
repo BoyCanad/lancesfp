@@ -17,15 +17,12 @@ export default defineConfig({
         //   - Large PNGs (pok.png 11MB, joy.png 10MB, marco.png 8MB, artwork.png 3.5MB)
         //     These are lazy-loaded and covered by the runtime local-images-cache rule.
         globIgnores: [
-          '**/images/storyboards/**',
+          '**/images/**',
           '**/*.gif',
-          '**/images/pok.png',
-          '**/images/joy.png',
-          '**/images/marco.png',
-          '**/images/artwork.png',
-          '**/images/collection.png',
-          // Space in filename corrupts the Workbox precache URL key
-          '**/images/AFTER HOURS-logo.png',
+          '**/*.png',
+          '**/*.jpg',
+          '**/*.jpeg',
+          '**/*.webp',
         ],
         maximumFileSizeToCacheInBytes: 20000000,
         navigateFallback: 'index.html',
