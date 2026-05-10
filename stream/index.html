@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="manifest" href="/manifest.json" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#000000" />
     <link rel="apple-touch-icon" href="/favicon.png" />
@@ -30,22 +30,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Force Unregister all Service Workers to eliminate playback interference
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for (let registration of registrations) {
-            registration.unregister().then(() => {
-              console.log('Service Worker unregistered successfully.');
-            });
-          }
-        });
-      }
-      
-      // Clear legacy caches that might slow down the filesystem
-      window.caches.keys().then(names => {
-        for (let name of names) window.caches.delete(name);
-      });
-    </script>
+
   </body>
 </html>
