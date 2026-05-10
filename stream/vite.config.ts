@@ -142,7 +142,7 @@ export default defineConfig({
           }
         ],
         start_url: ".",
-        display: "standalone",
+        display: "fullscreen",
         theme_color: "#000000",
         background_color: "#000000"
       },
