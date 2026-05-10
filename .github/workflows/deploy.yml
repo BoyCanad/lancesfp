@@ -46,7 +46,7 @@ jobs:
         # - sw.js (service worker — must update immediately)
         # - manifest.webmanifest (PWA manifest)
         # Hashed /assets/* are intentionally NOT purged (immutable, content-addressed).
-        if: ${{ secrets.CLOUDFLARE_ZONE_ID != '' && secrets.CLOUDFLARE_API_TOKEN != '' }}
+        if: secrets.CLOUDFLARE_ZONE_ID != '' && secrets.CLOUDFLARE_API_TOKEN != ''
         run: |
           curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
