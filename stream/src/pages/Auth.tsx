@@ -89,50 +89,14 @@ export default function Auth() {
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    setLoading(true);
 
     const normalizedEmail = email.toLowerCase().trim();
     setEmail(normalizedEmail);
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password: 'Check_Only_Password_123!'
-      });
-
-      const errorMessage = error?.message?.toLowerCase() || '';
-      const errorStatus = error?.status;
-      
-      // If error indicates user exists or rate limit for signups
-      const isRegistered = 
-        (errorStatus === 422 && errorMessage.includes('registered')) ||
-        errorMessage.includes('already registered') || 
-        errorMessage.includes('security') || 
-        errorMessage.includes('seconds') ||
-        (data.user && (!data.user.identities || data.user.identities.length === 0));
-
-      if (isRegistered) {
-        setIsSignUp(false);
-        setAuthMethod('password');
-        setStep(2);
-      } else if (!error && data.user) {
-        // It's a new user! 
-        // The dummy signUp above actually created them with 'check_only_password_123'.
-        await supabase.auth.signOut();
-        setIsSignUp(true);
-        setAuthMethod('password');
-        setStep(2);
-      } else {
-        setIsSignUp(false);
-        setAuthMethod('password');
-        setStep(2);
-      }
-    } catch (err) {
-      setStep(2);
-    } finally {
-      setLoading(false);
-    }
+    
+    // Move straight to password step to avoid 422 errors and abandoned accounts
+    setIsSignUp(false);
+    setAuthMethod('password');
+    setStep(2);
   };
 
   const handleUseCode = async () => {
@@ -235,57 +199,60 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        // Because the dummy signup in step 1 already created the user with a placeholder password,
-        // we must sign them in with that placeholder, then update their password to the real one.
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email,
-          password: 'Check_Only_Password_123!'
-        });
-        
-        if (signInErr) {
-          // If this fails, maybe they are an existing user who stumbled into the signup flow?
-          // Fallback: try normal sign in just in case.
-          const { error: fallbackErr } = await supabase.auth.signInWithPassword({ email, password });
-          if (fallbackErr) throw new Error('Account setup failed. Please refresh the page and try logging in.');
-          navigate('/');
-          return;
-        }
+      // 1. Try normal sign in first
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-        const { error } = await supabase.auth.updateUser({ 
-          password: password,
-          data: { email } 
-        });
-        if (error) throw error;
-        
-        navigate('/CreateProfile');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        
-        if (error) {
-          // Check for abandoned signup: if normal login fails, do they still have the dummy password?
+      if (signInErr) {
+        if (signInErr.message.includes('Invalid login credentials')) {
+          
+          // 2. Check for legacy abandoned signups (from older version of app)
           const { error: dummyErr } = await supabase.auth.signInWithPassword({ 
             email, 
             password: 'Check_Only_Password_123!' 
           });
           
           if (!dummyErr) {
-            // Yes! They are an abandoned signup. Set their real password now.
+            // It's an abandoned signup! Set their real password now.
             const { error: updateErr } = await supabase.auth.updateUser({ password });
             if (updateErr) throw updateErr;
             navigate('/CreateProfile');
             return;
           }
+
+          // 3. Not an abandoned signup, try creating a new account
+          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+            email,
+            password
+          });
+
+          if (signUpErr) {
+            if (signUpErr.status === 422 && signUpErr.message.toLowerCase().includes('registered')) {
+              // They are an existing user who just typed the wrong password
+              throw new Error('Invalid login credentials');
+            }
+            // Other signup errors (e.g. weak password)
+            throw signUpErr;
+          }
           
-          throw error;
+          // 4. Signup successful
+          navigate('/CreateProfile');
+          return;
         }
-        navigate('/');
+
+        // Other sign in error
+        throw signInErr;
       }
+      
+      // Sign in successful
+      navigate('/');
     } catch (error: any) {
       const message = error.message || 'Authentication error';
       setModal({
         isOpen: true,
-        title: isSignUp ? 'Signup Failed' : 'Login Failed',
+        title: 'Authentication Failed',
         message: message === 'Invalid login credentials' 
           ? 'The password you entered is incorrect. Please try again or check if you need to sign up.' 
           : message,
@@ -339,10 +306,10 @@ export default function Auth() {
           ) : (
             <>
               <h1 className="auth-title">
-                {isSignUp ? 'Finish setting up' : (authMethod === 'password' ? 'Enter your password' : 'Enter the code we sent to your email')}
+                {authMethod === 'password' ? 'Enter your password' : 'Enter the code we sent to your email'}
               </h1>
               <p className="auth-subtitle">
-                {isSignUp ? 'Enter a password to create your account.' : ''}
+                Sign in or enter a new password to create an account.
               </p>
 
               <div className="auth-email-display" onClick={() => { setStep(1); setAuthMethod('password'); }}>
@@ -361,7 +328,7 @@ export default function Auth() {
                       autoFocus
                       required
                     />
-                    {isSignUp && password.length > 0 && (
+                    {password.length > 0 && (
                       <div className="password-strength-container">
                         <div className="strength-bar-bg">
                           <div 
@@ -379,11 +346,10 @@ export default function Auth() {
                     )}
                   </div>
                   <button type="submit" className="auth-btn" disabled={loading}>
-                    {loading ? 'Processing...' : (isSignUp ? 'Get Started' : 'Sign In')}
+                    {loading ? 'Processing...' : 'Continue'}
                   </button>
 
-                  {!isSignUp && (
-                    <>
+                  <>
                       <div className="auth-divider">
                         <span>or</span>
                       </div>
@@ -396,7 +362,6 @@ export default function Auth() {
                         {resendCooldown > 0 ? `Try again in ${resendCooldown}s` : 'Use Sign-in Code'}
                       </button>
                     </>
-                  )}
                 </form>
               ) : (
                 <form onSubmit={handleVerifyOtp} className="auth-form">
