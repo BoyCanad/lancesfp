@@ -252,7 +252,7 @@ export default function Auth() {
           return;
         }
 
-        const { data, error } = await supabase.auth.updateUser({ 
+        const { error } = await supabase.auth.updateUser({ 
           password: password,
           data: { email } 
         });
