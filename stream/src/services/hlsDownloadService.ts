@@ -35,30 +35,46 @@ function resolveUrl(base: string, relative: string): string {
 }
 
 /**
- * Parses an HLS master manifest and returns the first (best) variant playlist URL.
- * If it's already a media playlist (contains #EXTINF), returns the URL as-is.
+ * Parses an HLS master manifest and returns ALL variant playlist URLs (Video + Audio).
  */
-async function resolveMediaPlaylist(masterUrl: string): Promise<string> {
+async function resolveAllMediaPlaylists(masterUrl: string): Promise<string[]> {
   const res = await fetch(masterUrl);
   if (!res.ok) throw new Error(`Failed to fetch manifest: ${masterUrl}`);
   const text = await res.text();
 
-  if (text.includes('#EXTINF')) return masterUrl;
+  // If it's already a media playlist (contains #EXTINF), return it as the only item
+  if (text.includes('#EXTINF')) return [masterUrl];
 
+  const subPlaylists = new Set<string>();
   const lines = text.split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      return resolveUrl(masterUrl, trimmed);
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // 1. Find separate Audio Tracks (e.g., stream_Stereo.m3u8)
+    if (line.startsWith('#EXT-X-MEDIA:TYPE=AUDIO')) {
+      const uriMatch = line.match(/URI="([^"]+)"/);
+      if (uriMatch) {
+        subPlaylists.add(resolveUrl(masterUrl, uriMatch[1]));
+      }
+    } 
+    // 2. Find Video Tracks (the line following #EXT-X-STREAM-INF)
+    else if (line && !line.startsWith('#')) {
+      subPlaylists.add(resolveUrl(masterUrl, line));
     }
   }
-  throw new Error('No variant stream found in master playlist');
+
+  if (subPlaylists.size === 0) {
+    throw new Error('No variant stream found in master playlist');
+  }
+  
+  return Array.from(subPlaylists);
 }
 
 /**
- * Parses a media playlist and returns all .ts segment URLs in order.
+ * Parses a media playlist and returns all .ts/media segment URLs.
  */
-async function parseSegments(playlistUrl: string): Promise<{ playlistUrl: string; segmentUrls: string[] }> {
+async function parseSegments(playlistUrl: string): Promise<string[]> {
   const res = await fetch(playlistUrl);
   if (!res.ok) throw new Error(`Failed to fetch media playlist: ${playlistUrl}`);
   const text = await res.text();
@@ -71,7 +87,7 @@ async function parseSegments(playlistUrl: string): Promise<{ playlistUrl: string
       segmentUrls.push(resolveUrl(playlistUrl, trimmed));
     }
   }
-  return { playlistUrl, segmentUrls };
+  return segmentUrls;
 }
 
 // ─── Download Logic ───────────────────────────────────────────────────────────
@@ -79,10 +95,8 @@ async function parseSegments(playlistUrl: string): Promise<{ playlistUrl: string
 const activeAbortControllers = new Map<string, AbortController>();
 
 /**
- * Downloads all HLS segments + subtitle VTT files for a movie and stores
- * them in the Cache API. Emits progress via the callback.
- *
- * @param subtitleTracks  Optional subtitle tracks to cache alongside the video.
+ * Downloads all HLS segments (Video + Audio) + subtitle VTT files for a movie and 
+ * stores them in the Cache API. Emits progress via the callback.
  */
 export async function downloadHlsStream(
   movieId: string,
@@ -112,17 +126,24 @@ export async function downloadHlsStream(
   try {
     const cache = await caches.open(HLS_CACHE_NAME);
 
-    // Step 1: Resolve media playlist from master
-    const mediaPlaylistUrl = await resolveMediaPlaylist(m3u8Url);
+    // Step 1: Find all sub-playlists (Video variants + Audio tracks)
+    const mediaPlaylistUrls = await resolveAllMediaPlaylists(m3u8Url);
+    
+    // Step 2: Extract ALL unique media segment URLs from ALL playlists
+    const allSegments = new Set<string>();
+    for (const url of mediaPlaylistUrls) {
+      // Cache the sub-playlist itself first
+      await cacheWithKey(cache, url, url, controller.signal);
+      const segments = await parseSegments(url);
+      segments.forEach(seg => allSegments.add(seg));
+    }
 
-    // Step 2: Parse all segment URLs
-    const { segmentUrls } = await parseSegments(mediaPlaylistUrl);
-
-    // Collect subtitle URLs to cache
+    const segmentArray = Array.from(allSegments);
     const subtitleUrls = (subtitleTracks ?? []).map((t) => t.url).filter(Boolean);
 
-    // Total = master manifest + media playlist + segments + subtitle files
-    const total = segmentUrls.length + 2 + subtitleUrls.length;
+    // Total = master manifest + segments + subtitle files
+    // (Note: playlists are already cached in step 2)
+    const total = segmentArray.length + 1 + subtitleUrls.length;
     report({ total, downloaded: 0 });
 
     // Step 3: Cache the master manifest
@@ -130,19 +151,12 @@ export async function downloadHlsStream(
     let downloaded = 1;
     report({ total, downloaded });
 
-    // Step 4: Cache the media playlist
-    if (mediaPlaylistUrl !== m3u8Url) {
-      await cacheWithKey(cache, mediaPlaylistUrl, mediaPlaylistUrl, controller.signal);
-      downloaded++;
-      report({ total, downloaded });
-    }
-
-    // Step 5: Download video segments in parallel batches
-    const BATCH_SIZE = 4;
-    for (let i = 0; i < segmentUrls.length; i += BATCH_SIZE) {
+    // Step 4: Download all unique segments in batches (Prevents crashes/timeouts)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < segmentArray.length; i += BATCH_SIZE) {
       if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
-      const batch = segmentUrls.slice(i, i + BATCH_SIZE);
+      const batch = segmentArray.slice(i, i + BATCH_SIZE);
       await Promise.all(
         batch.map(async (url) => {
           await cacheWithKey(cache, url, url, controller.signal);
@@ -152,7 +166,7 @@ export async function downloadHlsStream(
       );
     }
 
-    // Step 6: Download subtitle VTT files (non-fatal if one fails)
+    // Step 5: Download subtitle VTT files
     for (const url of subtitleUrls) {
       if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
       try {
@@ -164,23 +178,26 @@ export async function downloadHlsStream(
       report({ total, downloaded });
     }
 
-    // Step 7: Store metadata for offline management
+    // Step 6: Store metadata for offline management
     const meta: OfflineMovieMeta = {
       movieId,
       m3u8Url,
-      mediaPlaylistUrl,
-      segmentCount: segmentUrls.length,
+      mediaPlaylistUrls, // Updated to store all playlists
+      segmentCount: segmentArray.length,
       subtitleUrls,
       downloadedAt: Date.now(),
     };
     saveOfflineMeta(meta);
 
     report({ status: 'done', total, downloaded: total });
+    alert('✅ Download Complete!');
   } catch (err: any) {
     if (err?.name === 'AbortError') {
       report({ status: 'idle', total: 0, downloaded: 0 });
     } else {
+      console.error('❌ Fatal error during download:', err);
       report({ status: 'error', error: err?.message ?? 'Unknown error' });
+      alert('❌ Failed to download video. Check console for details.');
       throw err;
     }
   } finally {
@@ -191,16 +208,6 @@ export async function downloadHlsStream(
 /**
  * Fetches a URL and stores it in the cache under the given key.
  * Skips if already cached.
- *
- * WHY we buffer into ArrayBuffer before cache.put():
- * ─────────────────────────────────────────────────
- * cache.put(key, liveResponse) pipes a *live network stream* directly into
- * the Cache API.  If the CDN redirects mid-flight, the connection drops, or
- * the CORS stream is tainted, Chrome throws:
- *   "Failed to execute 'put' on 'Cache': Cache.put() encountered a network error"
- *
- * By reading the entire body into memory first (arrayBuffer()), we hand the
- * Cache API a *finished*, in-memory Response — nothing can fail mid-stream.
  */
 async function cacheWithKey(
   cache: Cache,
@@ -211,12 +218,10 @@ async function cacheWithKey(
   const existing = await cache.match(key);
   if (existing) return;
 
-  // Follow redirects explicitly so the final resolved URL is what we cache
   const res = await fetch(url, { signal, redirect: 'follow' });
   if (!res.ok) throw new Error(`Failed to fetch: ${url} (${res.status})`);
 
-  // Buffer the entire body into memory — eliminates "Cache.put() network error"
-  // that occurs when the live stream is interrupted during cache.put().
+  // Buffer the entire body into memory to prevent mid-stream network errors
   const buffer = await res.arrayBuffer();
   const buffered = new Response(buffer, {
     status: res.status,
@@ -242,9 +247,8 @@ export function cancelDownload(movieId: string): void {
 export interface OfflineMovieMeta {
   movieId: string;
   m3u8Url: string;
-  mediaPlaylistUrl: string;
+  mediaPlaylistUrls: string[];
   segmentCount: number;
-  /** Cached subtitle VTT URLs */
   subtitleUrls: string[];
   downloadedAt: number;
 }
@@ -274,8 +278,7 @@ function saveOfflineMeta(meta: OfflineMovieMeta): void {
 }
 
 /**
- * Deletes all cached segments, manifests and subtitle files for a movie,
- * then removes its metadata entry.
+ * Deletes all cached segments, manifests and subtitle files for a movie.
  */
 export async function deleteOfflineMovie(movieId: string): Promise<void> {
   const meta = getOfflineMeta(movieId);
@@ -286,26 +289,24 @@ export async function deleteOfflineMovie(movieId: string): Promise<void> {
   // Delete master manifest
   await cache.delete(meta.m3u8Url);
 
-  // Delete media playlist
-  if (meta.mediaPlaylistUrl !== meta.m3u8Url) {
-    await cache.delete(meta.mediaPlaylistUrl);
-  }
-
-  // Delete all .ts segments by re-parsing the cached playlist
-  try {
-    const res = await cache.match(meta.mediaPlaylistUrl);
-    if (res) {
-      const text = await res.text();
-      const lines = text.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith('#')) {
-          const segUrl = resolveUrl(meta.mediaPlaylistUrl, trimmed);
-          await cache.delete(segUrl);
+  // Delete all media playlists and their segments
+  for (const playlistUrl of meta.mediaPlaylistUrls) {
+    try {
+      const res = await cache.match(playlistUrl);
+      if (res) {
+        const text = await res.text();
+        const lines = text.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith('#')) {
+            const segUrl = resolveUrl(playlistUrl, trimmed);
+            await cache.delete(segUrl);
+          }
         }
       }
-    }
-  } catch { /* ignore */ }
+      await cache.delete(playlistUrl);
+    } catch { /* ignore */ }
+  }
 
   // Delete cached subtitle VTT files
   for (const url of meta.subtitleUrls ?? []) {
@@ -317,10 +318,6 @@ export async function deleteOfflineMovie(movieId: string): Promise<void> {
   localStorage.setItem(META_KEY, JSON.stringify(updated));
 }
 
-/**
- * Returns the cached m3u8 URL for offline playback (same URL, served from cache).
- * Returns null if not available offline.
- */
 export function getOfflinePlaybackUrl(movieId: string): string | null {
   const meta = getOfflineMeta(movieId);
   return meta ? meta.m3u8Url : null;
