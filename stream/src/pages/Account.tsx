@@ -14,6 +14,7 @@ import {
   Check,
   MonitorSmartphone,
   ShieldAlert,
+  Settings,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles, type Profile } from '../services/profileService';
@@ -150,16 +151,13 @@ export default function Account() {
               <div className="mobile-card">
                 <div className="mobile-card-badge">Member since {memberSince}</div>
                 <div className="mobile-card-main">
-                  <h3 className="mobile-plan-name">Free plan</h3>
+                  <h3 className="mobile-plan-name">Free Plan</h3>
                   <p className="mobile-payment-info">{userEmail || 'zedsmash154@gmail.com'}</p>
                 </div>
                 
                 <div className="mobile-card-links">
-                  <button className="mobile-card-link">
-                    <div className="mobile-card-link-left">
-                      <span>Buy an extra member slot</span>
-                      <span className="mobile-tag-new">New</span>
-                    </div>
+                  <button className="mobile-card-link" onClick={() => navigate('/change-plan')}>
+                    <span>Change plan</span>
                     <ChevronRight size={20} color="#333" />
                   </button>
                   <button className="mobile-card-link">
@@ -490,7 +488,7 @@ export default function Account() {
                   
                   <section className="account-section">
                     <div className="account-quick-links-card">
-                      <button className="account-link-item">
+                      <button className="account-link-item" onClick={() => navigate('/change-plan')}>
                         <div className="account-link-item__left">
                           <Layers size={22} className="account-link-icon" />
                           <span>Change plan</span>
@@ -519,6 +517,67 @@ export default function Account() {
                         </div>
                         <ChevronRight size={20} color="#666" />
                       </button>
+                      <button className="account-link-item">
+                        <div className="account-link-item__left">
+                          <MonitorSmartphone size={22} className="account-link-icon" />
+                          <span>Manage access and devices</span>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+
+                      <button className="account-link-item" onClick={() => setIsChangingPassword(true)}>
+                        <div className="account-link-item__left">
+                          <Lock size={22} className="account-link-icon" />
+                          <span>Update password</span>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+
+                      <button className="account-link-item">
+                        <div className="account-link-item__left">
+                          <Smile size={22} className="account-link-icon" />
+                          <span>Transfer a profile</span>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+
+                      <button className="account-link-item">
+                        <div className="account-link-item__left">
+                          <ShieldAlert size={22} className="account-link-icon" />
+                          <span>Adjust parental controls</span>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+
+                      <button className="account-link-item">
+                        <div className="account-link-item__left">
+                          <Settings size={22} className="account-link-icon" />
+                          <div className="account-link-text-stack">
+                            <span>Edit settings</span>
+                            <p className="account-link-desc">Languages, subtitles, autoplay, notifications, privacy and more</p>
+                          </div>
+                        </div>
+                        <ChevronRight size={20} color="#666" />
+                      </button>
+                    </div>
+                  </section>
+
+                  <section className="account-section">
+                    <div className="account-quick-links-card manage-profiles-card" onClick={() => setActiveTab('profiles')}>
+                      <div className="manage-profiles-content">
+                        <div className="manage-profiles-left">
+                          <h3 className="manage-profiles-title">Manage profiles</h3>
+                          <p className="manage-profiles-sub">{profiles.length} profiles</p>
+                        </div>
+                        <div className="manage-profiles-right">
+                          <div className="profile-avatars-stack">
+                            {profiles.slice(0, 4).map((p) => (
+                              <img key={p.id} src={p.image} alt={p.name} className="stacked-avatar" />
+                            ))}
+                          </div>
+                          <ChevronRight size={20} color="#666" />
+                        </div>
+                      </div>
                     </div>
                   </section>
                 </>
@@ -666,10 +725,64 @@ export default function Account() {
                 </>
               )}
 
-              {(activeTab !== 'overview' && activeTab !== 'security' && activeTab !== 'profiles') && (
-                <div className="account-placeholder">
-                  <h1 className="account-title">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
-                  <p className="account-subtitle">Coming soon...</p>
+              {activeTab === 'membership' && (
+                <div className="membership-tab-content">
+                  <h1 className="account-title">Membership</h1>
+                  <p className="account-subtitle">Plan Details</p>
+
+                  <section className="account-section">
+                    <div className="membership-card premium">
+                      <div className="membership-card-top-border"></div>
+                      <div className="membership-card-content">
+                        <div className="membership-plan-info">
+                          <h2 className="membership-plan-name">Free Plan</h2>
+                          <p className="membership-plan-desc">4K video resolution with spatial audio, ad-free watching and more.</p>
+                        </div>
+
+                        <div className="membership-actions">
+                          <button className="membership-action-item" onClick={() => navigate('/change-plan')}>
+                            <span>Change plan</span>
+                            <ChevronRight size={20} color="#666" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <p className="account-section-label">Payment Info</p>
+
+                  <section className="account-section">
+                    <div className="membership-card">
+                      <div className="membership-card-content">
+                        <div className="payment-info-header">
+                          <h2 className="payment-next-title">Next payment</h2>
+                          <p className="payment-next-date">May 25, 2026</p>
+                          <div className="payment-method-row">
+                             <div className="mastercard-icon">
+                               <div className="mc-circle red"></div>
+                               <div className="mc-circle orange"></div>
+                             </div>
+                             <span className="payment-card-number">•••• •••• •••• 5555</span>
+                          </div>
+                        </div>
+
+                        <div className="membership-actions">
+                          <button className="membership-action-item">
+                            <span>Manage payment method</span>
+                            <ChevronRight size={20} color="#666" />
+                          </button>
+                          <button className="membership-action-item">
+                            <span>Redeem gift or promo code</span>
+                            <ChevronRight size={20} color="#666" />
+                          </button>
+                          <button className="membership-action-item">
+                            <span>View payment history</span>
+                            <ChevronRight size={20} color="#666" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               )}
             </>

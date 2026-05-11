@@ -2,7 +2,7 @@
   background-color: #ffffff;
   min-height: 100vh;
   color: #333333;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Netflix Sans', 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -894,3 +894,216 @@
 .account-profiles-card .account-link-text-stack {
   flex: 1;
 }
+
+/* Membership Tab Styles */
+.membership-tab-content {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.membership-card {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.membership-card.premium {
+  border-top: none;
+}
+
+.membership-card-top-border {
+  height: 4px;
+  background: linear-gradient(90deg, #2a1b5d 0%, #d80c16 100%);
+  width: 100%;
+}
+
+.membership-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.membership-plan-info {
+  padding: 24px;
+}
+
+.membership-plan-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #000;
+  margin: 0 0 4px 0;
+}
+
+.membership-plan-extra {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.membership-plan-desc {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.membership-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.membership-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: none;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.membership-action-item:hover {
+  background: #fafafa;
+}
+
+.membership-action-item span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000;
+}
+
+.membership-action-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.extra-member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.extra-member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Payment Info Styles */
+.payment-info-header {
+  padding: 24px;
+}
+
+.payment-next-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #000;
+  margin: 0 0 4px 0;
+}
+
+.payment-next-date {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 16px 0;
+}
+
+.payment-method-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mastercard-icon {
+  display: flex;
+  position: relative;
+  width: 24px;
+  height: 15px;
+}
+
+.mc-circle {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.mc-circle.red {
+  background-color: #eb001b;
+  left: 0;
+}
+
+.mc-circle.orange {
+  background-color: #ff5f00;
+  left: 9px;
+  opacity: 0.8;
+}
+
+.payment-card-number {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Manage Profiles Card */
+.manage-profiles-card {
+  cursor: pointer;
+  padding: 20px 24px;
+  transition: background 0.2s;
+}
+
+.manage-profiles-card:hover {
+  background: #fafafa;
+}
+
+.manage-profiles-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.manage-profiles-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 2px 0;
+}
+
+.manage-profiles-sub {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.manage-profiles-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-avatars-stack {
+  display: flex;
+  align-items: center;
+}
+
+.stacked-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 2px solid #fff;
+  margin-left: -8px;
+  object-fit: cover;
+}
+
+.stacked-avatar:first-child {
+  margin-left: 0;
+}
+
+

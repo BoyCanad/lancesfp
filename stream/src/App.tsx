@@ -35,6 +35,7 @@ import MyNetflix from './pages/MyNetflix';
 import ForgotPassword from './pages/ForgotPassword';
 import Introduction from './pages/Introduction';
 import LanguageSettings from './pages/LanguageSettings';
+import ChangePlan from './pages/ChangePlan';
 import './App.css';
 
 function App() {
@@ -51,7 +52,7 @@ function App() {
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock') || pathname.startsWith('/LanguageSettings');
   const isAuth = pathname === '/login' || pathname === '/introduction';
   const isForgotPassword = pathname === '/forgot-password';
-  const isAccount = pathname === '/account';
+  const isAccount = pathname === '/account' || pathname === '/change-plan';
   const isMyNetflix = pathname === '/my-lsfplus';
   const isDownloads = pathname === '/downloads';
   const isDetailPage = [
@@ -201,6 +202,7 @@ function App() {
       '/my-lsfplus': 'My LSFPlus',
       '/downloads': 'Downloads',
       '/forgot-password': 'Reset Password',
+      '/change-plan': 'Change Plan',
       '/CreateProfile': 'Create Profile',
       '/collections/el-bimbo': 'El Bimbo Collection',
       '/ang-huling-el-bimbo-play': 'Ang Huling El Bimbo',
@@ -287,6 +289,7 @@ function App() {
         <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
+        <Route path="/change-plan" element={session ? <ChangePlan /> : <Navigate to="/login" replace />} />
         <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
       </Routes>
 
