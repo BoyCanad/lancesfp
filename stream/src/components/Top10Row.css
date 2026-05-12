@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 10;
 }
@@ -43,7 +43,7 @@
 
 .top10-row__track {
   display: flex;
-  gap: 0;
+  gap: 2vw;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
@@ -127,34 +127,37 @@
 .top10-card__rank {
   position: relative;
   flex-shrink: 0;
-  font-size: clamp(120px, 12vw, 180px);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -8px;
-  /* Hollow outline style */
-  color: transparent;
-  -webkit-text-stroke: 3px rgba(255, 255, 255, 0.8);
+  font-family: 'Netflix Sans', 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
+  font-size: 260px;
+  font-weight: 900; 
+  font-style: normal;
+  line-height: 0.75;
+  letter-spacing: -8px; 
+  /* Thicken the font using a stroke of the same color as the fill */
+  color: #000;
+  -webkit-text-stroke: 4px #000;
+  /* Use filter for a soft, clean outer outline */
+  filter: drop-shadow(3px 0 0 #595959) drop-shadow(-3px 0 0 #595959) drop-shadow(0 3px 0 #595959) drop-shadow(0 -3px 0 #595959);
   user-select: none;
-  /* Overlap: number sits behind the thumbnail */
-  margin-right: -40px;
+  /* Thumbnail overlaps the right portion of the number */
+  margin-right: -15px;
   z-index: 1;
   pointer-events: none;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.9));
   align-self: flex-end;
-  padding-bottom: 8px;
-  /* Smooth transition when sibling cards shift on hover */
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  padding-bottom: 0;
+  transform: translateY(6px); /* Fine-tune to align with thumb bottom */
+  transition: opacity 0.3s ease;
 }
 
 .top10-card__rank--one {
-  margin-right: -22px; /* Less overlap for '1' so it moves left relative to the thumbnail, preventing cutoff */
+  margin-right: -20px;
+  letter-spacing: -2px;
 }
 
 /* Dim adjacent numbers when a card is hovered */
 .top10-card:has(~ .top10-card:hover) .top10-card__rank,
 .top10-card:hover ~ .top10-card .top10-card__rank {
-  opacity: 0.4;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  opacity: 0.3;
 }
 
 /* ─── Shared positioning wrapper for thumb + expanded popup ─── */
@@ -162,6 +165,7 @@
   position: relative;
   flex-shrink: 0;
   z-index: 2;
+  margin-bottom: 10px;
 }
 
 /* ─── Portrait thumbnail ────────────────────────────────────── */
@@ -300,14 +304,9 @@
   transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Bottom gradient on preview so details blend in */
+/* Bottom gradient removed */
 .top10-card__media-wrap::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(20,20,20,0.9) 100%);
-  z-index: 3;
-  pointer-events: none;
+  display: none;
 }
 
 .top10-card__vol-btn {
@@ -524,29 +523,38 @@
   }
 
   .top10-row__track {
-    gap: 16px !important;
-    padding: 8px 16px !important;
+    gap: 0 !important;
+    padding: 8px 0 8px 16px !important;
     margin: 0 !important;
   }
 
   .top10-card__rank {
-    font-size: clamp(100px, 30vw, 160px);
-    margin-right: -20px; /* Reduced overlap to make it more visible */
-    letter-spacing: -6px;
-    -webkit-text-stroke: 3px rgba(255,255,255,1);
-    color: transparent;
-    margin-bottom: -15px; /* lower it slightly to align with bottom of thumbnail */
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8)); /* Add shadow for extra visibility */
+    font-family: 'Netflix Sans', 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
+    font-size: clamp(130px, 38vw, 200px);
+    font-weight: 900;
+    line-height: 0.7;
+    letter-spacing: -4px;
+    color: #000;
+    -webkit-text-stroke: 2px #000;
+    filter: drop-shadow(1.5px 0 0 #595959) drop-shadow(-1.5px 0 0 #595959) drop-shadow(0 1.5px 0 #595959) drop-shadow(0 -1.5px 0 #595959);
+    margin-right: -15px;
+    padding-bottom: 0;
+    transform: translateY(3px);
   }
 
   .top10-card__rank--one {
-    margin-right: -5px; /* Rank 1 offset */
+    margin-right: -20px;
+    letter-spacing: -1px;
   }
 
   .top10-card__thumb-wrap {
     width: 140px;
     aspect-ratio: 3 / 4;
     border-radius: 12px;
+  }
+
+  .top10-card__thumb-container {
+    margin-bottom: 8px;
   }
 
   /* No hover expansion on mobile — tap goes to detail */

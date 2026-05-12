@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import LoadingSpinner from './components/LoadingSpinner';
+import SplashScreen from './components/SplashScreen';
 import { useLanguage } from './i18n/LanguageContext';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
@@ -46,6 +47,9 @@ function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    return !sessionStorage.getItem('splashShown');
+  });
 
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
@@ -237,13 +241,33 @@ function App() {
   }, [pathname, session, location.search]);
 
   if (checkingAuth) {
-    // Show spinner during auth check too
+    // Show splash immediately if it's the first entry, otherwise show spinner
+    if (showSplash) {
+      return (
+        <div className="app">
+          <SplashScreen 
+            onComplete={() => {
+              setShowSplash(false);
+              sessionStorage.setItem('splashShown', 'true');
+            }} 
+          />
+        </div>
+      );
+    }
     return <LoadingSpinner visible={true} />;
   }
 
   return (
     <div className="app">
-      <LoadingSpinner visible={pageLoading} profileImage={transitionProfile} />
+      {showSplash && (
+        <SplashScreen 
+          onComplete={() => {
+            setShowSplash(false);
+            sessionStorage.setItem('splashShown', 'true');
+          }} 
+        />
+      )}
+      <LoadingSpinner visible={pageLoading && !showSplash} profileImage={transitionProfile} />
       {showNavAndFooter && !isMyNetflix && !isGenrePage && <Navbar />}
 
       <Routes>
