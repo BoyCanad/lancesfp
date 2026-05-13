@@ -33,7 +33,8 @@ export default function CategoryPage() {
   const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
   const [inMyList, setInMyList] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
-  const [heroMuted, setHeroMuted] = useState(true);
+  const [heroMuted, setHeroMuted] = useState(false);
+  const [isHeroMinimal, setIsHeroMinimal] = useState(false);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [dynamicContinueWatching, setDynamicContinueWatching] = useState<any[]>([]);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
@@ -91,8 +92,8 @@ export default function CategoryPage() {
 
   const handleMovieClick = (movie: any) => navigate(PATH_MAP[movie.id] || `/watch/${movie.id}`);
 
-  const featured = movies.length > 0 ? (genreId.toLowerCase() === 'shows' ? movies.find(m => m.id === 't1') || movies[0] : movies[0]) : null;
-  const desktopHero = genreId.toLowerCase() === 'shows' ? (movies.find(m => m.id === 't1') || afterHours) : (featured || elBimboFeatured);
+  const featured = movies.length > 0 ? (genreId.toLowerCase() === 'shows' ? movies.find(m => m.id === 'beyond-the-last-dance') || movies[0] : movies[0]) : null;
+  const desktopHero = genreId.toLowerCase() === 'shows' ? (movies.find(m => m.id === 'beyond-the-last-dance') || afterHours) : (featured || elBimboFeatured);
 
   useEffect(() => {
     if (featured) setInMyList(isInMyList(featured.id));
@@ -106,13 +107,20 @@ export default function CategoryPage() {
 
   const isAggregatedGenre = ['shows', 'movies'].includes(genreId.toLowerCase());
   
+  useEffect(() => {
+    setIsHeroMinimal(false); // Reset on genre change
+    const timer = setTimeout(() => {
+      setIsHeroMinimal(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [genreId]);
+
   // ─── Row structure helper ───────────────────────────────────────────────────
   const getCategoryRows = () => {
     const rows = [];
     
     // Add Continue Watching row if data exists
     if (dynamicContinueWatching.length > 0) {
-      // We often filter continue watching in category pages to match the genre
       const filteredCW = dynamicContinueWatching.filter(m => {
         if (genreId.toLowerCase() === 'shows') return m.mediaType === 'show';
         if (genreId.toLowerCase() === 'movies') return m.mediaType === 'movie';
@@ -167,20 +175,45 @@ export default function CategoryPage() {
             <img src={desktopHero.banner} className="cp__hero-media" alt={desktopHero.title} />
           )}
           <div className="cp__hero-gradient" />
-          <div className="cp__hero-content">
-            {desktopHero.logo ? <img src={desktopHero.logo} alt={desktopHero.title} className="cp__hero-logo" /> : <h2 className="cp__hero-title">{desktopHero.title}</h2>}
+          <div className={`cp__hero-content ${isHeroMinimal ? 'cp__hero-content--minimal' : ''}`}>
+            {desktopHero.logo ? (
+              <img src={desktopHero.logo} alt={desktopHero.title} className="cp__hero-logo" />
+            ) : (
+              <h2 className="cp__hero-title">{desktopHero.title}</h2>
+            )}
+            
+            <div className="cp__hero-status">
+              {desktopHero.comingSoon ? "New Episodes Coming Soon" : "Watch Season 1 Now"}
+            </div>
+
             <p className="cp__hero-desc">{desktopHero.description}</p>
+            
             <div className="cp__hero-actions">
-              <button className="cp__hero-play-btn" onClick={() => handleMovieClick(desktopHero)}><Play size={20} fill="black" /> Play</button>
-              <button className="cp__hero-info-btn" onClick={() => handleMovieClick(desktopHero)}><Info size={20} /> More Info</button>
+              <button className="cp__hero-play-btn" onClick={() => handleMovieClick(desktopHero)}>
+                <Play size={24} fill="black" /> Play
+              </button>
+              <button className="cp__hero-info-btn" onClick={() => handleMovieClick(desktopHero)}>
+                <Info size={24} /> More Info
+              </button>
             </div>
           </div>
+
+          <div className="cp__hero-right-meta">
+            {desktopHero.trailerUrl && (
+              <button className="cp__hero-mute-btn" onClick={() => { setHeroMuted(!heroMuted); if (heroVideoRef.current) heroVideoRef.current.muted = !heroMuted; }}>
+                {heroMuted ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                )}
+              </button>
+            )}
+            <div className="cp__hero-rating">
+              {desktopHero.ageRating}
+            </div>
+          </div>
+
           <div className="cp__hero-vignette" />
-          {desktopHero.trailerUrl && (
-            <button className="cp__hero-mute-btn" onClick={() => { setHeroMuted(!heroMuted); if (heroVideoRef.current) heroVideoRef.current.muted = !heroMuted; }}>
-              {heroMuted ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>}
-            </button>
-          )}
         </div>
 
         <div className="cp__rows">

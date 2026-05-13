@@ -125,18 +125,31 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
     if (isActive) {
       video.currentTime = 0;
       video.muted = isMuted;
+      video.volume = isMuted ? 0 : 1;
       setIsBuffering(true);
       video.play().catch(() => {
         // Autoplay policy blocked — retry muted
         video.muted = true;
+        video.volume = 0;
         video.play().catch(() => {});
       });
     } else {
       video.pause();
+      video.muted = true;
+      video.volume = 0;
       video.currentTime = 0;
       setCurrentTime(0);
     }
   }, [isActive]);
+
+  // Handle mount state
+  useEffect(() => {
+    if (!isActive && videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.muted = true;
+      videoRef.current.volume = 0;
+    }
+  }, []);
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -157,8 +170,12 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
 
   // Keep mute in sync
   useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = isMuted;
-  }, [isMuted]);
+    if (videoRef.current) {
+      const shouldMute = !isActive || isMuted;
+      videoRef.current.muted = shouldMute;
+      videoRef.current.volume = shouldMute ? 0 : 1;
+    }
+  }, [isMuted, isActive]);
 
   const handleVideoClick = () => {
     const video = videoRef.current;
@@ -206,7 +223,7 @@ function ClipItem({ movie, isActive, isNext, isPrev, isMuted, onMuteToggle, inde
         src={movie.tallTrailerUrl || movie.trailerUrl}
         playsInline
         loop
-        muted={isMuted}
+        muted={!isActive || isMuted}
         preload={isActive || isNext || isPrev ? 'auto' : 'metadata'}
         onClick={handleVideoClick}
       />
@@ -350,8 +367,12 @@ export default function Clips() {
   // Fetch from Supabase and filter for clips
   useEffect(() => {
     fetchAllMovies().then(movies => {
+      // Filter for tall trailers AND deduplicate by tallTrailerUrl to avoid overlapping same-video audio
       const clips = movies.filter(m => m.tallTrailerUrl);
-      if (clips.length > 0) setClipsData(clips);
+      const uniqueClips = clips.filter((movie, index, self) =>
+        index === self.findIndex((m) => m.tallTrailerUrl === movie.tallTrailerUrl)
+      );
+      if (uniqueClips.length > 0) setClipsData(uniqueClips);
     });
   }, []);
 
@@ -391,7 +412,7 @@ export default function Clips() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [clipsData]);
 
 
 

@@ -268,7 +268,7 @@ function App() {
         />
       )}
       <LoadingSpinner visible={pageLoading && !showSplash} profileImage={transitionProfile} />
-      {showNavAndFooter && !isMyNetflix && !isGenrePage && <Navbar />}
+      {showNavAndFooter && !isMyNetflix && <Navbar />}
 
       <Routes>
         <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
