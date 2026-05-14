@@ -2204,7 +2204,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   return (
     <div
       ref={containerRef}
-      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''} ${showXRay && !isExpandingTrailer && !showRecommendation && isPortrait && isMobileWindow ? 'portrait-xray-mode' : ''}`}
+      className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${isPlaying ? 'is-playing' : 'is-paused'} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''} ${showXRay && !isExpandingTrailer && !showRecommendation && isPortrait && isMobileWindow ? 'portrait-xray-mode' : ''}`}
     >
 
       {/* GPU Accelerated Ambient Glow - Mobile Portrait Only to preserve landscape performance */}
@@ -2384,10 +2384,12 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
           {/* Bottom Branding (Desktop Right, Mobile Left) */}
           <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} ${!isTrailerVideoVisible ? 'static-banner-state' : ''} fade-in-actions`}>
-            {nextMovie.logo ? (
-              <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
-            ) : (
-              <h2 className="inline-trailer-title">{nextMovie.title}</h2>
+            {!isMobileWindow && (
+              nextMovie.logo ? (
+                <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
+              ) : (
+                <h2 className="inline-trailer-title">{nextMovie.title}</h2>
+              )
             )}
 
             {/* Description (Desktop only, only during banner pause phase) */}
@@ -2482,70 +2484,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           {/* Subtitles handled by custom overlay */}
         </video>
         
-        {/* Pause Info Overlay (Amazon/Netflix Style) */}
-        {!isPlaying && !isLoading && showControls && !showRecommendation && !isExpandingTrailer && !isScrubbing && (
-          <div className={`player-pause-info ${showXRay && isXRayExpanded && !isPortrait ? 'xray-shift' : ''}`}>
-            <div className="pause-info-content">
-              {movie?.logo ? (
-                <img src={movie.logo} alt={movie.title} className="pause-info-logo" />
-              ) : (
-                <h2 className="pause-info-title">
-                  {movie?.id === 'after-hours'
-                    ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
-                    : title}
-                </h2>
-              )}
-              <p className="pause-info-description">
-                {movie?.description}
-              </p>
-            </div>
-          </div>
-        )}
-
-
-
-        {/* 2X Speed Indicator */}
-        {is2xPressing && isMobileWindow && (
-          <div className="speed-2x-indicator">
-            <div className="speed-2x-pill">
-              <FastForward size={16} fill="white" strokeWidth={0} />
-              <span>2X Speed</span>
-            </div>
-          </div>
-        )}
-
-        {/* Playback Indicators Overlay (Bubble Pop-up) - Filtered to only show for Play/Pause */}
-        {activeIndicator && (activeIndicator.type === 'play' || activeIndicator.type === 'pause') && (
-          <div className={`playback-indicator playback-indicator--${activeIndicator.type}`} key={activeIndicator.key}>
-            <div className="indicator-icon-wrapper">
-              {activeIndicator.type === 'play' && <Play size={64} fill="currentColor" />}
-              {activeIndicator.type === 'pause' && <Pause size={64} fill="currentColor" />}
-            </div>
-          </div>
-        )}
-
-        {/* Clip Editor Inner Buttons Overlay */}
-        {isClippingMode && (
-          <>
-            <button className="clip-inner-btn clip-inner-play" onClick={(e) => { e.stopPropagation(); togglePlay(); }}>
-              {isPlaying ? <Pause size={28} fill="currentColor" strokeWidth={0.5} /> : <Play size={28} fill="currentColor" strokeWidth={0.5} />}
-            </button>
-            <button className="clip-inner-btn clip-inner-replay" onClick={(e) => {
-              e.stopPropagation();
-              if (videoRef.current) {
-                videoRef.current.currentTime = clipStart;
-                videoRef.current.play().catch(() => { });
-                setIsPlaying(true);
-              }
-            }}>
-              <RotateCcw size={28} />
-            </button>
-          </>
-        )}
-
-        {/* Custom Subtitle Overlay */}
+        {/* Custom Subtitle Overlay — rendered BEFORE pause-info so that the pause gradient (z-index:200) correctly paints on top */}
         {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
-          <div className="custom-subtitle-overlay-container">
+          <div className={`custom-subtitle-overlay-container ${!isPlaying ? 'player-paused' : ''}`}>
             {(() => {
               const filteredCues = parsedSubtitles[movie.subtitles[activeSubtitle].url]
                 .filter(cue => {
@@ -2590,6 +2531,71 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               ));
             })()}
           </div>
+        )}
+
+        {/* Pause Info Overlay (Amazon/Netflix Style) — rendered AFTER subtitle so z-index:200 wins */}
+        {!isPlaying && !isLoading && showControls && !showRecommendation && !isExpandingTrailer && !isScrubbing && !isMobileWindow && (
+          <div className={`player-pause-info ${showXRay && isXRayExpanded && !showAllPanel && !isPortrait ? 'xray-shift' : ''}`}>
+            <div className="pause-info-content">
+              {!isMobileWindow && (
+                <>
+                  {movie?.logo ? (
+                    <img src={movie.logo} alt={movie.title} className="pause-info-logo" />
+                  ) : (
+                    <h2 className="pause-info-title">
+                      {movie?.id === 'after-hours'
+                        ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
+                        : title}
+                    </h2>
+                  )}
+                  <p className="pause-info-description">
+                    {movie?.description}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+
+
+        {/* 2X Speed Indicator */}
+        {is2xPressing && isMobileWindow && (
+          <div className="speed-2x-indicator">
+            <div className="speed-2x-pill">
+              <FastForward size={16} fill="white" strokeWidth={0} />
+              <span>2X Speed</span>
+            </div>
+          </div>
+        )}
+
+        {/* Playback Indicators Overlay (Bubble Pop-up) - Filtered to only show for Play/Pause */}
+        {activeIndicator && (activeIndicator.type === 'play' || activeIndicator.type === 'pause') && (
+          <div className={`playback-indicator playback-indicator--${activeIndicator.type}`} key={activeIndicator.key}>
+            <div className="indicator-icon-wrapper">
+              {activeIndicator.type === 'play' && <Play size={64} fill="currentColor" />}
+              {activeIndicator.type === 'pause' && <Pause size={64} fill="currentColor" />}
+            </div>
+          </div>
+        )}
+
+        {/* Clip Editor Inner Buttons Overlay */}
+        {isClippingMode && (
+          <>
+            <button className="clip-inner-btn clip-inner-play" onClick={(e) => { e.stopPropagation(); togglePlay(); }}>
+              {isPlaying ? <Pause size={28} fill="currentColor" strokeWidth={0.5} /> : <Play size={28} fill="currentColor" strokeWidth={0.5} />}
+            </button>
+            <button className="clip-inner-btn clip-inner-replay" onClick={(e) => {
+              e.stopPropagation();
+              if (videoRef.current) {
+                videoRef.current.currentTime = clipStart;
+                videoRef.current.play().catch(() => { });
+                setIsPlaying(true);
+              }
+            }}>
+              <RotateCcw size={28} />
+            </button>
+          </>
         )}
 
         {isLoading && !videoError && (
