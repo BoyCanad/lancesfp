@@ -12,6 +12,7 @@ interface XRayPanelProps {
   onBack?: () => void;
   onSeek?: (time: number) => void;
   onShowAllChange?: (show: boolean) => void;
+  onToggle?: (expanded: boolean) => void;
   isPortrait?: boolean;
 }
 
@@ -197,7 +198,7 @@ function PollView({ poll, isPortrait }: { poll: { question: string, options: str
   );
 }
 
-export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onShowAllChange, isPortrait }: XRayPanelProps) {
+export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onShowAllChange, onToggle, isPortrait }: XRayPanelProps) {
   const [expanded, setExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState<'scene' | 'cast' | 'music' | 'trivia' | 'polls' | 'bonus'>('scene');
@@ -208,6 +209,10 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
   useEffect(() => {
     onShowAllChange?.(showAll);
   }, [showAll, onShowAllChange]);
+
+  useEffect(() => {
+    onToggle?.(expanded);
+  }, [expanded, onToggle]);
 
   const activeScene = useMemo(() => {
     return xRay.scenes.find(s => currentTime >= s.start && currentTime <= s.end) || null;
@@ -642,7 +647,10 @@ export default function XRayPanel({ xRay, currentTime, onActorClick, onSeek, onS
         <div className="xray-panel__header">
           <button
             className="xray-panel__title-btn"
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => {
+              const next = !expanded;
+              setExpanded(next);
+            }}
           >
             <span className="xray-panel__title">X-Ray</span>
             {expanded ? <ChevronUp size={14} className="xray-panel__chevron" /> : <ChevronDown size={14} className="xray-panel__chevron" />}

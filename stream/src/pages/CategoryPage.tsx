@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Search, ChevronDown, Play, Plus, Check, Info } from 'lucide-react';
-import { featuredMovies, trendingMovies, elBimboFeatured, makingOfLegacy, elBimboCollections, afterHours, allMovies } from '../data/movies';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronDown, Play, Plus, Check, Info, ArrowLeft, Search } from 'lucide-react';
+import { elBimboFeatured, afterHours, allMovies } from '../data/movies';
 import { isInMyList, addToMyList, removeFromMyList } from '../services/listService';
 import { getWatchProgress } from '../services/profileService';
+import { useVideoFade } from '../hooks/useVideoFade';
+import ContentRow from '../components/ContentRow';
 import type { Profile } from '../services/profileService';
 import CategorySelector from '../components/CategorySelector';
 import './CategoryPage.css';
@@ -28,6 +30,8 @@ const PATH_MAP: Record<string, string> = {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function CategoryPage() {
   const { genreId = 'Browse' } = useParams<{ genreId: string }>();
+  const [searchParams] = useSearchParams();
+  const typeFilter = searchParams.get('type');
   const navigate = useNavigate();
   const [movies, setMovies] = useState<any[]>([]);
   const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
@@ -38,6 +42,7 @@ export default function CategoryPage() {
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
   const [dynamicContinueWatching, setDynamicContinueWatching] = useState<any[]>([]);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const [isVideoEnded, setIsVideoEnded] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth > 768);
@@ -70,30 +75,24 @@ export default function CategoryPage() {
   }, []);
 
   useEffect(() => {
-    const pool = [
-      ...featuredMovies,
-      ...trendingMovies,
-      elBimboFeatured,
-      makingOfLegacy,
-      afterHours,
-      ...elBimboCollections,
-    ];
-
-    const unique = Array.from(new Map(pool.map(item => [item.id, item])).values());
-
-    const filtered = unique.filter(m => {
+    const filtered = allMovies.filter(m => {
       if (genreId.toLowerCase() === 'shows') return m.mediaType === 'show';
       if (genreId.toLowerCase() === 'movies') return m.mediaType === 'movie';
-      return m.genre.some((g: string) => g.toLowerCase() === genreId.toLowerCase());
+      
+      const matchesGenre = m.genre.some((g: string) => g.toLowerCase() === genreId.toLowerCase() || g.toLowerCase().replace(/ /g, '-') === genreId.toLowerCase());
+      if (typeFilter === 'show') return matchesGenre && m.mediaType === 'show';
+      if (typeFilter === 'movie') return matchesGenre && m.mediaType === 'movie';
+      return matchesGenre;
     });
 
     setMovies(filtered);
-  }, [genreId]);
+  }, [genreId, typeFilter]);
 
   const handleMovieClick = (movie: any) => navigate(PATH_MAP[movie.id] || `/watch/${movie.id}`);
 
-  const featured = movies.length > 0 ? (genreId.toLowerCase() === 'shows' ? movies.find(m => m.id === 'beyond-the-last-dance') || movies[0] : movies[0]) : null;
-  const desktopHero = genreId.toLowerCase() === 'shows' ? (movies.find(m => m.id === 'beyond-the-last-dance') || afterHours) : (featured || elBimboFeatured);
+  const isShowContext = genreId.toLowerCase() === 'shows' || (genreId.toLowerCase() === 'documentary' && typeFilter === 'show');
+  const featured = movies.length > 0 ? (isShowContext ? movies.find(m => m.id === 'beyond-the-last-dance') || movies[0] : movies[0]) : null;
+  const desktopHero = isShowContext ? (movies.find(m => m.id === 'beyond-the-last-dance') || afterHours) : (featured || elBimboFeatured);
 
   useEffect(() => {
     if (featured) setInMyList(isInMyList(featured.id));
@@ -109,11 +108,82 @@ export default function CategoryPage() {
   
   useEffect(() => {
     setIsHeroMinimal(false); // Reset on genre change
+    setIsVideoEnded(false);  // Reset video state
     const timer = setTimeout(() => {
       setIsHeroMinimal(true);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [genreId]);
+  }, [genreId, typeFilter, desktopHero.id]);
+
+  // Handle visibility-based pause and volume fade
+  useVideoFade(heroVideoRef, heroMuted, !!desktopHero?.trailerUrl && !isVideoEnded);
+
+  // ─── Trailer Subtitle Logic ───────────────────────────────────────────────
+  interface ParsedCue {
+    start: number;
+    end: number;
+    text: string;
+  }
+
+  const [cues, setCues] = useState<ParsedCue[]>([]);
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+
+  const parseVTT = (vttData: string): ParsedCue[] => {
+    const cues: ParsedCue[] = [];
+    const lines = vttData.split(/\r?\n/);
+    let i = 0;
+
+    const timeToSeconds = (timeStr: string) => {
+      const parts = timeStr.trim().split(':');
+      let secs = 0;
+      if (parts.length === 3) {
+        secs = parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2].replace(',', '.'));
+      } else if (parts.length === 2) {
+        secs = parseFloat(parts[0]) * 60 + parseFloat(parts[1].replace(',', '.'));
+      }
+      return isNaN(secs) ? 0 : secs;
+    };
+
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      if (line.includes('-->')) {
+        const parts = line.split('-->');
+        const start = timeToSeconds(parts[0]);
+        const end = timeToSeconds(parts[1]);
+
+        i++;
+        let text = '';
+        while (i < lines.length && lines[i].trim() !== '') {
+          const textLine = lines[i].trim().replace(/<[^>]+>/g, '');
+          text += (text ? '\n' : '') + textLine;
+          i++;
+        }
+        cues.push({ start, end, text });
+      } else {
+        i++;
+      }
+    }
+    return cues;
+  };
+
+  useEffect(() => {
+    if (desktopHero?.trailerVttUrl) {
+      fetch(desktopHero.trailerVttUrl)
+        .then(res => res.text())
+        .then(data => setCues(parseVTT(data)))
+        .catch(err => console.error('Failed to load subtitles:', err));
+    } else {
+      setCues([]);
+    }
+    setCurrentSubtitle('');
+  }, [desktopHero]);
+
+  const handleTimeUpdate = () => {
+    if (!heroVideoRef.current) return;
+    const time = heroVideoRef.current.currentTime;
+    const activeCue = cues.find(cue => time >= cue.start && time <= cue.end);
+    setCurrentSubtitle(activeCue ? activeCue.text : '');
+  };
 
   // ─── Row structure helper ───────────────────────────────────────────────────
   const getCategoryRows = () => {
@@ -124,7 +194,11 @@ export default function CategoryPage() {
       const filteredCW = dynamicContinueWatching.filter(m => {
         if (genreId.toLowerCase() === 'shows') return m.mediaType === 'show';
         if (genreId.toLowerCase() === 'movies') return m.mediaType === 'movie';
-        return true;
+        
+        const matchesGenre = m.genre.some((g: string) => g.toLowerCase() === genreId.toLowerCase() || g.toLowerCase().replace(/ /g, '-') === genreId.toLowerCase());
+        if (typeFilter === 'show') return matchesGenre && m.mediaType === 'show';
+        if (typeFilter === 'movie') return matchesGenre && m.mediaType === 'movie';
+        return matchesGenre;
       });
 
       if (filteredCW.length > 0) {
@@ -152,29 +226,72 @@ export default function CategoryPage() {
   const rows = getCategoryRows();
 
   // ── DESKTOP LAYOUT ──────────────────────────────────────────────────────────
-  if (isDesktop && isAggregatedGenre) {
+  if (isDesktop) {
+    // Determine parent label for breadcrumb
+    const parentLabel = genreId.toLowerCase() === 'shows' || genreId.toLowerCase() === 'movies'
+      ? null
+      : (typeFilter === 'movie' ? 'Movies' : typeFilter === 'show' ? 'TV Shows' : (desktopHero?.mediaType === 'movie' ? 'Movies' : 'TV Shows'));
+    const genreLabel = genreId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
     return (
       <div className="cp cp--desktop">
-        <div className="cp__sub-header">
-          <div className="cp__sub-header-left">
-            <h1 className="cp__page-title">{genreId.toLowerCase() === 'shows' ? 'TV Shows' : 'Movies'}</h1>
-            <button className="cp__genres-btn" onClick={() => setIsCategorySelectorOpen(true)}>
-              Genres <ChevronDown size={16} strokeWidth={2.5} />
-            </button>
+        {isAggregatedGenre ? (
+          <div className="cp__sub-header">
+            <div className="cp__sub-header-left">
+              <h1 className="cp__page-title">{genreId.toLowerCase() === 'shows' ? 'TV Shows' : 'Movies'}</h1>
+              <button className="cp__genres-btn" onClick={() => setIsCategorySelectorOpen(true)}>
+                Genres <ChevronDown size={16} strokeWidth={2.5} />
+              </button>
+            </div>
+            <div className="cp__view-toggles">
+              <button className="cp__view-btn cp__view-btn--active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button className="cp__view-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            </div>
           </div>
-          <div className="cp__view-toggles">
-            <button className="cp__view-btn cp__view-btn--active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
-            <button className="cp__view-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+        ) : (
+          <div className="cp__breadcrumb">
+            <span className="cp__breadcrumb-parent" onClick={() => navigate(parentLabel === 'Movies' ? '/genre/movies' : '/genre/shows')}>
+              {parentLabel}
+            </span>
+            <span className="cp__breadcrumb-sep"> &rsaquo; </span>
+            <span className="cp__breadcrumb-current">{genreLabel}</span>
           </div>
-        </div>
+        )}
 
         <div className="cp__hero">
-          {desktopHero.trailerUrl ? (
-            <video ref={heroVideoRef} className="cp__hero-media" autoPlay muted={heroMuted} loop playsInline poster={desktopHero.banner}><source src={desktopHero.trailerUrl} type="video/mp4" /></video>
-          ) : (
-            <img src={desktopHero.banner} className="cp__hero-media" alt={desktopHero.title} />
-          )}
+          <div className="cp__hero-media-wrapper">
+            <img 
+              src={desktopHero.banner} 
+              className={`cp__hero-media cp__hero-img ${isVideoEnded ? 'is-visible' : ''}`} 
+              alt={desktopHero.title} 
+            />
+            {desktopHero.trailerUrl && (
+              <video 
+                key={desktopHero.id}
+                ref={heroVideoRef} 
+                className={`cp__hero-media cp__hero-video ${isVideoEnded ? 'is-hidden' : ''}`} 
+                src={desktopHero.trailerUrl}
+                autoPlay 
+                muted={heroMuted} 
+                playsInline 
+                poster={desktopHero.banner} 
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={() => setIsVideoEnded(true)}
+              />
+            )}
+          </div>
           <div className="cp__hero-gradient" />
+          
+          {currentSubtitle && (
+            <div className="cp__hero-subtitle-overlay">
+              <div className="cp__hero-subtitle-text">
+                {currentSubtitle.split('\n').map((line, idx) => (
+                  <span key={idx}>{line}<br /></span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className={`cp__hero-content ${isHeroMinimal ? 'cp__hero-content--minimal' : ''}`}>
             {desktopHero.logo ? (
               <img src={desktopHero.logo} alt={desktopHero.title} className="cp__hero-logo" />
@@ -216,13 +333,16 @@ export default function CategoryPage() {
           <div className="cp__hero-vignette" />
         </div>
 
-        <div className="cp__rows">
+        <div className="cp__rows cp__rows--desktop">
           {rows.map((row, i) => (
-            <DesktopRow key={i} title={row.title} items={row.items} onMovieClick={handleMovieClick} showProgress={row.showProgress} />
+            <ContentRow key={i} title={row.title} movies={row.items} showProgress={row.showProgress} />
           ))}
+          {!isAggregatedGenre && movies.length > 1 && (
+            <ContentRow title={`More in ${genreLabel}`} movies={movies.slice(1)} />
+          )}
         </div>
 
-        <CategorySelector isOpen={isCategorySelectorOpen} onClose={() => setIsCategorySelectorOpen(false)} currentCategory={genreId} />
+        <CategorySelector isOpen={isCategorySelectorOpen} onClose={() => setIsCategorySelectorOpen(false)} currentCategory={genreId} mode={genreId.toLowerCase() === 'shows' ? 'shows' : genreId.toLowerCase() === 'movies' ? 'movies' : undefined} />
       </div>
     );
   }
@@ -236,7 +356,6 @@ export default function CategoryPage() {
           <h1 className="category-page__header-title">Categories</h1>
         </div>
         <div className="category-page__header-right">
-          <button className="category-page__icon-btn"><Download size={24} color="white" /></button>
           <button className="category-page__icon-btn" onClick={() => navigate('/search')}><Search size={24} color="white" /></button>
         </div>
       </header>
@@ -248,7 +367,7 @@ export default function CategoryPage() {
         </button>
       </div>
 
-      <div className="category-page__content">
+      <div className="category-page__content cp__rows--mobile">
         {featured ? (
           <div className="category-page__hero-card">
             <img src={featured.mobileBanner || featured.mobileThumbnail || featured.banner || featured.thumbnail} className="category-page__hero-img" alt={featured.title} />
@@ -265,74 +384,20 @@ export default function CategoryPage() {
           <div className="category-page__empty"><p>No titles found in this category.</p></div>
         )}
 
-        {isAggregatedGenre ? (
-          rows.map((row, i) => (
-            <MobileRow key={i} title={row.title} items={row.items} onMovieClick={handleMovieClick} showProgress={row.showProgress} />
-          ))
-        ) : (
-          movies.length > 1 && (
-            <MobileRow title={`More in ${genreId}`} items={movies.slice(1)} onMovieClick={handleMovieClick} />
-          )
-        )}
+        <div className="cp__rows-wrapper">
+          {isAggregatedGenre ? (
+            rows.map((row, i) => (
+              <ContentRow key={i} title={row.title} movies={row.items} showProgress={row.showProgress} />
+            ))
+          ) : (
+            movies.length > 1 && (
+              <ContentRow title={`More in ${genreId}`} movies={movies.slice(1)} />
+            )
+          )}
+        </div>
       </div>
 
-      <CategorySelector isOpen={isCategorySelectorOpen} onClose={() => setIsCategorySelectorOpen(false)} currentCategory={genreId} />
-    </div>
-  );
-}
-
-// ─── Scrollable row component (Desktop fallback for aggregated) ────────────────
-function DesktopRow({ title, items, onMovieClick, showProgress }: { title: string; items: any[]; onMovieClick: (m: any) => void; showProgress?: boolean }) {
-  if (items.length === 0) return null;
-  return (
-    <section className="cp-row">
-      <div className="cp-row__header">
-        <h2 className="cp-row__title">{title}</h2>
-      </div>
-      <div className="cp-row__track">
-        {items.map(movie => (
-          <div key={movie.id} className="cp-row__card" onClick={() => onMovieClick(movie)}>
-            <div className="cp-row__card-img-wrapper">
-              <img src={movie.cardBanner || movie.banner || movie.thumbnail} alt={movie.title} className="cp-row__card-img" />
-              {movie.isOriginal && <div className="cp-row__n-badge">N</div>}
-              <div className="cp-row__card-overlay"><Play size={28} fill="white" color="white" /></div>
-            </div>
-            {showProgress && movie.progress !== undefined && (
-                <div className="cp-row__progress-container">
-                    <div className="cp-row__progress-bg">
-                        <div className="cp-row__progress-bar" style={{ width: `${movie.progress}%` }} />
-                    </div>
-                </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Mobile Row Component ────────────────────────────────────────────────────
-function MobileRow({ title, items, onMovieClick, showProgress }: { title: string; items: any[]; onMovieClick: (m: any) => void; showProgress?: boolean }) {
-  if (items.length === 0) return null;
-  return (
-    <div className="category-page__list-section">
-      <h3 className="category-page__list-title">{title}</h3>
-      <div className="category-page__row">
-        {items.map(movie => (
-          <div key={movie.id} className="category-page__list-item" onClick={() => onMovieClick(movie)}>
-            <div className="category-page__list-item-img-wrapper">
-              <img src={movie.mobileThumbnail || movie.thumbnail} alt={movie.title} />
-            </div>
-            {showProgress && movie.progress !== undefined && (
-                <div className="category-page__mobile-progress">
-                    <div className="category-page__mobile-progress-bg">
-                        <div className="category-page__mobile-progress-fill" style={{ width: `${movie.progress}%` }} />
-                    </div>
-                </div>
-            )}
-          </div>
-        ))}
-      </div>
+      <CategorySelector isOpen={isCategorySelectorOpen} onClose={() => setIsCategorySelectorOpen(false)} currentCategory={genreId} mode={genreId.toLowerCase() === 'shows' ? 'shows' : genreId.toLowerCase() === 'movies' ? 'movies' : undefined} />
     </div>
   );
 }

@@ -265,6 +265,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [isNativePlayer, setIsNativePlayer] = useState(false);
   const [parsedSubtitles, setParsedSubtitles] = useState<Record<string, ParsedCue[]>>({});
   const [showRating, setShowRating] = useState(false);
+  const [ratingRemainingTime, setRatingRemainingTime] = useState(0);
   const [activeIndicator, setActiveIndicator] = useState<{ type: 'play' | 'pause' | 'forward' | 'backward'; key: number } | null>(null);
   const [ambientColor, setAmbientColor] = useState('rgba(0,0,0,0.9)');
   const [showRecommendation, setShowRecommendation] = useState(false);
@@ -299,6 +300,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const clipProgressUIRef = useRef<HTMLDivElement>(null);
   const clipStartHandleUIRef = useRef<HTMLDivElement>(null);
   const clipEndHandleUIRef = useRef<HTMLDivElement>(null);
+  const [isXRayExpanded, setIsXRayExpanded] = useState(true);
   const clipLocalRef = useRef<{ start: number, end: number }>({ start: 0, end: 0 });
 
   const [activeSource, setActiveSource] = useState('');
@@ -441,7 +443,6 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const trailerVideoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const lastTapRef = useRef<{ time: number; x: number } | null>(null);
-  const ratingTimerRef = useRef<number | null>(null);
   const lastTriggeredRatingRef = useRef<number | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const isLongPressActiveRef = useRef(false);
@@ -452,13 +453,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const EL_BIMBO_RATING_TIMESTAMPS = [1025, 1104, 1154, 1779, 2144, 2182];
 
   const triggerRating = () => {
-    if (ratingTimerRef.current) window.clearTimeout(ratingTimerRef.current);
+    setRatingRemainingTime(7000);
     setShowRating(true);
-    ratingTimerRef.current = window.setTimeout(() => {
-      setShowRating(false);
-      ratingTimerRef.current = null;
-    }, 7000);
   };
+
 
   const triggerIndicator = (type: 'play' | 'pause' | 'forward' | 'backward') => {
     if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
@@ -615,6 +613,23 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
 
   const showXRay = variant === 'xray' || !!movie?.xRay;
+
+  useEffect(() => {
+    if (ratingRemainingTime <= 0) {
+      if (showRating) setShowRating(false);
+      return;
+    }
+
+    // Pause the rating timer when controls are shown in X-Ray mode
+    if (showControls && showXRay) return;
+
+    const interval = setInterval(() => {
+      setRatingRemainingTime(prev => Math.max(0, prev - 100));
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [ratingRemainingTime, showControls, showXRay, showRating]);
+
   const [showAllPanel, setShowAllPanel] = useState(false);
 
   // Calculate dynamically active program for VOD recordings
@@ -866,7 +881,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
   // Ambient Color Sampling for Mobile Portrait
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || !isPortrait) {
+      if (!isPortrait) setAmbientColor('rgba(0,0,0,1)'); // Reset to black in landscape
+      return;
+    }
 
     const interval = setInterval(() => {
       if (videoRef.current && canvasRef.current) {
@@ -1057,8 +1075,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           enableWorker: !isOffline,   // ← must be false when offline
           autoStartLoad: true,
           lowLatencyMode: false,
-          maxBufferLength: 60,
-          maxMaxBufferLength: 90,
+          maxBufferLength: isMobileWindow ? 30 : 60,
+          maxMaxBufferLength: isMobileWindow ? 60 : 90,
           // Use shorter timeouts offline so we fail fast instead of hanging
           fragLoadingTimeOut: isOffline ? 10000 : 45000,
           manifestLoadingTimeOut: isOffline ? 8000 : 30000,
@@ -2189,11 +2207,13 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       className={`video-player-container ${showControls || isScrubbing ? 'show-controls' : ''} ${!isMobileWindow ? 'desktop-player' : 'mobile-player'} ${isClippingMode ? 'clipping-mode' : ''} ${showXRay && !isExpandingTrailer && !showRecommendation && isPortrait && isMobileWindow ? 'portrait-xray-mode' : ''}`}
     >
 
-      {/* GPU Accelerated Ambient Glow */}
-      <div
-        className="ambient-glow"
-        style={{ backgroundColor: ambientColor }}
-      />
+      {/* GPU Accelerated Ambient Glow - Mobile Portrait Only to preserve landscape performance */}
+      {isPortrait && (
+        <div
+          className="ambient-glow"
+          style={{ backgroundColor: ambientColor }}
+        />
+      )}
 
       {/* Hidden canvas for color sampling */}
       <canvas ref={canvasRef} width="1" height="1" style={{ display: 'none' }} />
@@ -2401,6 +2421,18 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         </div>
       )}
 
+      {/* Age Rating Overlay - Netflix Style (Placed at root for absolute 0,0 alignment) */}
+      <div className={`age-rating-overlay${showXRay && !isExpandingTrailer && !showRecommendation ? ' age-rating-overlay--xray' : ''} ${ratingRemainingTime > 0 ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
+        <div className="age-rating-content">
+          <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
+          {movie.contentWarnings && movie.contentWarnings.length > 0 && (
+            <p className="age-rating-warnings">
+              {movie.contentWarnings.join(', ')}
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className={`video-stage-wrapper ${showRecommendation ? 'credits-shrink' : ''} ${isExpandingTrailer ? 'trailer-expanding' : ''} ${isClippingMode ? 'clipping-active' : ''} ${showAllPanel ? 'xray-all-open' : ''}`}>
         {/* Rate overlay inside the shrunken frame */}
         {showRecommendation && !isExpandingTrailer && !isMobileWindow && (
@@ -2434,6 +2466,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           webkit-playsinline="true"
           {...(!isNativePlayer ? { crossOrigin: 'anonymous' } : {})}
           className="video-element"
+          style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onWaiting={handleWaiting}
@@ -2448,6 +2481,26 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         >
           {/* Subtitles handled by custom overlay */}
         </video>
+        
+        {/* Pause Info Overlay (Amazon/Netflix Style) */}
+        {!isPlaying && !isLoading && showControls && !showRecommendation && !isExpandingTrailer && !isScrubbing && (
+          <div className={`player-pause-info ${showXRay && isXRayExpanded && !isPortrait ? 'xray-shift' : ''}`}>
+            <div className="pause-info-content">
+              {movie?.logo ? (
+                <img src={movie.logo} alt={movie.title} className="pause-info-logo" />
+              ) : (
+                <h2 className="pause-info-title">
+                  {movie?.id === 'after-hours'
+                    ? `After Hours${location.state?.episodeTitle ? `: ${location.state.episodeTitle}` : ''}`
+                    : title}
+                </h2>
+              )}
+              <p className="pause-info-description">
+                {movie?.description}
+              </p>
+            </div>
+          </div>
+        )}
 
 
 
@@ -2551,17 +2604,6 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           </div>
         )}
 
-        {/* Age Rating Overlay - Netflix Style */}
-        <div className={`age-rating-overlay${showXRay && !isExpandingTrailer && !showRecommendation ? ' age-rating-overlay--xray' : ''} ${showRating ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
-          <div className="age-rating-content">
-            <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
-            {movie.contentWarnings && movie.contentWarnings.length > 0 && (
-              <p className="age-rating-warnings">
-                {movie.contentWarnings.join(', ')}
-              </p>
-            )}
-          </div>
-        </div>
 
 
         {/* X-Ray top-right back button (since the X-Ray panel covers the regular back button) */}
@@ -2951,132 +2993,20 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               <span>Audio & Subtitles</span>
             </div>
           </div>
-
-
-          {/* Mobile Menu Backdrop */}
-          <div
-            className={`mobile-menu-backdrop ${(showSubtitlesMenu || showSpeedMenu) && isMobileWindow ? 'show' : ''}`}
-            onClick={() => { setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
-          />
-
-          {/* Mobile Subtitles Bottom Sheet */}
-          {isMobileWindow && showSubtitlesMenu && (
-            <div className="mobile-bottom-sheet show">
-              <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
-              <div className="mobile-sheet-header">
-                <button className="close-sheet-btn" onClick={() => setShowSubtitlesMenu(false)}>
-                  <X size={24} />
-                </button>
-                <div className="mobile-menu-title">Audio & Subtitles</div>
-              </div>
-              <div className="mobile-menu-scrollable mobile-dual-column">
-                <div className="mobile-menu-section">
-                  <h4>Audio</h4>
-                  <div className="mobile-scroll-container">
-                    <ul className="mobile-menu-list">
-                      {audioTracks.length > 0 ? (
-                        audioTracks.map((track, idx) => (
-                          <li
-                            key={idx}
-                            className={`mobile-menu-item ${activeAudioTrack === idx ? 'active' : ''}`}
-                            onClick={() => { handleAudioTrackChange(idx); setShowSubtitlesMenu(false); }}
-                          >
-                            <div className="mobile-menu-item-left">
-                              {activeAudioTrack === idx ? <Check size={20} className="mobile-check-icon" /> : <div className="mobile-spacer-icon" />}
-                              <span>{
-                                track.name === 'audio_1' ? 'Filipino [Original]' :
-                                track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
-                                (track.name || `Track ${idx + 1}`)
-                              }</span>
-                            </div>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="mobile-menu-item active">
-                          <div className="mobile-menu-item-left">
-                            <Check size={20} className="mobile-check-icon" />
-                            <span>Filipino [Original]</span>
-                          </div>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="mobile-menu-section">
-                  <h4>Subtitles</h4>
-                  <div className="mobile-scroll-container">
-                    <ul className="mobile-menu-list">
-                      <li
-                        className={`mobile-menu-item ${activeSubtitle === -1 ? 'active' : ''}`}
-                        onClick={() => { handleSubtitleChange(-1); setShowSubtitlesMenu(false); }}
-                      >
-                        <div className="mobile-menu-item-left">
-                          {activeSubtitle === -1 && <Check size={20} className="mobile-check-icon" />}
-                          {activeSubtitle !== -1 && <div className="mobile-spacer-icon" />}
-                          <span>Off</span>
-                        </div>
-                      </li>
-                      {movie.subtitles?.map((sub, idx) => (
-                        <li
-                          key={idx}
-                          className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
-                          onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
-                        >
-                          <div className="mobile-menu-item-left">
-                            {activeSubtitle === idx && <Check size={20} className="mobile-check-icon" />}
-                            {activeSubtitle !== idx && <div className="mobile-spacer-icon" />}
-                            <span>{sub.label}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Mobile Speed Bottom Sheet */}
-          {isMobileWindow && showSpeedMenu && (
-            <div className="mobile-bottom-sheet mobile-speed-sheet show">
-              <div className="mobile-menu-handle" onClick={() => setShowSpeedMenu(false)}></div>
-              <div className="mobile-sheet-header">
-                <button className="close-sheet-btn" onClick={() => setShowSpeedMenu(false)}>
-                  <X size={24} />
-                </button>
-                <div className="mobile-menu-title">Playback Speed</div>
-              </div>
-              <div className="speed-slider-container">
-                <div className="speed-track-wrapper">
-                  <div className="speed-track"></div>
-                  <div className="speed-marks">
-                    {[0.5, 0.75, 1, 1.5, 2].map(speed => (
-                      <div
-                        key={speed}
-                        className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
-                        onClick={() => handleSpeedChange(speed)}
-                      >
-                        <div className="speed-dot-outer">
-                          <div className="speed-dot"></div>
-                        </div>
-                        <span className="speed-label">
-                          {speed === 1 ? 'Normal' : `${speed}x`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
       {/* X-Ray Panel Overlay (Moved outside stage to allow portrait below-video layout) */}
       {showXRay && movie?.xRay && !isExpandingTrailer && !showRecommendation && (
-        <XRayPanel xRay={movie.xRay} currentTime={currentTime} isPortrait={isPortrait && isMobileWindow} onBack={() => navigate(-1)} onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} onShowAllChange={setShowAllPanel} />
+        <XRayPanel 
+          xRay={movie.xRay} 
+          currentTime={currentTime} 
+          isPortrait={isPortrait && isMobileWindow} 
+          onBack={() => navigate(-1)} 
+          onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} 
+          onShowAllChange={setShowAllPanel}
+          onToggle={setIsXRayExpanded}
+        />
       )}
 
       {/* Clip Editor Moment UI */}
@@ -3266,6 +3196,125 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               >
                 <X size={16} />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Menu Backdrop */}
+      <div
+        className={`mobile-menu-backdrop ${(showSubtitlesMenu || showSpeedMenu) && isMobileWindow ? 'show' : ''}`}
+        onClick={() => { setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
+      />
+
+      {/* Mobile Subtitles Bottom Sheet */}
+      {isMobileWindow && showSubtitlesMenu && (
+        <div className="mobile-bottom-sheet show">
+          <div className="mobile-menu-handle" onClick={() => setShowSubtitlesMenu(false)}></div>
+          <div className="mobile-sheet-header">
+            <button className="close-sheet-btn" onClick={() => setShowSubtitlesMenu(false)}>
+              <X size={24} />
+            </button>
+            <div className="mobile-menu-title">Audio & Subtitles</div>
+          </div>
+          <div className="mobile-menu-scrollable mobile-dual-column">
+            <div className="mobile-menu-section">
+              <h4>Audio</h4>
+              <div className="mobile-scroll-container">
+                <ul className="mobile-menu-list">
+                  {audioTracks.length > 0 ? (
+                    audioTracks.map((track, idx) => (
+                      <li
+                        key={idx}
+                        className={`mobile-menu-item ${activeAudioTrack === idx ? 'active' : ''}`}
+                        onClick={() => { handleAudioTrackChange(idx); setShowSubtitlesMenu(false); }}
+                      >
+                        <div className="mobile-menu-item-left">
+                          {activeAudioTrack === idx ? <Check size={20} className="mobile-check-icon" /> : <div className="mobile-spacer-icon" />}
+                          <span>{
+                            track.name === 'audio_1' ? 'Filipino [Original]' :
+                            track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
+                            (track.name || `Track ${idx + 1}`)
+                          }</span>
+                        </div>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="mobile-menu-item active">
+                      <div className="mobile-menu-item-left">
+                        <Check size={20} className="mobile-check-icon" />
+                        <span>Filipino [Original]</span>
+                      </div>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mobile-menu-section">
+              <h4>Subtitles</h4>
+              <div className="mobile-scroll-container">
+                <ul className="mobile-menu-list">
+                  <li
+                    className={`mobile-menu-item ${activeSubtitle === -1 ? 'active' : ''}`}
+                    onClick={() => { handleSubtitleChange(-1); setShowSubtitlesMenu(false); }}
+                  >
+                    <div className="mobile-menu-item-left">
+                      {activeSubtitle === -1 && <Check size={20} className="mobile-check-icon" />}
+                      {activeSubtitle !== -1 && <div className="mobile-spacer-icon" />}
+                      <span>Off</span>
+                    </div>
+                  </li>
+                  {movie?.subtitles?.map((sub, idx) => (
+                    <li
+                      key={idx}
+                      className={`mobile-menu-item ${activeSubtitle === idx ? 'active' : ''}`}
+                      onClick={() => { handleSubtitleChange(idx); setShowSubtitlesMenu(false); }}
+                    >
+                      <div className="mobile-menu-item-left">
+                        {activeSubtitle === idx && <Check size={20} className="mobile-check-icon" />}
+                        {activeSubtitle !== idx && <div className="mobile-spacer-icon" />}
+                        <span>{sub.label}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Speed Bottom Sheet */}
+      {isMobileWindow && showSpeedMenu && (
+        <div className="mobile-bottom-sheet mobile-speed-sheet show">
+          <div className="mobile-menu-handle" onClick={() => setShowSpeedMenu(false)}></div>
+          <div className="mobile-sheet-header">
+            <button className="close-sheet-btn" onClick={() => setShowSpeedMenu(false)}>
+              <X size={24} />
+            </button>
+            <div className="mobile-menu-title">Playback Speed</div>
+          </div>
+          <div className="speed-slider-container">
+            <div className="speed-track-wrapper">
+              <div className="speed-track"></div>
+              <div className="speed-marks">
+                {[0.5, 0.75, 1, 1.5, 2].map(speed => (
+                  <div
+                    key={speed}
+                    className={`speed-mark ${playbackSpeed === speed ? 'active' : ''}`}
+                    onClick={() => handleSpeedChange(speed)}
+                  >
+                    <div className="speed-dot-outer">
+                      <div className="speed-dot"></div>
+                    </div>
+                    <span className="speed-label">
+                      {speed === 1 ? 'Normal' : `${speed}x`}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -108,6 +108,8 @@ export default function Navbar() {
     '/collections/el-bimbo',
     '/beyond-the-last-dance'
   ].some(path => location.pathname.includes(path));
+
+  const isHomePage = location.pathname === '/browse';
   
   // Sync query state with URL
   useEffect(() => {
@@ -155,12 +157,12 @@ export default function Navbar() {
           </div>
           
           <ul className="navbar__menu">
-            <li className="navbar__menu-item fw-bold" onClick={() => navigate('/browse')}>{t('nav.home')}</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/genre/shows')}>{t('nav.shows')}</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/genre/movies')}>{t('nav.movies')}</li>
+            <li className={`navbar__menu-item ${location.pathname === '/browse' ? 'fw-bold' : ''}`} onClick={() => navigate('/browse')}>{t('nav.home')}</li>
+            <li className={`navbar__menu-item ${location.pathname.startsWith('/genre/shows') ? 'fw-bold' : ''}`} onClick={() => navigate('/genre/shows')}>{t('nav.shows')}</li>
+            <li className={`navbar__menu-item ${location.pathname.startsWith('/genre/movies') ? 'fw-bold' : ''}`} onClick={() => navigate('/genre/movies')}>{t('nav.movies')}</li>
             <li className="navbar__menu-item">{t('nav.games')}</li>
             <li className="navbar__menu-item">{t('nav.new_popular')}</li>
-            <li className="navbar__menu-item" onClick={() => navigate('/my-list')}>{t('nav.mylist')}</li>
+            <li className={`navbar__menu-item ${location.pathname === '/my-list' ? 'fw-bold' : ''}`} onClick={() => navigate('/my-list')}>{t('nav.mylist')}</li>
             <li className="navbar__menu-item">{t('nav.browse_lang')}</li>
           </ul>
         </div>
@@ -322,7 +324,8 @@ export default function Navbar() {
 
       {/* --- MOBILE NAVBAR (Matches Netflix exactly) --- */}
       <div className="navbar__mobile-inner mobile-only">
-        <div className="navbar__mobile-top">
+        {isHomePage && (
+          <div className="navbar__mobile-top">
           <div className="navbar__mobile-branding">
             <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '34px' }} />
 
@@ -351,10 +354,11 @@ export default function Navbar() {
             </div>
           </div>
         </div>
-        {!isDetailPage && (
+        )}
+        {isHomePage && !isDetailPage && (
           <div className={`navbar__mobile-pills ${scrolled ? 'navbar__mobile-pills--hidden' : ''}`}>
-            <button className="navbar__mobile-pill" onClick={() => navigate('/genre/shows')}>Shows</button>
-            <button className="navbar__mobile-pill" onClick={() => navigate('/genre/movies')}>Movies</button>
+            <button className={`navbar__mobile-pill ${location.pathname.startsWith('/genre/shows') ? 'active' : ''}`} onClick={() => navigate('/genre/shows')}>Shows</button>
+            <button className={`navbar__mobile-pill ${location.pathname.startsWith('/genre/movies') ? 'active' : ''}`} onClick={() => navigate('/genre/movies')}>Movies</button>
             <button 
               className="navbar__mobile-pill"
               onClick={() => setIsCategorySelectorOpen(true)}

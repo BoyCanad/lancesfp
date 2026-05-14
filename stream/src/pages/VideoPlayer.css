@@ -823,12 +823,12 @@
 /* Age Rating Overlay - Netflix Style */
 .age-rating-overlay {
   position: absolute;
-  top: 15%;
+  top: 0;
   left: 0;
   background: linear-gradient(to right, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 60%, transparent 100%);
   border-left: 3px solid #e50914;
   padding: 10px 60px 10px 16px;
-  z-index: 50;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -839,12 +839,18 @@
   opacity: 0;
 }
 
-/* X-Ray titles: shift age rating right of the compact X-Ray panel so it isn't covered */
+/* X-Ray titles: moved all the way to the top left as requested */
 .age-rating-overlay--xray {
-  top: 20px;
-  left: 300px;
+  top: 0;
+  left: 0;
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
+  transition: opacity 0.4s ease;
+}
+
+.show-controls .age-rating-overlay--xray {
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
 .age-rating-overlay.show {
@@ -2072,9 +2078,9 @@
 .mobile-menu-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  z-index: 2000;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 9999; /* Highest possible to stay above top-bar/x-ray */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2090,15 +2096,22 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%) translateY(100%);
-  width: 96%;
-  max-width: 500px;
+  width: 100%; /* Use full width on small mobile, rounded on tablet */
+  max-width: 600px;
   background-color: #1a1a1a;
   border-radius: 20px 20px 0 0;
-  padding: 20px;
-  padding-bottom: 40px;
-  z-index: 2001;
+  padding: 15px 24px 40px;
+  z-index: 10000; /* Must be above backdrop */
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  max-height: 85vh; /* Allow more room for long lists */
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 600px) {
+  .mobile-bottom-sheet {
+    width: 96%;
+  }
 }
 
 .mobile-bottom-sheet.show {
@@ -2149,10 +2162,11 @@
 }
 
 .mobile-menu-scrollable {
-  max-height: 50vh;
+  flex: 1;
   overflow-y: auto;
   padding-right: 5px;
   mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-menu-section {
@@ -2217,11 +2231,36 @@
 .mobile-menu-item-left { display: flex; align-items: center; gap: 12px; }
 
 /* Fixed Headers for Menus */
-.mobile-scroll-container { max-height: 300px; overflow-y: auto; padding-right: 5px; } .mobile-scroll-container::-webkit-scrollbar { width: 4px; } .mobile-scroll-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; } .menu-section, .mobile-menu-section { display: flex !important; flex-direction: column !important; } .menu-header, .mobile-menu-section h4 { flex-shrink: 0 !important; }
+.mobile-scroll-container { 
+  max-height: 250px; 
+  overflow-y: auto; 
+  padding-right: 5px; 
+} 
+.mobile-scroll-container::-webkit-scrollbar { 
+  width: 4px; 
+} 
+.mobile-scroll-container::-webkit-scrollbar-thumb { 
+  background: rgba(255, 255, 255, 0.2); 
+  border-radius: 2px; 
+} 
+.menu-section, .mobile-menu-section { 
+  display: flex !important; 
+  flex-direction: column !important; 
+} 
+.menu-header, .mobile-menu-section h4 { 
+  flex-shrink: 0 !important; 
+}
 
-/* Remove scrolling for short lists */
-.mobile-scroll-container { max-height: none !important; overflow: visible !important; } .mobile-dual-column { overflow-y: visible !important; min-height: fit-content !important; padding-bottom: 40px !important; }
-.mobile-menu-scrollable { max-height: none !important; overflow: visible !important; }
+/* Allow scrolling for long lists */
+.mobile-dual-column { 
+  overflow-y: visible !important; 
+  min-height: fit-content !important; 
+  padding-bottom: 20px !important; 
+}
+.mobile-menu-scrollable { 
+  max-height: 80vh; 
+  overflow-y: auto; 
+}
 
 /* Trailer Visibility States */
 .hidden-video { opacity: 0 !important; transition: opacity 1s ease-in-out !important; } .inline-trailer-video.fade-in { opacity: 1 !important; transition: opacity 1s ease-in-out !important; } .inline-trailer-banner.fade-out { opacity: 0 !important; transition: opacity 1s ease-in-out !important; }
@@ -2761,5 +2800,115 @@
 @media (max-width: 896px) and (orientation: portrait) {
   .xray-mobile-top-bar {
     padding: 8px 15px !important;
+  }
+}
+/* Pause Info Overlay */
+.player-pause-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end; /* Bottom left */
+  padding: 0 4% 240px; /* Elevated further to clear subtitles (20%) */
+  background: linear-gradient(35deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 45%, transparent 85%);
+  z-index: 200; /* Above subtitles (40) */
+  pointer-events: none;
+  animation: pauseInfoFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.pause-info-content {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.pause-info-logo {
+  max-width: 480px;
+  max-height: 220px;
+  object-fit: contain;
+  object-position: left;
+  filter: drop-shadow(0 4px 15px rgba(0,0,0,0.6));
+}
+
+.pause-info-title {
+  color: white;
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  letter-spacing: -0.5px;
+}
+
+.pause-info-description {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.player-pause-info.xray-shift {
+  padding-left: 500px;
+  background: linear-gradient(35deg, rgba(0,0,0,0.95) 30%, rgba(0,0,0,0.5) 60%, transparent 90%);
+}
+
+@keyframes pauseInfoFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile Adjustments for Pause Info */
+@media (max-width: 896px) {
+  .player-pause-info {
+    padding: 0 24px 180px;
+    background: linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.7) 50%, transparent 90%);
+  }
+
+  .player-pause-info.xray-shift {
+    padding-left: 340px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 90%);
+  }
+
+  .pause-info-content {
+    max-width: 80%;
+    gap: 10px;
+  }
+
+  .pause-info-logo {
+    max-width: 260px;
+    max-height: 120px;
+  }
+
+  .pause-info-title {
+    font-size: 1.4rem;
+  }
+
+  .pause-info-description {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    opacity: 0.8;
+    max-width: 60%; /* Even more compact */
+  }
+}
+
+@media (max-width: 896px) and (orientation: portrait) {
+  .player-pause-info {
+    padding-bottom: 40px;
   }
 }

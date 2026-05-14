@@ -552,8 +552,11 @@
     transition: none;
   }
   
-  .top10-card:hover .top10-card__rank {
+  .top10-card:hover .top10-card__rank,
+  .top10-card:active .top10-card__rank {
     opacity: 1;
+    transform: translateY(14px) !important;
+    transition: none !important;
   }
 
   .top10-card__rank--one {
