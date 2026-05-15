@@ -42,6 +42,8 @@ interface ParsedCue {
   text: string;
   isKaraoke?: boolean;
   position?: string;
+  line?: string;
+  align?: string;
 }
 
 const parseVTT = (vttData: string, preserveKaraoke = false): ParsedCue[] => {
@@ -66,14 +68,35 @@ const parseVTT = (vttData: string, preserveKaraoke = false): ParsedCue[] => {
     const line = lines[i].trim();
     if (line.includes('-->')) {
       const parts = line.split('-->');
-      const start = timeToSeconds(parts[0].trim());
-      const end = timeToSeconds(parts[1].trim());
+      const startStr = parts[0].trim();
+      const endAndSettings = parts[1].trim();
+      
+      // Split by whitespace to separate timestamp from settings
+      const endParts = endAndSettings.split(/\s+/);
+      const endStr = endParts[0];
 
-      // Extract position attribute if present (e.g., position:80%)
+      const start = timeToSeconds(startStr);
+      const end = timeToSeconds(endStr);
+
+      // Extract position attribute (e.g., position:20%)
       let position = undefined;
-      const positionMatch = line.match(/position:\s*(\d+(?:\.\d+)?%)/);
+      const positionMatch = line.match(/position:\s*(\d+(?:\.\d+)?%?)/);
       if (positionMatch) {
-        position = positionMatch[1];
+        position = positionMatch[1].endsWith('%') ? positionMatch[1] : positionMatch[1] + '%';
+      }
+
+      // Extract line attribute (e.g., line:20% or line:0)
+      let linePos = undefined;
+      const lineMatch = line.match(/line:\s*(-?\d+(?:\.\d+)?%?)/);
+      if (lineMatch) {
+        linePos = lineMatch[1];
+      }
+
+      // Extract align attribute (e.g., align:start, align:center, align:end)
+      let alignment = undefined;
+      const alignMatch = line.match(/align:\s*([a-zA-Z]+)/);
+      if (alignMatch) {
+        alignment = alignMatch[1];
       }
 
       i++;
@@ -82,7 +105,6 @@ const parseVTT = (vttData: string, preserveKaraoke = false): ParsedCue[] => {
       while (i < lines.length && lines[i].trim() !== '') {
         const textLine = lines[i].trim();
         if (preserveKaraoke) {
-          // Check if this line contains any karaoke color tags (both hex codes and named colors, including dual-color format)
           if (textLine.match(/<c\.(color[0-9a-fA-F]+(?:\.[0-9a-fA-F]+)?|[a-zA-Z]+(?:\.[a-zA-Z]+)?)>/)) {
             isKaraoke = true;
           }
@@ -92,7 +114,7 @@ const parseVTT = (vttData: string, preserveKaraoke = false): ParsedCue[] => {
         }
         i++;
       }
-      cues.push({ start, end, text, isKaraoke, position });
+      cues.push({ start, end, text, isKaraoke, position, line: linePos, align: alignment });
     } else {
       i++;
     }
@@ -262,6 +284,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [audioTracks, setAudioTracks] = useState<any[]>([]);
   const [activeAudioTrack, setActiveAudioTrack] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBrandingExiting, setIsBrandingExiting] = useState(false);
+  const [shouldRenderBranding, setShouldRenderBranding] = useState(false);
+
   const [isNativePlayer, setIsNativePlayer] = useState(false);
   const [parsedSubtitles, setParsedSubtitles] = useState<Record<string, ParsedCue[]>>({});
   const [showRating, setShowRating] = useState(false);
@@ -409,6 +434,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
   }, [isPlaying, hasStartedPlaying]);
 
+
   useEffect(() => {
     if (isExpandingTrailer) {
       if (isMobileWindow) {
@@ -498,6 +524,15 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     return baseMovie;
   }, [baseMovie, location.state?.subtitlesUrl]);
   const title = location.state?.episodeTitle || movie?.title || "Ang Huling El Bimbo";
+
+  useEffect(() => {
+    if (title) {
+      document.title = title;
+    }
+    return () => {
+      document.title = 'Lances+'; // Reset on unmount
+    };
+  }, [title]);
 
   const nextMovie = useMemo(() => {
     // Special overrides for curated recommendations
@@ -799,6 +834,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
     if (isScrubbingRef.current) return;
 
+    if (!showControls) {
+      setShowControls(true);
+    }
+
     hideControlsTimeoutRef.current = window.setTimeout(() => {
       if (isPlaying && !isScrubbingRef.current) {
         setShowControls(false);
@@ -807,6 +846,23 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       }
     }, 3000);
   };
+
+  // Branding Visibility Logic (Exit Animation)
+  const brandingCondition = !isPlaying && !isLoading && showControls && !showRecommendation && !isExpandingTrailer && !isMobileWindow;
+
+  useEffect(() => {
+    if (brandingCondition) {
+      setShouldRenderBranding(true);
+      setIsBrandingExiting(false);
+    } else if (shouldRenderBranding) {
+      setIsBrandingExiting(true);
+      const timer = setTimeout(() => {
+        setShouldRenderBranding(false);
+        setIsBrandingExiting(false);
+      }, 500); // Match CSS pauseInfoFadeOut duration
+      return () => clearTimeout(timer);
+    }
+  }, [brandingCondition, shouldRenderBranding]);
 
   // Setup Media Session API for native mobile notifications
   useEffect(() => {
@@ -1052,7 +1108,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     let hls: Hls | null = null;
     hlsManagedRef.current = false;
     hlsRef.current = null;
-    playPendingRef.current = false;
+    playPendingRef.current = true; // Assume we want to autoplay on source change
 
     if (!videoRef.current) return;
 
@@ -1117,7 +1173,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 }, 300);
               }
             })
-            .catch(err => console.warn("Autoplay blocked or failed:", err));
+            .catch(err => {
+              console.warn("HLS autoplay blocked or failed:", err);
+              playPendingRef.current = true; // Try again on canplay
+            });
         });
 
         hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
@@ -1224,7 +1283,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         videoRef.current.load();
         videoRef.current.play()
           .then(() => setIsPlaying(true))
-          .catch(err => console.warn("Native autoplay blocked:", err));
+          .catch(err => {
+            console.warn("Native HLS autoplay blocked:", err);
+            playPendingRef.current = true;
+          });
       } else {
         setVideoError("Your browser does not support HLS video streaming.");
         setIsLoading(false);
@@ -1244,7 +1306,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             }, 300);
           }
         })
-        .catch(err => console.warn("MP4 autoplay blocked:", err));
+        .catch(err => {
+          console.warn("MP4 autoplay blocked:", err);
+          playPendingRef.current = true;
+        });
     }
     
     // Reset volume as it might have been set to 0 by the inline trailer fade-out
@@ -1562,11 +1627,11 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           .pip-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
             background: rgba(255,255,255,0.15); z-index: 10; cursor: pointer; transition: height 0.2s ease; }
           .pip-root:hover .pip-progress, .pip-root.paused .pip-progress { height: 5px; }
-          .pip-fill { height: 100%; background: linear-gradient(90deg, #e50914, #ff3d47); position: relative;
+          .pip-fill { height: 100%; background: linear-gradient(90deg, #4c1d95, #6b21a8); position: relative;
             border-radius: 0 2px 2px 0; transition: width 0.15s linear; }
           .pip-fill::after { content: ''; position: absolute; right: -1px; top: 50%;
             transform: translateY(-50%) scale(0); width: 10px; height: 10px; background: #fff;
-            border-radius: 50%; box-shadow: 0 0 6px rgba(229,9,20,0.8); transition: transform 0.2s ease; }
+            border-radius: 50%; box-shadow: 0 0 6px rgba(76,29,149,0.8); transition: transform 0.2s ease; }
           .pip-root:hover .pip-fill::after, .pip-root.paused .pip-fill::after { transform: translateY(-50%) scale(1); }
 
           /* Time display */
@@ -1936,6 +2001,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   // isPlaying React state to propagate. Clears the loading poster immediately.
   const handlePlaying = () => {
     setHasStartedPlaying(true);
+    setIsPlaying(true);
+    setIsLoading(false);
   };
 
   const handleCanPlay = () => {
@@ -2474,6 +2541,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           onWaiting={handleWaiting}
           onCanPlay={handleCanPlay}
           onPlaying={handlePlaying}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
           onClick={handleVideoClick}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
@@ -2502,40 +2571,86 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               // For karaoke or positioned subtitles, show all overlapping cues to handle multiple alignments
               // For regular subtitles, use the latest one to prevent stacking
               const hasKaraoke = filteredCues.some(c => c.isKaraoke);
-              const hasPositioned = filteredCues.some(c => c.position);
-              const cuesToShow = (hasKaraoke || hasPositioned) ? filteredCues : filteredCues.sort((a, b) => a.start - b.start).slice(-1);
+              const hasPositionedGroup = filteredCues.some(c => c.position !== undefined || c.line !== undefined || c.align !== undefined);
+              const cuesToShow = (hasKaraoke || hasPositionedGroup) ? filteredCues : filteredCues.sort((a, b) => a.start - b.start).slice(-1);
 
-              return cuesToShow.map((cue, idx) => (
-                <div
-                  key={idx}
-                  className="custom-subtitle-text"
-                  style={cue.position ? { 
-                    left: cue.position, 
-                    transform: 'translateX(-50%)', 
-                    position: 'absolute', 
-                    bottom: '0', 
-                    zIndex: 40 
-                  } : {}}
-                >
-                  {cue.isKaraoke ? (
-                    renderKaraokeSubtitle(cue.text.trim(), movie?.id)
-                  ) : (
-                    cue.text.trim().split('\n').map((line, i, arr) => (
-                      <span key={i}>
-                        {line}
-                        {i !== arr.length - 1 && <br />}
-                      </span>
-                    ))
-                  )}
-                </div>
-              ));
+              return cuesToShow.map((cue, idx) => {
+                const hasPosition = cue.position !== undefined;
+                const hasAlign = cue.align !== undefined;
+                const hasLine = cue.line !== undefined;
+                const isPositioned = hasPosition || hasLine || hasAlign;
+
+                const style: React.CSSProperties = isPositioned ? {
+                  position: 'absolute',
+                  zIndex: 40
+                } : {};
+
+                if (isPositioned) {
+                  let align = cue.align || 'center';
+                  let posValue = 50;
+
+                  if (hasPosition) {
+                    posValue = parseFloat(cue.position!);
+                  } else {
+                    if (align === 'start' || align === 'left') posValue = 5;
+                    else if (align === 'end' || align === 'right') posValue = 95;
+                  }
+
+                  style.left = posValue + '%';
+
+                  if (align === 'start' || align === 'left') {
+                    style.transform = 'none';
+                    style.textAlign = 'left';
+                    if (posValue < 2) style.left = '2%';
+                  } else if (align === 'end' || align === 'right') {
+                    style.transform = 'translateX(-100%)';
+                    style.textAlign = 'right';
+                    if (posValue > 98) style.left = '98%';
+                  } else {
+                    style.transform = 'translateX(-50%)';
+                    style.textAlign = 'center';
+                  }
+
+                  style.width = 'max-content';
+                  style.whiteSpace = 'pre-wrap';
+
+                  if (hasLine) {
+                    if (cue.line!.includes('%')) {
+                      style.bottom = (100 - parseFloat(cue.line!)) + '%';
+                    } else {
+                      style.bottom = (parseFloat(cue.line!) * 1.5 + 5) + '%';
+                    }
+                  } else {
+                    style.bottom = '0';
+                  }
+                }
+
+                return (
+                  <div
+                    key={`${cue.start}-${idx}`}
+                    className={`custom-subtitle-text ${isPositioned ? 'is-positioned' : ''}`}
+                    style={style}
+                  >
+                    {cue.isKaraoke ? (
+                      renderKaraokeSubtitle(cue.text.trim(), movie?.id)
+                    ) : (
+                      cue.text.trim().split('\n').map((line, i, arr) => (
+                        <span key={i}>
+                          {line}
+                          {i !== arr.length - 1 && <br />}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                );
+              });
             })()}
           </div>
         )}
 
         {/* Pause Info Overlay (Amazon/Netflix Style) — rendered AFTER subtitle so z-index:200 wins */}
-        {!isPlaying && !isLoading && showControls && !showRecommendation && !isExpandingTrailer && !isScrubbing && !isMobileWindow && (
-          <div className={`player-pause-info ${showXRay && isXRayExpanded && !showAllPanel && !isPortrait ? 'xray-shift' : ''}`}>
+        {shouldRenderBranding && (
+          <div className={`player-pause-info ${isBrandingExiting ? 'exit' : ''} ${showXRay && isXRayExpanded && !showAllPanel && !isPortrait ? 'xray-shift' : ''}`}>
             <div className="pause-info-content">
               {!isMobileWindow && (
                 <>
@@ -2556,6 +2671,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             </div>
           </div>
         )}
+
 
 
 

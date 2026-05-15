@@ -372,19 +372,35 @@ export default function ContentRow({
   const navigate = useNavigate();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const updateScrollBtns = () => {
+  const updateScrollBtns = useCallback(() => {
     const el = rowRef.current;
     if (!el) return;
     setCanScrollLeft(el.scrollLeft > 10);
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 10);
-  };
+    
+    // Calculate pages based on clientWidth vs scrollWidth
+    // We add a tiny buffer to avoid rounding issues
+    const total = Math.max(1, Math.ceil(el.scrollWidth / el.clientWidth));
+    const current = Math.min(total - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth)));
+    
+    setTotalPages(total);
+    setCurrentPage(current);
+  }, []);
+
+  useEffect(() => {
+    updateScrollBtns();
+    window.addEventListener('resize', updateScrollBtns);
+    return () => window.removeEventListener('resize', updateScrollBtns);
+  }, [movies, updateScrollBtns]);
 
   const scroll = (dir: 'left' | 'right') => {
     if (!rowRef.current) return;
-    const amount = rowRef.current.clientWidth * 0.75;
+    const amount = rowRef.current.clientWidth * 0.9; // Scroll nearly a full page
     rowRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
-    setTimeout(updateScrollBtns, 400);
+    // updateScrollBtns will be triggered by onScroll event
   };
 
   const getDetailPath = (movie: Movie) => {
@@ -426,12 +442,16 @@ export default function ContentRow({
       <div className="row__header">
         <h2 className="row__title">{title}</h2>
         <div className="row__header-right">
-          <div className="row__pagination">
-            <div className="row__pagination-dot active"></div>
-            <div className="row__pagination-dot"></div>
-            <div className="row__pagination-dot"></div>
-            <div className="row__pagination-dot"></div>
-          </div>
+          {totalPages > 1 && (
+            <div className="row__pagination">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`row__pagination-dot ${i === currentPage ? 'active' : ''}`}
+                ></div>
+              ))}
+            </div>
+          )}
           {onSeeAll && (
             <button className="row__see-all" onClick={onSeeAll}>See All →</button>
           )}

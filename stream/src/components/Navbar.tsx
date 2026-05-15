@@ -110,6 +110,7 @@ export default function Navbar() {
   ].some(path => location.pathname.includes(path));
 
   const isHomePage = location.pathname === '/browse';
+  const isGenrePage = location.pathname.startsWith('/genre');
   
   // Sync query state with URL
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${isDetailPage ? 'navbar--detail-page' : ''}`}>
+    <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${isDetailPage ? 'navbar--detail-page' : ''} ${isGenrePage ? 'navbar--no-bg' : ''}`}>
       {/* --- DESKTOP NAVBAR --- */}
       <div className="navbar__inner desktop-only">
         <div className="navbar__left">
@@ -160,7 +161,7 @@ export default function Navbar() {
             <li className={`navbar__menu-item ${location.pathname === '/browse' ? 'fw-bold' : ''}`} onClick={() => navigate('/browse')}>{t('nav.home')}</li>
             <li className={`navbar__menu-item ${location.pathname.startsWith('/genre/shows') ? 'fw-bold' : ''}`} onClick={() => navigate('/genre/shows')}>{t('nav.shows')}</li>
             <li className={`navbar__menu-item ${location.pathname.startsWith('/genre/movies') ? 'fw-bold' : ''}`} onClick={() => navigate('/genre/movies')}>{t('nav.movies')}</li>
-            <li className="navbar__menu-item">{t('nav.games')}</li>
+            <li className={`navbar__menu-item ${location.pathname === '/games' ? 'fw-bold' : ''}`} onClick={() => navigate('/games')}>{t('nav.games')}</li>
             <li className="navbar__menu-item">{t('nav.new_popular')}</li>
             <li className={`navbar__menu-item ${location.pathname === '/my-list' ? 'fw-bold' : ''}`} onClick={() => navigate('/my-list')}>{t('nav.mylist')}</li>
             <li className="navbar__menu-item">{t('nav.browse_lang')}</li>

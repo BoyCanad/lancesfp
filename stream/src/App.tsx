@@ -23,6 +23,7 @@ import VideoPlayer from './pages/VideoPlayer';
 import XRayVideoPlayer from './pages/XRayVideoPlayer';
 import TrailerPlayer from './pages/TrailerPlayer';
 import Clips from './pages/Clips';
+import Games from './pages/Games';
 import ClipPlayer from './pages/ClipPlayer';
 import ProfilePicker from './pages/ProfilePicker';
 import ManageProfile from './pages/ManageProfile';
@@ -221,7 +222,8 @@ function App() {
       '/after-hours': 'After Hours',
       '/bukang-liwayway-takipsilim': 'Bukang Liwayway Takipsilim',
       '/a-day-in-my-life-stem': 'A Day In My Life',
-      '/11-stem-a': '11 Stem A'
+      '/11-stem-a': '11 Stem A',
+      '/games': 'Games'
     };
 
     let title = pageTitles[pathname] || 'LSFPlus';
@@ -304,6 +306,7 @@ function App() {
         <Route path="/xray/:id" element={session ? <XRayVideoPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
         <Route path="/clips" element={session ? <Clips /> : <Navigate to="/login" replace />} />
+        <Route path="/games" element={session ? <Games /> : <Navigate to="/login" replace />} />
         <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
         <Route path="/music/:id" element={<MusicPlayer />} />
         <Route path="/music" element={<MusicPlayer />} />

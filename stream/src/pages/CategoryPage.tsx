@@ -299,9 +299,11 @@ export default function CategoryPage() {
               <h2 className="cp__hero-title">{desktopHero.title}</h2>
             )}
             
-            <div className="cp__hero-status">
-              {desktopHero.comingSoon ? "New Episodes Coming Soon" : "Watch Season 1 Now"}
-            </div>
+            {desktopHero.mediaType === 'show' && (
+              <div className="cp__hero-status">
+                {desktopHero.comingSoon ? "New Episodes Coming Soon" : "Watch Season 1 Now"}
+              </div>
+            )}
 
             <p className="cp__hero-desc">{desktopHero.description}</p>
             
@@ -316,7 +318,7 @@ export default function CategoryPage() {
           </div>
 
           <div className="cp__hero-right-meta">
-            {desktopHero.trailerUrl && (
+            {desktopHero.trailerUrl && !isVideoEnded && (
               <button className="cp__hero-mute-btn" onClick={() => { setHeroMuted(!heroMuted); if (heroVideoRef.current) heroVideoRef.current.muted = !heroMuted; }}>
                 {heroMuted ? (
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>

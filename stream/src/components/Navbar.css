@@ -16,6 +16,10 @@
   background: #141414;
 }
 
+.navbar--no-bg:not(.navbar--scrolled) {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 100%) !important;
+}
+
 .navbar__inner {
   width: 100%;
   display: flex;

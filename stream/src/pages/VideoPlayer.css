@@ -13,6 +13,10 @@
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+.video-player-container.is-playing:not(.show-controls) {
+  cursor: none !important;
+}
+
 .ambient-glow {
   position: absolute;
   top: 50%;
@@ -107,12 +111,12 @@
     cursor: pointer;
     transition: height 0.1s ease;
 
-    /* The Premium Purple Fill */
-    background-image: linear-gradient(90deg, #7e22ce, #a855f7) !important;
+    /* The Premium Dark Purple Fill */
+    background-image: linear-gradient(90deg, #4c1d95, #6b21a8) !important;
     background-repeat: no-repeat !important;
 
     /* Forces modern browsers (like Safari/Chrome) to respect the purple */
-    accent-color: #a855f7 !important;
+    accent-color: #6b21a8 !important;
   }
 
   .timeline-slider:hover {
@@ -125,11 +129,11 @@
     height: 24px;
     width: 24px;
     border-radius: 50%;
-    background-color: #a855f7 !important;
+    background-color: #6b21a8 !important;
     cursor: pointer;
     transition: transform 0.1s ease;
     opacity: 0;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.6) !important;
+    box-shadow: 0 0 10px rgba(107, 33, 168, 0.6) !important;
   }
 
   /* Firefox specific override just in case */
@@ -137,9 +141,9 @@
     height: 24px;
     width: 24px;
     border-radius: 50%;
-    background-color: #a855f7 !important;
+    background-color: #6b21a8 !important;
     border: none;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.6) !important;
+    box-shadow: 0 0 10px rgba(107, 33, 168, 0.6) !important;
   }
 
   .time-text {
@@ -193,7 +197,7 @@
   }
 
   .custom-subtitle-overlay-container.player-paused {
-    opacity: 0 !important;
+    opacity: 1 !important;
   }
 }
 
@@ -209,24 +213,26 @@
   bottom: 5%;
   left: 0;
   width: 100%;
+
   text-align: center;
   z-index: 56;
-  /* Above XRay panel (55), below pause-info overlay (200) */
   pointer-events: none;
-  /* Let clicks pass through to the video */
   display: flex;
   flex-direction: column;
   align-items: center;
   transition: bottom 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
+
+
+
 .show-controls .custom-subtitle-overlay-container {
   bottom: 8%;
 }
 
 .custom-subtitle-overlay-container.player-paused {
-  opacity: 0;
-  /* Completely hidden ONLY when paused */
+  opacity: 1;
+  /* Visible when paused on mobile by default */
 }
 
 .custom-subtitle-text {
@@ -243,7 +249,18 @@
     -1px -1px 4px rgba(0, 0, 0, 1),
     2px 2px 6px rgba(0, 0, 0, 0.9),
     0px 2px 10px rgba(0, 0, 0, 0.8);
+  transition: font-size 0.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
+
+.custom-subtitle-text.is-positioned {
+  padding: 0 12px !important; /* Small safe area to prevent cut-off */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: 95vw !important;
+  width: max-content !important;
+  box-sizing: border-box !important;
+}
+
 
 @media (min-width: 1024px) {
   .custom-subtitle-overlay-container {
@@ -275,6 +292,17 @@
 
 .xray-all-open .xray-back-button {
   display: none;
+}
+
+.xray-all-open .custom-subtitle-text {
+  font-size: 1.1rem !important;
+  line-height: 1.1 !important;
+}
+
+@media (min-width: 1024px) {
+  .xray-all-open .custom-subtitle-text {
+    font-size: 1.8rem !important;
+  }
 }
 
 .video-error-overlay {
@@ -460,12 +488,12 @@
   cursor: pointer;
   transition: height 0.1s ease;
   
-  /* The Premium Purple Fill */
-  background-image: linear-gradient(90deg, #7e22ce, #a855f7) !important;
+  /* The Premium Dark Purple Fill */
+  background-image: linear-gradient(90deg, #4c1d95, #6b21a8) !important;
   background-repeat: no-repeat !important;
   
   /* Forces modern browsers (like Safari/Chrome) to respect the purple */
-  accent-color: #a855f7 !important; 
+  accent-color: #6b21a8 !important; 
 }
 
 .timeline-slider:hover {
@@ -478,11 +506,11 @@
   height: 24px;
   width: 24px;
   border-radius: 50%;
-  background-color: #a855f7 !important;
+  background-color: #6b21a8 !important;
   cursor: pointer;
   transition: transform 0.1s ease;
   opacity: 0;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 10px rgba(107, 33, 168, 0.6) !important;
 }
 
 /* Firefox specific override just in case */
@@ -490,9 +518,9 @@
   height: 24px;
   width: 24px;
   border-radius: 50%;
-  background-color: #a855f7 !important;
+  background-color: #6b21a8 !important;
   border: none;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 10px rgba(107, 33, 168, 0.6) !important;
 }
 
 .timeline-container:hover .timeline-slider::-webkit-slider-thumb {
@@ -897,8 +925,8 @@
   width: 60px;
   height: 60px;
   border: 4px solid rgba(255, 255, 255, 0.1);
-  border-left-color: #a855f7;
-  /* Changed to purple */
+  border-left-color: #4c1d95;
+  /* Premium Deep Dark Purple */
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -2336,11 +2364,13 @@
   /* Must be above backdrop */
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
-  max-height: 85vh;
+  max-height: 90vh;
   /* Allow more room for long lists */
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Keep the sheet fixed, scroll content only */
 }
+
 
 @media (min-width: 600px) {
   .mobile-bottom-sheet {
@@ -2397,11 +2427,13 @@
 
 .mobile-menu-scrollable {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: hidden; /* Don't scroll the whole menu */
   padding-right: 5px;
-  mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
   -webkit-overflow-scrolling: touch;
 }
+
+
+
 
 .mobile-menu-section {
   margin-bottom: 25px;
@@ -2555,12 +2587,6 @@
 }
 
 /* Mobile Dual Column Layout */
-.mobile-dual-column {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 40px !important;
-  padding: 20px 30px !important;
-}
 
 .mobile-menu-section {
   flex: 1;
@@ -2604,12 +2630,14 @@
   gap: 12px;
 }
 
-/* Fixed Headers for Menus */
+/* Individual section scrolling */
 .mobile-scroll-container {
-  max-height: 250px;
+  max-height: 55vh; /* Limit height of each section */
   overflow-y: auto;
-  padding-right: 5px;
+  padding-right: 10px;
 }
+
+
 
 .mobile-scroll-container::-webkit-scrollbar {
   width: 4px;
@@ -2633,15 +2661,16 @@
 
 /* Allow scrolling for long lists */
 .mobile-dual-column {
-  overflow-y: visible !important;
-  min-height: fit-content !important;
-  padding-bottom: 20px !important;
+  overflow-y: hidden !important;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 40px !important;
+  padding: 20px 30px 40px !important;
 }
 
-.mobile-menu-scrollable {
-  max-height: 80vh;
-  overflow-y: auto;
-}
+
+
+
 
 /* Trailer Visibility States */
 .hidden-video {
@@ -3426,12 +3455,17 @@
   z-index: 200;
   /* Above subtitles (40) */
   pointer-events: none;
-  animation: pauseInfoFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pauseInfoFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   /* Premium smooth shift when X-Ray panel opens/closes */
   transition:
     padding-left 0.6s cubic-bezier(0.16, 1, 0.3, 1),
     padding-right 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.player-pause-info.exit {
+  animation: pauseInfoFadeOut 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 
 .pause-info-content {
   max-width: 600px;
@@ -3482,16 +3516,33 @@
 }
 
 @keyframes pauseInfoFadeIn {
-  from {
+  0% {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateX(-30px) scale(0.98);
+    filter: blur(4px);
   }
 
-  to {
+  100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
+    filter: blur(0);
   }
 }
+
+@keyframes pauseInfoFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.96);
+    filter: blur(8px);
+  }
+}
+
 
 /* Mobile Adjustments for Pause Info */
 @media (max-width: 896px) {

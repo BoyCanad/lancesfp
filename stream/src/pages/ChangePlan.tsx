@@ -8,42 +8,45 @@ export default function ChangePlan() {
 
   const plans = [
     {
-      id: 'standard-ads',
-      name: 'Standard with ads',
-      resolution: '1080p',
-      headerGradient: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-      price: '$7.99',
-      ads: 'Yes',
-      quality: 'Good',
-      fullResolution: '1080p (Full HD)',
-      devices: '2',
-      downloadDevices: '2',
-    },
-    {
-      id: 'standard',
-      name: 'Standard',
-      resolution: '1080p',
-      headerGradient: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
-      price: '$18.99',
-      ads: 'No ads',
-      quality: 'Good',
-      fullResolution: '1080p (Full HD)',
-      devices: '2',
-      downloadDevices: '2',
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
+      id: 'free',
+      name: 'Free Plan',
       resolution: '4K + HDR',
-      headerGradient: 'linear-gradient(135deg, #2a1b5d 0%, #d80c16 100%)',
-      price: '$23.99',
+      headerGradient: 'linear-gradient(135deg, #2a1b5d 0%, #1e3c72 100%)',
+      price: 'Free',
       ads: 'No ads',
       quality: 'Best',
       fullResolution: '4K (Ultra HD) + HDR',
       spatialAudio: 'Included',
+      devices: '2',
+      downloadDevices: '2',
+      current: true,
+    },
+    {
+      id: 'all-access',
+      name: 'All-Access Plan',
+      resolution: '4K + HDR',
+      headerGradient: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+      price: 'Not available',
+      ads: 'No ads',
+      quality: 'Best',
+      fullResolution: '4K (Ultra HD) + HDR',
+      exclusive: 'Exclusive Titles and Games',
       devices: '4',
       downloadDevices: '6',
-      current: true,
+    },
+    {
+      id: 'vip',
+      name: 'VIP Plan',
+      resolution: '4K + HDR',
+      headerGradient: 'linear-gradient(135deg, #d80c16 0%, #2a1b5d 100%)',
+      price: 'Not Available',
+      ads: 'No ads',
+      quality: 'Amazing',
+      fullResolution: '4K (Ultra HD) + HDR',
+      exclusive: 'Early access to titles & games + VIP room',
+      exclusiveDetails: 'Exclusive early access to titles and games and Exclusive access to the VIP only room',
+      devices: 'Unlimited',
+      downloadDevices: 'Unlimited',
     },
   ];
 
@@ -82,7 +85,7 @@ export default function ChangePlan() {
                 <div className="plan-details">
                   <div className="detail-item">
                     <span className="detail-label">Monthly price</span>
-                    <span className="detail-value">{plan.price} (pre-tax)</span>
+                    <span className="detail-value">{plan.price}</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Ads</span>
@@ -100,6 +103,17 @@ export default function ChangePlan() {
                     <div className="detail-item">
                       <span className="detail-label">Spatial audio (immersive sound)</span>
                       <span className="detail-value">{plan.spatialAudio}</span>
+                    </div>
+                  )}
+                  {plan.exclusive && (
+                    <div className="detail-item">
+                      <span className="detail-label">{plan.id === 'vip' ? 'Early access & VIP room' : 'Exclusive Titles and Games'}</span>
+                      <span className="detail-value">{plan.id === 'vip' ? 'Included' : 'Included'}</span>
+                    </div>
+                  )}
+                  {plan.exclusiveDetails && (
+                    <div className="detail-item-hint">
+                      {plan.exclusiveDetails}
                     </div>
                   )}
                   <div className="detail-item">
