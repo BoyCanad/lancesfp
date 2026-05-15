@@ -40,18 +40,19 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // Check if the user exists using our custom RPC function
-      const { data: userExists, error: rpcError } = await supabase.rpc('check_email_exists', { 
+      // Call our NEW, smarter RPC function
+      const { data: userStatus, error: rpcError } = await supabase.rpc('check_user_status', { 
         lookup_email: normalizedEmail 
       });
 
       if (rpcError) throw rpcError;
 
-      if (userExists) {
-        // EXISTING USER -> Go to Password Login screen
-        setStep(2);
+      if (userStatus === 'complete') {
+        // User exists AND finished setup. Send to Password screen.
+        setStep(2); 
       } else {
-        // NEW USER -> Send Sign-Up Email
+        // User is 'not_found' OR 'incomplete'. 
+        // In both cases, we send an OTP to verify their email and get them a session.
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email: normalizedEmail,
           options: {
@@ -63,12 +64,12 @@ export default function Auth() {
         if (otpError) throw otpError;
         
         setResendCooldown(30);
-        setStep(3); // Go to OTP Sent screen
+        setStep(3); // Go to OTP / Magic Link screen
       }
     } catch (error: any) {
       setModal({
         isOpen: true,
-        title: 'Request Failed',
+        title: 'Error',
         message: error.message || 'An error occurred. Please try again.',
         type: 'error'
       });
