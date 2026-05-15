@@ -6,60 +6,53 @@ import './SignUp.css';
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Overview, 2: Plan Selection
-  const [selectedPlan, setSelectedPlan] = useState('premium');
+  const [step, setStep] = useState(1); // 1: Overview, 2: Plan Selection, 3: Password Creation
+  const [selectedPlan, setSelectedPlan] = useState('free');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const plans = [
     {
-      id: 'mobile',
-      name: 'Mobile',
-      resolution: '480p',
-      price: '₱169',
-      quality: 'Fair',
-      resLabel: '480p',
-      devices: 'Mobile phone, tablet',
-      simultaneous: '1',
-      download: '1',
-      gradient: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)'
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      resolution: '720p',
-      price: '₱279',
-      quality: 'Good',
-      resLabel: '720p (HD)',
-      devices: 'TV, computer, mobile phone, tablet',
-      simultaneous: '1',
-      download: '1',
-      gradient: 'linear-gradient(135deg, #2a1b5d 0%, #4a00e0 100%)'
-    },
-    {
-      id: 'standard',
-      name: 'Standard',
-      resolution: '1080p',
-      price: '₱449',
-      quality: 'Great',
-      resLabel: '1080p (Full HD)',
+      id: 'free',
+      name: 'Free Plan',
+      resolution: '4K + HDR',
+      price: 'Free',
+      ads: 'No ads',
+      quality: 'Best',
+      resLabel: '4K (Ultra HD) + HDR',
       devices: 'TV, computer, mobile phone, tablet',
       simultaneous: '2',
       download: '2',
-      gradient: 'linear-gradient(135deg, #1e3c72 0%, #8e2de2 100%)'
+      spatialAudio: 'Included',
+      gradient: 'linear-gradient(135deg, #2a1b5d 0%, #1e3c72 100%)'
     },
     {
-      id: 'premium',
-      name: 'Premium',
+      id: 'all-access',
+      name: 'All-Access Plan',
       resolution: '4K + HDR',
-      price: '₱619',
+      price: 'Not available',
+      ads: 'No ads',
       quality: 'Best',
       resLabel: '4K (Ultra HD) + HDR',
       devices: 'TV, computer, mobile phone, tablet',
       simultaneous: '4',
       download: '6',
-      spatialAudio: 'Included',
-      popular: true,
-      gradient: 'linear-gradient(135deg, #d80c16 0%, #8e2de2 100%)'
+      exclusive: 'Exclusive Titles and Games',
+      gradient: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)'
+    },
+    {
+      id: 'vip',
+      name: 'VIP Plan',
+      resolution: '4K + HDR',
+      price: 'Not Available',
+      ads: 'No ads',
+      quality: 'Amazing',
+      resLabel: '4K (Ultra HD) + HDR',
+      devices: 'TV, computer, mobile phone, tablet',
+      simultaneous: 'Unlimited',
+      download: 'Unlimited',
+      exclusive: 'Early access to titles & games + VIP room',
+      gradient: 'linear-gradient(135deg, #d80c16 0%, #2a1b5d 100%)'
     }
   ];
 
@@ -69,14 +62,29 @@ export default function SignUp() {
   };
 
   const handleCompleteSignUp = async () => {
-    setLoading(true);
-    // Here you would typically save the selected plan to the user's profile
-    // For now, we'll just simulate a delay and redirect to profile creation
-    setTimeout(() => {
-      setLoading(false);
-      navigate('/CreateProfile');
-    }, 1500);
+    if (selectedPlan !== 'free') return;
+    setStep(3); // Move to password creation
   };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || loading) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      
+      // Password set! Now go to profile creation
+      navigate('/CreateProfile');
+    } catch (error: any) {
+      alert(error.message || 'Failed to set password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isPlanAvailable = selectedPlan === 'free';
 
   return (
     <div className="signup-page">
@@ -104,7 +112,7 @@ export default function SignUp() {
 
             <button className="signup-btn" onClick={() => setStep(2)}>Next</button>
           </div>
-        ) : (
+        ) : step === 2 ? (
           <div className="signup-step-container signup-selection">
             <span className="step-indicator">STEP <b>2</b> OF <b>3</b></span>
             <h1 className="signup-title">Choose the plan that's right for you</h1>
@@ -116,7 +124,6 @@ export default function SignUp() {
                   className={`signup-plan-card ${selectedPlan === plan.id ? 'active' : ''}`}
                   onClick={() => setSelectedPlan(plan.id)}
                 >
-                  {plan.popular && <div className="popular-badge">Most Popular</div>}
                   <div className="plan-card-header" style={{ background: plan.gradient }}>
                     <div className="plan-name-check">
                       <h2 className="plan-card-name">{plan.name}</h2>
@@ -144,6 +151,12 @@ export default function SignUp() {
                         <span className="detail-value">{plan.spatialAudio}</span>
                       </div>
                     )}
+                    {plan.exclusive && (
+                      <div className="card-detail-item">
+                        <span className="detail-label">Exclusive</span>
+                        <span className="detail-value">{plan.exclusive}</span>
+                      </div>
+                    )}
                     <div className="card-detail-item">
                       <span className="detail-label">Supported devices</span>
                       <span className="detail-value">{plan.devices}</span>
@@ -169,11 +182,41 @@ export default function SignUp() {
               <button 
                 className="signup-btn" 
                 onClick={handleCompleteSignUp}
-                disabled={loading}
+                disabled={loading || !isPlanAvailable}
               >
-                {loading ? 'Processing...' : 'Next'}
+                {loading ? 'Processing...' : (isPlanAvailable ? 'Next' : 'Not Available')}
               </button>
             </div>
+          </div>
+        ) : (
+          <div className="signup-step-container signup-password">
+            <span className="step-indicator">STEP <b>3</b> OF <b>3</b></span>
+            <h1 className="signup-title">Create a password to start your membership</h1>
+            <p className="signup-subtitle" style={{ color: '#333', marginBottom: '16px' }}>
+              Just a few more steps and you're done! We hate paperwork, too.
+            </p>
+            
+            <form onSubmit={handlePasswordSubmit} className="signup-password-form">
+              <input
+                type="password"
+                placeholder="Add a password"
+                className="signup-password-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoFocus
+                required
+                minLength={6}
+              />
+              <div className="signup-footer-btn-wrapper" style={{ marginTop: '24px' }}>
+                <button 
+                  type="submit" 
+                  className="signup-btn" 
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Next'}
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </main>

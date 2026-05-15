@@ -249,6 +249,26 @@
   max-width: 440px;
 }
 
+.signup-password {
+  max-width: 440px;
+  padding-top: 40px;
+}
+
+.signup-password-input {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #8c8c8c;
+  border-radius: 2px;
+  font-size: 1rem;
+  margin-top: 8px;
+  box-sizing: border-box;
+}
+
+.signup-password-input:focus {
+  outline: none;
+  border-color: #0071eb;
+}
+
 /* Footer Styles */
 .signup-footer {
   background-color: #f3f3f3;
