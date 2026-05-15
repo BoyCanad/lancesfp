@@ -10,6 +10,8 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   // Step 1: Email, Step 2: Password (Login), Step 3: OTP (Sign up)
   const [step, setStep] = useState<1 | 2 | 3>(1); 
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otpType, setOtpType] = useState<'signup' | 'magiclink'>('signup');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [modal, setModal] = useState({
     isOpen: false,
@@ -51,8 +53,14 @@ export default function Auth() {
         // User exists AND finished setup. Send to Password screen.
         setStep(2); 
       } else {
-        // User is 'not_found' OR 'incomplete'. 
-        // In both cases, we send an OTP to verify their email and get them a session.
+        // Here is the magic: Tell our state which type of token Supabase is sending
+        if (userStatus === 'not_found') {
+          setOtpType('signup');
+        } else if (userStatus === 'incomplete') {
+          setOtpType('magiclink');
+        }
+
+        // Send an OTP to verify their email
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email: normalizedEmail,
           options: {
@@ -103,6 +111,57 @@ export default function Auth() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle OTP verification
+  const handleVerifyOtp = async () => {
+    const token = otp.join('');
+    if (token.length !== 6 || loading) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: otpType
+      });
+
+      if (error) throw error;
+      
+      // Successfully verified!
+      navigate('/browse'); 
+      
+    } catch (error: any) {
+      setModal({ 
+        isOpen: true, 
+        title: 'Invalid Code', 
+        message: 'The code you entered is incorrect or expired.', 
+        type: 'error' 
+      });
+      setOtp(['', '', '', '', '', '']);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
     }
   };
 
@@ -183,29 +242,57 @@ export default function Auth() {
             </>
           )}
 
-          {/* STEP 3: MAGIC LINK SENT (New Users) */}
+          {/* STEP 3: OTP VERIFICATION (New/Incomplete Users) */}
           {step === 3 && (
             <>
-              <h1 className="auth-title">Check your email</h1>
+              <h1 className="auth-title">Enter the code we sent you</h1>
               <p className="auth-subtitle">
-                We sent a sign-up link to the email below. Simply tap the link to create your account.
+                We sent a 6-digit code to <b>{email}</b>. It may take a minute to arrive.
               </p>
 
-              <div className="auth-email-display" onClick={() => setStep(1)}>
-                <span>{email}</span>
-                <span className="auth-edit-link">Change</span>
+              <div className="auth-otp-container">
+                {otp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    id={`otp-${idx}`}
+                    type="text"
+                    inputMode="numeric"
+                    className="auth-otp-input"
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                    maxLength={1}
+                    autoFocus={idx === 0}
+                  />
+                ))}
               </div>
+
+              <button 
+                className="auth-btn auth-btn--continue"
+                onClick={handleVerifyOtp}
+                disabled={loading || otp.join('').length < 6}
+                style={{marginTop: '24px'}}
+              >
+                {loading ? 'Verifying...' : 'Verify'}
+              </button>
 
               <div className="auth-footer" style={{marginTop: '24px'}}>
                 <p className="auth-footer-text">
-                  Didn't get a link? Check your spam or {resendCooldown > 0 ? (
-                    <span style={{color: '#e50914'}}>resend in {resendCooldown}s</span>
+                  Didn't get a code? {resendCooldown > 0 ? (
+                    <span style={{color: '#e50914'}}>Resend in {resendCooldown}s</span>
                   ) : (
                     <button type="button" className="auth-toggle-btn" onClick={handleEmailSubmit}>
-                      resend it
+                      Resend code
                     </button>
-                  )}.
+                  )}
                 </p>
+                <button 
+                  className="auth-toggle-btn" 
+                  onClick={() => setStep(1)}
+                  style={{marginTop: '8px', fontSize: '0.9rem'}}
+                >
+                  Change email
+                </button>
               </div>
             </>
           )}
