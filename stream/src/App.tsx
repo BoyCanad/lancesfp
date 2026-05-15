@@ -120,10 +120,15 @@ function App() {
 
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session);
+      
+      // If user is logged in but hasn't completed signup, force them to signup page
+      if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction'].includes(window.location.pathname)) {
+        navigate('/signup', { replace: true });
+      }
+      
       setCheckingAuth(false);
     }).catch((error) => {
       console.error("Error getting session:", error);
-      // Network error — fall back to persisted session
       const persisted = getPersistedSession();
       setSession(persisted);
       setCheckingAuth(false);
@@ -133,6 +138,11 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+      
+      // Enforce signup completion on auth change
+      if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction'].includes(window.location.pathname)) {
+        navigate('/signup', { replace: true });
+      }
       
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/account', { state: { recover: true } });
@@ -276,7 +286,11 @@ function App() {
       <Routes>
         <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
         
-        <Route path="/" element={session ? <ProfilePicker /> : <Introduction />} />
+        <Route path="/" element={
+          session 
+            ? (session.user.user_metadata?.signup_completed ? <ProfilePicker /> : <Navigate to="/signup" replace />) 
+            : <Introduction />
+        } />
         <Route path="/introduction" element={<Introduction />} />
         <Route path="/CreateProfile" element={session ? <CreateProfile /> : <Navigate to="/login" replace />} />
         <Route path="/ProfileLock/:id" element={session ? <ProfileLock /> : <Navigate to="/login" replace />} />
@@ -284,7 +298,11 @@ function App() {
         <Route path="/EditProfile/:id" element={session ? <EditProfile /> : <Navigate to="/login" replace />} />
         <Route path="/IconPicker/:id" element={session ? <IconPicker /> : <Navigate to="/login" replace />} />
         
-        <Route path="/browse" element={<Home />} />
+        <Route path="/browse" element={
+          session 
+            ? (session.user.user_metadata?.signup_completed ? <Home /> : <Navigate to="/signup" replace />) 
+            : <Navigate to="/login" replace />
+        } />
         <Route path="/my-list" element={<MyList />} />
         <Route path="/search" element={<Search />} />
         <Route path="/genre/:genreId" element={<CategoryPage />} />
@@ -318,7 +336,11 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
         <Route path="/change-plan" element={session ? <ChangePlan /> : <Navigate to="/login" replace />} />
-        <Route path="/signup" element={session ? <SignUp /> : <Navigate to="/login" replace />} />
+        <Route path="/signup" element={
+          session 
+            ? (session.user.user_metadata?.signup_completed ? <Navigate to="/" replace /> : <SignUp />) 
+            : <Navigate to="/login" replace />
+        } />
         <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
       </Routes>
 

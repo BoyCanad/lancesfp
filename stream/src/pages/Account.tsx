@@ -45,7 +45,7 @@ export default function Account() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserEmail(user.email ?? null);
-        setIsVerified(user.user_metadata?.is_verified === true);
+        setIsVerified(user.user_metadata?.signup_completed === true);
         if (user.created_at) {
           const date = new Date(user.created_at);
           const month = date.toLocaleString('default', { month: 'long' });
