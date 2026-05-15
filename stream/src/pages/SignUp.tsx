@@ -72,7 +72,10 @@ export default function SignUp() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await supabase.auth.updateUser({ 
+        password,
+        data: { is_verified: true }
+      });
       if (error) throw error;
       
       // Password set! Now go to profile creation

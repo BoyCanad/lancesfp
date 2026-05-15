@@ -26,6 +26,7 @@ export default function Account() {
   const location = useLocation() as any;
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [activeProfile, setActiveProfile] = useState<any>(null);
+  const [isVerified, setIsVerified] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'membership' | 'security' | 'devices' | 'profiles'>('overview');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -44,6 +45,7 @@ export default function Account() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserEmail(user.email ?? null);
+        setIsVerified(user.user_metadata?.is_verified === true);
         if (user.created_at) {
           const date = new Date(user.created_at);
           const month = date.toLocaleString('default', { month: 'long' });
@@ -182,7 +184,20 @@ export default function Account() {
                     <div className="mobile-card-link-left">
                       <Mail size={22} color="#333" />
                       <div className="mobile-link-text">
-                        <span>Email</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>Email</span>
+                          {isVerified ? (
+                            <div className="account-verified-row" style={{ marginTop: '0' }}>
+                              <Check size={12} color="#0071eb" />
+                              <span style={{ fontSize: '11px', color: '#0071eb' }}>Verified</span>
+                            </div>
+                          ) : (
+                            <div className="account-verified-row" style={{ marginTop: '0' }}>
+                              <ShieldAlert size={12} color="#e50914" />
+                              <span style={{ fontSize: '11px', color: '#e50914' }}>Unverified</span>
+                            </div>
+                          )}
+                        </div>
                         <p>{userEmail || 'zedsmash154@gmail.com'}</p>
                       </div>
                     </div>
@@ -604,10 +619,17 @@ export default function Account() {
                       <div className="account-link-text-stack">
                          <span>Email</span>
                          <span className="account-detail-value">{userEmail || 'zedsmash154@gmail.com'}</span>
-                         <div className="account-verified-row">
-                           <Check size={14} color="#333" />
-                           <span>Verified</span>
-                         </div>
+                         {isVerified ? (
+                           <div className="account-verified-row">
+                             <Check size={14} color="#333" />
+                             <span>Verified</span>
+                           </div>
+                         ) : (
+                           <div className="account-verified-row unverified">
+                             <ShieldAlert size={14} color="#e50914" />
+                             <span style={{color: '#e50914'}}>Action Required</span>
+                           </div>
+                         )}
                       </div>
                     </div>
                     <ChevronRight size={20} color="#666" />
