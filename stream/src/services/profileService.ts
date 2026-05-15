@@ -103,18 +103,29 @@ export async function updateProfile(
   updates: Partial<Pick<Profile, 'name' | 'image' | 'locked' | 'pin' | 'icon_history'>>
 ): Promise<Profile> {
   if (!navigator.onLine) return {} as any;
-  // If updating image, handle history
+  
+  // Handle icon history
   if (updates.image) {
-    const { data: current } = await supabase
-      .from('profiles')
-      .select('icon_history, image')
-      .eq('id', id)
-      .single();
-    
-    if (current) {
-      const history = current.icon_history || (current.image ? [current.image] : []);
+    try {
+      const { data: current } = await supabase
+        .from('profiles')
+        .select('icon_history, image')
+        .eq('id', id)
+        .single();
+      
+      if (current) {
+        const history = current.icon_history || (current.image ? [current.image] : []);
+        if (!history.includes(updates.image)) {
+          updates.icon_history = [...history, updates.image].slice(-10);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not sync icon history to DB, saving locally instead.");
+      const key = `icon_history_${id}`;
+      const localHistoryStr = localStorage.getItem(key);
+      const history: string[] = localHistoryStr ? JSON.parse(localHistoryStr) : [];
       if (!history.includes(updates.image)) {
-        updates.icon_history = [...history, updates.image];
+        localStorage.setItem(key, JSON.stringify([updates.image, ...history].slice(0, 10)));
       }
     }
   }
@@ -125,7 +136,22 @@ export async function updateProfile(
     .eq('id', id)
     .select()
     .single();
-  if (error) throw error;
+  
+  if (error) {
+    // If the error is specifically about icon_history column, try without it
+    if (error.message?.includes('icon_history')) {
+      const { icon_history, ...safeUpdates } = updates as any;
+      const { data: retryData, error: retryError } = await supabase
+        .from('profiles')
+        .update(safeUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (retryError) throw retryError;
+      return retryData;
+    }
+    throw error;
+  }
   return data;
 }
 

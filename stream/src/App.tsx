@@ -38,6 +38,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Introduction from './pages/Introduction';
 import LanguageSettings from './pages/LanguageSettings';
 import ChangePlan from './pages/ChangePlan';
+import SignUp from './pages/SignUp';
 import './App.css';
 
 function App() {
@@ -55,7 +56,7 @@ function App() {
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock') || pathname.startsWith('/LanguageSettings');
-  const isAuth = pathname === '/login' || pathname === '/introduction';
+  const isAuth = pathname === '/login' || pathname === '/introduction' || pathname === '/signup';
   const isForgotPassword = pathname === '/forgot-password';
   const isAccount = pathname === '/account' || pathname === '/change-plan';
   const isMyNetflix = pathname === '/my-lsfplus';
@@ -317,6 +318,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
         <Route path="/change-plan" element={session ? <ChangePlan /> : <Navigate to="/login" replace />} />
+        <Route path="/signup" element={session ? <SignUp /> : <Navigate to="/login" replace />} />
         <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
       </Routes>
 
