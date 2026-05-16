@@ -54,7 +54,6 @@ function buildRows(movies: Movie[]) {
   ];
   const archiveMovies = [
     ...archiveLeadIds.map((id) => byId[id]).filter(Boolean),
-    ...all.filter((m) => !archiveLeadIds.includes(m.id) && !FEATURED_IDS.includes(m.id)),
   ] as Movie[];
 
   return { featured, trending, makingOf, ahours, elBimboCollections, archiveMovies, all };

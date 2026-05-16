@@ -130,14 +130,19 @@ export default defineConfig({
         name: "LSFPlus Streaming",
         icons: [
           {
-            src: "favicon.png",
+            src: "icon.png",
             sizes: "64x64 32x32 24x24 16x16",
             type: "image/png"
           },
           {
-            src: "/images/huling-el-bimbo-logo.webp",
-            type: "image/webp",
+            src: "icon.png",
+            sizes: "192x192",
+            type: "image/png"
+          },
+          {
+            src: "icon.png",
             sizes: "512x512",
+            type: "image/png",
             purpose: "any maskable"
           }
         ],

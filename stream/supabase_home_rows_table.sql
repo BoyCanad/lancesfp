@@ -51,14 +51,7 @@ INSERT INTO public.home_rows (sort_order, row_type, title, movie_ids) VALUES
   'ang-huling-el-bimbo-play-xray',
   'beyond-the-last-dance',
   'bukang-liwayway-takipsilim',
-  'a-day-in-my-life-stem',
-  'minsan',
-  'tindahan-ni-aling-nena',
-  'alapaap-overdrive',
-  'spoliarium-graduation',
-  'pare-ko',
-  'tama-ka-ligaya',
-  'ang-huling-el-bimbo'
+  'a-day-in-my-life-stem'
 ]),
 (30, 'top10',      'Top 10 Titles in LSFPlus Today', ARRAY[
   'ang-huling-el-bimbo-play',
