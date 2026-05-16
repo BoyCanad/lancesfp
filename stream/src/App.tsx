@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import MobileNav from './components/MobileNav';
 import LoadingSpinner from './components/LoadingSpinner';
 import SplashScreen from './components/SplashScreen';
+import { getProfiles } from './services/profileService';
 import { useLanguage } from './i18n/LanguageContext';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
@@ -118,12 +119,22 @@ function App() {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session);
       
-      // If user is logged in but hasn't completed signup, force them to signup page
       if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction'].includes(window.location.pathname)) {
-        navigate('/signup', { replace: true });
+        // Repair metadata: If they have profiles, they are definitely complete
+        try {
+          const profiles = await getProfiles();
+          if (profiles && profiles.length > 0) {
+            await supabase.auth.updateUser({ data: { signup_completed: true } });
+          } else {
+            navigate('/signup', { replace: true });
+          }
+        } catch (e) {
+          // If profile fetch fails, assume they might need signup
+          navigate('/signup', { replace: true });
+        }
       }
       
       setCheckingAuth(false);
@@ -136,12 +147,22 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       
-      // Enforce signup completion on auth change
-      if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction'].includes(window.location.pathname)) {
-        navigate('/signup', { replace: true });
+      // Enforce signup completion on auth change, but check for profiles first as a repair
+      if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction', '/browse'].includes(window.location.pathname)) {
+        try {
+          const profiles = await getProfiles();
+          if (profiles && profiles.length > 0) {
+            await supabase.auth.updateUser({ data: { signup_completed: true } });
+          } else if (event === 'SIGNED_IN') {
+             // Only redirect to signup on explicit sign in if no profiles found
+             navigate('/signup', { replace: true });
+          }
+        } catch (e) {
+          // ignore
+        }
       }
       
       if (event === 'PASSWORD_RECOVERY') {

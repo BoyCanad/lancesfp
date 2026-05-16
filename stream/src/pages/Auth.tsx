@@ -93,12 +93,19 @@ export default function Auth() {
     
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+
+      // If user is missing signup_completed metadata, set it now because they just logged in with a password
+      if (data.user && !data.user.user_metadata?.signup_completed) {
+        await supabase.auth.updateUser({
+          data: { signup_completed: true }
+        });
+      }
 
       // Login successful! Redirect to browse
       navigate('/browse');
@@ -242,47 +249,66 @@ export default function Auth() {
             </>
           )}
 
-          {/* STEP 3: OTP VERIFICATION (New/Incomplete Users) */}
+          {/* STEP 3: OTP VERIFICATION / EMAIL LINK (New/Incomplete Users) */}
           {step === 3 && (
             <>
-              <h1 className="auth-title">Enter the code we sent you</h1>
+              <h1 className="auth-title">
+                {otpType === 'signup' ? 'Finish signing up' : 'Enter the code we sent you'}
+              </h1>
               <p className="auth-subtitle">
-                We sent a 6-digit code to <b>{email}</b>. It may take a minute to arrive.
+                {otpType === 'signup' 
+                  ? <>We sent a sign-up link to <b>{email}</b>. Check your inbox and click the link to continue.</>
+                  : <>We sent a 6-digit code to <b>{email}</b>. It may take a minute to arrive.</>
+                }
               </p>
 
-              <div className="auth-otp-container">
-                {otp.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    id={`otp-${idx}`}
-                    type="text"
-                    inputMode="numeric"
-                    className="auth-otp-input"
-                    value={digit}
-                    onChange={(e) => handleOtpChange(idx, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(idx, e)}
-                    maxLength={1}
-                    autoFocus={idx === 0}
-                  />
-                ))}
-              </div>
+              {otpType !== 'signup' ? (
+                <>
+                  <div className="auth-otp-container">
+                    {otp.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        id={`otp-${idx}`}
+                        type="text"
+                        inputMode="numeric"
+                        className="auth-otp-input"
+                        value={digit}
+                        onChange={(e) => handleOtpChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(idx, e)}
+                        maxLength={1}
+                        autoFocus={idx === 0}
+                      />
+                    ))}
+                  </div>
 
-              <button 
-                className="auth-btn auth-btn--continue"
-                onClick={handleVerifyOtp}
-                disabled={loading || otp.join('').length < 6}
-                style={{marginTop: '24px'}}
-              >
-                {loading ? 'Verifying...' : 'Verify'}
-              </button>
+                  <button 
+                    className="auth-btn auth-btn--continue"
+                    onClick={handleVerifyOtp}
+                    disabled={loading || otp.join('').length < 6}
+                    style={{marginTop: '24px'}}
+                  >
+                    {loading ? 'Verifying...' : 'Verify'}
+                  </button>
+                </>
+              ) : (
+                <div style={{textAlign: 'center', padding: '40px 0'}}>
+                   <div className="auth-help-container" style={{display: 'flex', justifyContent: 'center', marginBottom: '24px'}}>
+                     <div className="auth-loading-spinner" style={{margin: '0 auto'}}></div>
+                   </div>
+                   <p style={{color: '#737373', fontSize: '1rem', lineHeight: '1.6'}}>
+                     Waiting for verification...<br/>
+                     Please click the link in your email to choose your plan.
+                   </p>
+                </div>
+              )}
 
               <div className="auth-footer" style={{marginTop: '24px'}}>
                 <p className="auth-footer-text">
-                  Didn't get a code? {resendCooldown > 0 ? (
+                  {otpType === 'signup' ? "Didn't get an email?" : "Didn't get a code?"} {resendCooldown > 0 ? (
                     <span style={{color: '#e50914'}}>Resend in {resendCooldown}s</span>
                   ) : (
                     <button type="button" className="auth-toggle-btn" onClick={handleEmailSubmit}>
-                      Resend code
+                      {otpType === 'signup' ? 'Resend email' : 'Resend code'}
                     </button>
                   )}
                 </p>
