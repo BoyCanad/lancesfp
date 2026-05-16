@@ -45,6 +45,17 @@ export const MovieCard = memo(({
   const [inMyList, setInMyList] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoElemRef = useRef<HTMLVideoElement>(null);
+  const ytIframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (ytIframeRef.current && ytIframeRef.current.contentWindow) {
+      if (isMuted) {
+        ytIframeRef.current.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
+      } else {
+        ytIframeRef.current.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+      }
+    }
+  }, [isMuted]);
 
   useEffect(() => {
     setInMyList(isInMyList(movie.id));
@@ -92,6 +103,9 @@ export const MovieCard = memo(({
     if (videoElemRef.current) {
       videoElemRef.current.pause();
       videoElemRef.current.currentTime = 0;
+    }
+    if (ytIframeRef.current && ytIframeRef.current.contentWindow) {
+      ytIframeRef.current.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
     }
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
@@ -183,6 +197,17 @@ export const MovieCard = memo(({
           />
         </picture>
         
+        {/* TMDB Title Logo Overlay (Desktop Only) */}
+        {movie.id.startsWith('tmdb-') && movie.logo && (
+          <div className="card__logo-overlay desktop-only-logo">
+            <img 
+              src={movie.logo} 
+              alt={`${movie.title} logo`} 
+              className="card__thumb-logo" 
+            />
+          </div>
+        )}
+        
         {/* Thumbnail logic continue... */}
       </div>
 
@@ -221,18 +246,29 @@ export const MovieCard = memo(({
             {/* Trailer (Video) - Preloaded during hover delay */}
             {movie.trailerUrl && (
               <div className="card__video-wrapper">
-                <video
-                  ref={videoElemRef}
-                  src={movie.trailerUrl}
-                  muted={isMuted}
-                  playsInline
-                  preload="auto"
-                  className="card__expanded-trailer"
-                  onEnded={() => {
-                    setIsPlayingTrailer(false);
-                    setHasFinishedOnce(true);
-                  }}
-                />
+                {movie.trailerUrl.includes('youtube.com') || movie.trailerUrl.includes('youtu.be') ? (
+                  <iframe
+                    ref={ytIframeRef}
+                    className={`card__expanded-trailer ${isPlayingTrailer ? 'card__expanded-trailer--playing' : ''}`}
+                    src={isPlayingTrailer ? `${movie.trailerUrl}${movie.trailerUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1` : ''}
+                    allow="autoplay; encrypted-media"
+                    frameBorder="0"
+                    style={{ pointerEvents: 'none', border: 'none', transform: 'scale(1.35)' }}
+                  />
+                ) : (
+                  <video
+                    ref={videoElemRef}
+                    src={movie.trailerUrl}
+                    muted={isMuted}
+                    playsInline
+                    preload="auto"
+                    className="card__expanded-trailer"
+                    onEnded={() => {
+                      setIsPlayingTrailer(false);
+                      setHasFinishedOnce(true);
+                    }}
+                  />
+                )}
                 
                 <button 
                   className="card__vol-btn"
@@ -418,7 +454,7 @@ export default function ContentRow({
     if (movie.id === 'bukang-liwayway-takipsilim') return '/bukang-liwayway-takipsilim';
     if (movie.id === 'a-day-in-my-life-stem') return '/a-day-in-my-life-stem';
     if (movie.id === 't1') return '/11-stem-a';
-    return `/browse`; // Fallback
+    return `/${movie.id}`; // Fallback to slug-based routing
   };
 
   const handleMovieClick = useCallback((movie: Movie, startTime?: number) => {

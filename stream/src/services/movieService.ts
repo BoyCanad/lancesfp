@@ -293,3 +293,47 @@ export function invalidateHomeRowsCache() {
   _homeRowsCache = null;
   _homeRowsCacheTime = 0;
 }
+
+// ─── Mutate: Upsert a movie ──────────────────────────────────────────────────
+export async function upsertMovie(movie: Movie) {
+  try {
+    const { data, error } = await supabase
+      .from('movies')
+      .upsert({
+        id: movie.id,
+        title: movie.title,
+        thumbnail: movie.thumbnail,
+        banner: movie.banner,
+        description: movie.description,
+        rating: movie.rating,
+        year: parseInt(movie.year) || 0,
+        duration: movie.duration,
+        genre: movie.genre,
+        ageRating: movie.ageRating,
+        mediaType: movie.mediaType,
+        mobileThumbnail: movie.mobileThumbnail,
+        mobileBanner: movie.mobileBanner,
+        detailBanner: movie.detailBanner,
+        detailMobileBanner: movie.detailMobileBanner,
+        isOriginal: movie.isOriginal ?? false,
+        trailerUrl: movie.trailerUrl ?? null,
+        logo: movie.logo ?? null,
+        comingSoon: movie.comingSoon ?? false,
+        seasons: movie.seasons ?? null,
+        // Add more fields if needed
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Update local cache
+    invalidateMovieCache();
+    invalidateHomeRowsCache();
+    
+    return data;
+  } catch (err) {
+    console.error('[movieService] Failed to upsert movie:', err);
+    throw err;
+  }
+}

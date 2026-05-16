@@ -40,6 +40,7 @@ import Introduction from './pages/Introduction';
 import LanguageSettings from './pages/LanguageSettings';
 import ChangePlan from './pages/ChangePlan';
 import SignUp from './pages/SignUp';
+import AdminImport from './pages/AdminImport';
 import './App.css';
 
 function App() {
@@ -62,6 +63,14 @@ function App() {
   const isAccount = pathname === '/account' || pathname === '/change-plan';
   const isMyNetflix = pathname === '/my-lsfplus';
   const isDownloads = pathname === '/downloads';
+  const reservedRoots = [
+    '/login', '/introduction', '/browse', '/my-list', '/search', '/clips', '/music', '/live',
+    '/account', '/my-lsfplus', '/downloads', '/forgot-password', '/change-plan', '/signup', '/games',
+    '/CreateProfile'
+  ];
+  
+  const isDynamicDetailPage = pathname.split('/').length === 2 && !reservedRoots.includes(pathname);
+
   const isDetailPage = [
     '/ang-huling-el-bimbo-play',
     '/ang-huling-el-bimbo-play-xray',
@@ -78,7 +87,7 @@ function App() {
     '/bukang-liwayway-takipsilim',
     '/a-day-in-my-life-stem',
     '/11-stem-a'
-  ].includes(pathname);
+  ].includes(pathname) || isDynamicDetailPage;
 
   const isGenrePage = pathname.startsWith('/genre');
 
@@ -363,6 +372,8 @@ function App() {
             : <Navigate to="/login" replace />
         } />
         <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/import" element={session ? <AdminImport /> : <Navigate to="/login" replace />} />
+        <Route path="/:id" element={<MovieDetail />} />
       </Routes>
 
       {showNavAndFooter && (

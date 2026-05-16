@@ -65,7 +65,7 @@ export default function Search() {
       't1': '/11-stem-a'
     };
     
-    navigate(pathMap[movie.id] || `/watch/${movie.id}`);
+    navigate(pathMap[movie.id] || `/${movie.id}`);
   };
 
 

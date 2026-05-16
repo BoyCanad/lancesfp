@@ -1,0 +1,235 @@
+.admin-import {
+  min-height: 100vh;
+  background: #141414;
+  color: white;
+  padding: 80px 4% 40px;
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-import__header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.admin-import__back {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-import__back:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-import__header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.admin-import__search-container {
+  max-width: 800px;
+  margin: 0 auto 40px;
+}
+
+.admin-import__search-form {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s;
+}
+
+.admin-import__search-form:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.admin-import__search-icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+}
+
+.admin-import__search-form input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 12px 12px 12px 48px;
+  font-size: 1.1rem;
+  outline: none;
+}
+
+.admin-import__search-form button {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 0 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-import__search-form button:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.admin-import__search-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-import__results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .admin-import__results {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-import__card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s;
+}
+
+.admin-import__card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-import__card-thumb {
+  width: 160px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.admin-import__card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-import__no-thumb {
+  width: 100%;
+  height: 100%;
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.admin-import__type-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.admin-import__card-info {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-import__card-info h3 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.admin-import__meta {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 12px;
+}
+
+.admin-import__overview {
+  font-size: 0.9rem;
+  color: #ccc;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.admin-import__import-btn {
+  align-self: flex-start;
+  background: white;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-import__import-btn:hover:not(:disabled) {
+  background: #e5e5e5;
+  transform: scale(1.02);
+}
+
+.admin-import__import-btn.success {
+  background: #22c55e;
+  color: white;
+}
+
+.admin-import__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 100px 0;
+  color: #555;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

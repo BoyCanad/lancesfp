@@ -2268,6 +2268,51 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
   const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);
 
+  if (movie?.id?.startsWith('tmdb-')) {
+    const tmdbId = movie.id.replace('tmdb-', '');
+    const embedType = movie.mediaType === 'show' ? 'tv' : 'movie';
+    const tvParams = embedType === 'tv' ? '/1/1' : ''; // Default to S1 E1 for TV
+    let iframeSrc = `https://www.vidking.net/embed/${embedType}/${tmdbId}${tvParams}?color=9146ff&autoPlay=true&nextEpisode=true&episodeSelector=true`;
+
+    if (location.state?.videoUrl && location.state.videoUrl.includes('vidking')) {
+      iframeSrc = location.state.videoUrl;
+    }
+
+    return (
+      <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            position: 'absolute', 
+            top: 20, 
+            left: 20, 
+            zIndex: 50, 
+            background: 'rgba(0,0,0,0.5)', 
+            border: 'none', 
+            borderRadius: '50%', 
+            padding: '12px', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
+          }}
+        >
+          <ArrowLeft size={32} color="white" />
+        </button>
+        <iframe 
+          src={iframeSrc}
+          width="100%" 
+          height="100%" 
+          frameBorder="0" 
+          allowFullScreen
+          style={{ width: '100%', height: '100%', border: 'none' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       ref={containerRef}

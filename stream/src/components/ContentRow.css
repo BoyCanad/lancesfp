@@ -676,6 +676,8 @@
 
 /* Mobile Portrait Aspect Ratio Reversion */
 @media (max-width: 768px) {
+  .desktop-only-logo { display: none !important; }
+  
   .row { 
     padding: 0 16px 12px !important; 
     margin: 0 !important;
