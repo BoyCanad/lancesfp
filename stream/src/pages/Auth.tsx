@@ -244,7 +244,9 @@ export default function Auth() {
               </form>
               
               <div className="auth-footer">
-                <button className="auth-toggle-btn">Forgot password?</button>
+                <button className="auth-toggle-btn" onClick={() => navigate('/forgot-password')}>
+                  Forgot password?
+                </button>
               </div>
             </>
           )}
