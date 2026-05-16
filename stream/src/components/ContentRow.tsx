@@ -352,13 +352,23 @@ export const MovieCard = memo(({
             </div>
 
             {showProgress && movie.progress !== undefined ? (
-              <div className="card__expanded-progress-row">
+              <div style={{ marginTop: '12px' }}>
+                {movie.currentEpisode && (
+                  <div style={{ color: '#fff', fontSize: '0.85rem', marginBottom: '6px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    S{movie.currentEpisode.season}:E{movie.currentEpisode.episode} "{movie.currentEpisode.title}"
+                  </div>
+                )}
+                <div className="card__expanded-progress-row" style={{ marginTop: '0' }}>
                 <div className="card__expanded-progress-bg">
                   <div className="card__expanded-progress-fill" style={{ width: `${movie.progress}%` }} />
                 </div>
                 <span className="card__expanded-time">
-                  {Math.round((movie.progress / 100) * parseDurationToMin(movie.duration))}m of {parseDurationToMin(movie.duration)}m
+                  {movie.duration_ms 
+                    ? `${Math.round((movie.progress / 100) * (movie.duration_ms / 60000))}m of ${Math.round(movie.duration_ms / 60000)}m`
+                    : `${Math.round((movie.progress / 100) * parseDurationToMin(movie.duration))}m of ${parseDurationToMin(movie.duration)}m`
+                  }
                 </span>
+              </div>
               </div>
             ) : (
               <>

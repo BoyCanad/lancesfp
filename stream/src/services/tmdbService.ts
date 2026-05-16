@@ -106,7 +106,7 @@ export const tmdbService = {
               title: ep.name,
               description: ep.overview,
               thumbnail: ep.still_path ? `${IMAGE_BASE_URL}/w500${ep.still_path}` : (tmdb.backdrop_path ? `${IMAGE_BASE_URL}/w500${tmdb.backdrop_path}` : ''),
-              videoUrl: `https://www.vidking.net/embed/tv/${tmdb.id}/${s.season_number}/${ep.episode_number}?color=9146ff&autoPlay=true&nextEpisode=true&episodeSelector=true`,
+              videoUrl: `https://vidlink.pro/tv/${tmdb.id}/${s.season_number}/${ep.episode_number}?primaryColor=9146ff`,
               duration: ep.runtime ? `${ep.runtime}m` : 'N/A'
             }))
           };
@@ -134,6 +134,7 @@ export const tmdbService = {
       detailBanner: tmdb.backdrop_path ? `${IMAGE_BASE_URL}/original${tmdb.backdrop_path}` : '',
       detailMobileBanner: tmdb.backdrop_path ? `${IMAGE_BASE_URL}/w780${tmdb.backdrop_path}` : '',
       trailerUrl,
+      videoUrl: type === 'movie' ? `https://vidlink.pro/movie/${tmdb.id}?primaryColor=9146ff` : undefined,
       logo,
       mediaType: type === 'tv' ? 'show' : 'movie',
       isOriginal: false,

@@ -56,6 +56,8 @@ export interface Movie {
   contentWarnings?: string[];
   isOriginal?: boolean;
   progress?: number; // for "continue watching", 0-100
+  duration_ms?: number; // real duration in ms for accurate rendering
+  currentEpisode?: { season: number; episode: number; title: string };
   desktopOnly?: boolean;
   streamStatus?: 'live' | 'scheduled' | 'offline';
   quality?: string;

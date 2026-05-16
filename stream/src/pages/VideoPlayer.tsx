@@ -24,7 +24,8 @@ import {
   MessageCircle,
   Camera,
   MoreHorizontal,
-  PictureInPicture2
+  PictureInPicture2,
+  List
 } from 'lucide-react';
 import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
@@ -188,6 +189,163 @@ const renderKaraokeSubtitle = (text: string, movieId?: string) => {
 
   return <>{result}</>;
 };
+
+// ─── VidlinkPlayer ────────────────────────────────────────────────────────────
+// Dedicated component so it can use hooks (useEffect) while being conditionally
+// returned from VideoPlayer (which has its own hook calls above).
+function VidlinkPlayer({ iframeSrc, movie, onBack, onChangeEpisode }: {
+  iframeSrc: string;
+  movie: import('../data/movies').Movie;
+  onBack: () => void;
+  onChangeEpisode?: (season: number, episode: number) => void;
+}) {
+  const [showEpisodes, setShowEpisodes] = useState(false);
+
+  useEffect(() => {
+    const handler = async (event: MessageEvent) => {
+      if (event.origin !== 'https://vidlink.pro') return;
+      if (event.data?.type !== 'MEDIA_DATA') return;
+
+      const mediaData = event.data.data;
+
+      // 1. Persist raw data for vidlink's own resume system
+      try {
+        const existing = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+        const updated = { ...existing, ...mediaData };
+        localStorage.setItem('vidLinkProgress', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('[VidlinkPlayer] Failed to save vidLinkProgress', e);
+      }
+
+      // 2. Sync to Supabase watch_progress so it surfaces in Continue Watching
+      try {
+        const stored = localStorage.getItem('activeProfile');
+        if (!stored) return;
+        const profile = JSON.parse(stored);
+
+        // mediaData contains the entire history. Extract the entry for THIS specific movie/show
+        const tmdbNumericId = movie.id.replace('tmdb-', '');
+        const entry = mediaData[tmdbNumericId];
+        if (!entry) return;
+
+        let watched = entry?.progress?.watched ?? 0;
+        let duration = entry?.progress?.duration ?? 0;
+
+        // If it's a TV show, extract the specific progress for the last watched episode
+        if (entry?.type === 'tv' && entry?.last_season_watched && entry?.last_episode_watched) {
+          const s = entry.last_season_watched;
+          const e = entry.last_episode_watched;
+          const epProgress = entry?.show_progress?.[`s${s}e${e}`]?.progress;
+          if (epProgress) {
+            watched = epProgress.watched;
+            duration = epProgress.duration;
+          }
+        }
+
+        if (duration <= 0) return;
+
+        await updateWatchProgress(
+          profile.id,
+          movie.id,
+          Math.round(watched * 1000),   // seconds → ms
+          Math.round(duration * 1000)   // seconds → ms
+        );
+      } catch (e) {
+        console.warn('[VidlinkPlayer] Failed to sync watch progress', e);
+      }
+    };
+
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [movie.id]);
+
+  return (
+    <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
+      <button
+        onClick={onBack}
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          zIndex: 50,
+          background: 'rgba(0,0,0,0.5)',
+          border: 'none',
+          borderRadius: '50%',
+          padding: '12px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+        }}
+      >
+        <ArrowLeft size={32} color="white" />
+      </button>
+
+      {movie?.mediaType === 'show' && movie?.seasons && movie.seasons.length > 0 && onChangeEpisode && (
+        <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 50 }}>
+          <button
+            onClick={() => setShowEpisodes(!showEpisodes)}
+            style={{
+              background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
+              padding: '8px 16px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+              backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', fontWeight: 500
+            }}
+          >
+            <List size={20} /> Episodes
+          </button>
+          
+          {showEpisodes && (
+            <div style={{
+              position: 'absolute', top: '100%', right: 0, marginTop: '10px',
+              background: 'rgba(15,15,15,0.95)', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px', padding: '16px', width: '300px', maxHeight: '60vh', overflowY: 'auto',
+              backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+            }}>
+              {movie.seasons.map((s: any) => (
+                <div key={s.id} style={{ marginBottom: '16px' }}>
+                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '8px', fontSize: '1.1rem' }}>Season {s.seasonNumber}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {s.episodes.map((ep: any) => (
+                      <button
+                        key={ep.id}
+                        onClick={() => {
+                          onChangeEpisode(s.seasonNumber, ep.episodeNumber);
+                          setShowEpisodes(false);
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', color: '#ccc', textAlign: 'left',
+                          padding: '8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem',
+                          display: 'flex', gap: '12px', alignItems: 'center'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ccc'; }}
+                      >
+                        <span style={{ color: '#9146ff', fontWeight: 'bold', minWidth: '24px' }}>{ep.episodeNumber}</span>
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ep.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <iframe
+        src={iframeSrc}
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        allowFullScreen
+        allow="autoplay; fullscreen"
+        style={{ width: '100%', height: '100%', border: 'none' }}
+      />
+    </div>
+  );
+}
 
 interface VideoPlayerProps {
   variant?: 'default' | 'xray';
@@ -2271,45 +2429,50 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   if (movie?.id?.startsWith('tmdb-')) {
     const tmdbId = movie.id.replace('tmdb-', '');
     const embedType = movie.mediaType === 'show' ? 'tv' : 'movie';
-    const tvParams = embedType === 'tv' ? '/1/1' : ''; // Default to S1 E1 for TV
-    let iframeSrc = `https://www.vidking.net/embed/${embedType}/${tmdbId}${tvParams}?color=9146ff&autoPlay=true&nextEpisode=true&episodeSelector=true`;
+    let tvParams = '/1/1'; // Default to S1 E1 for TV
+    if (embedType === 'tv') {
+      try {
+        const raw = localStorage.getItem('vidLinkProgress');
+        if (raw) {
+          const vidProgress = JSON.parse(raw);
+          const entry = vidProgress[tmdbId];
+          if (entry?.last_season_watched && entry?.last_episode_watched) {
+            tvParams = `/${entry.last_season_watched}/${entry.last_episode_watched}`;
+          }
+        }
+      } catch (e) { /* ignore parse errors */ }
+    }
 
-    if (location.state?.videoUrl && location.state.videoUrl.includes('vidking')) {
+    let iframeSrc = embedType === 'movie'
+      ? `https://vidlink.pro/movie/${tmdbId}?primaryColor=9146ff`
+      : `https://vidlink.pro/tv/${tmdbId}${tvParams}?primaryColor=9146ff`;
+
+    if (location.state?.videoUrl && (
+      location.state.videoUrl.includes('vidlink.pro') ||
+      location.state.videoUrl.includes('vidking')
+    )) {
       iframeSrc = location.state.videoUrl;
     }
 
+    // Always enforce purple accent — strip any existing primaryColor then re-append
+    const iframeUrl = new URL(iframeSrc);
+    iframeUrl.searchParams.set('primaryColor', '9146ff');
+    iframeUrl.searchParams.set('autoplay', 'false');
+    iframeSrc = iframeUrl.toString();
+
     return (
-      <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
-        <button 
-          onClick={() => navigate(-1)} 
-          style={{ 
-            position: 'absolute', 
-            top: 20, 
-            left: 20, 
-            zIndex: 50, 
-            background: 'rgba(0,0,0,0.5)', 
-            border: 'none', 
-            borderRadius: '50%', 
-            padding: '12px', 
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)'
-          }}
-        >
-          <ArrowLeft size={32} color="white" />
-        </button>
-        <iframe 
-          src={iframeSrc}
-          width="100%" 
-          height="100%" 
-          frameBorder="0" 
-          allowFullScreen
-          style={{ width: '100%', height: '100%', border: 'none' }}
-        />
-      </div>
+      <VidlinkPlayer
+        iframeSrc={iframeSrc}
+        movie={movie}
+        onBack={() => navigate(-1)}
+        onChangeEpisode={(s, e) => {
+          const newUrl = new URL(iframeSrc);
+          newUrl.pathname = `/tv/${tmdbId}/${s}/${e}`;
+          newUrl.searchParams.set('primaryColor', '9146ff');
+          newUrl.searchParams.set('autoplay', 'false');
+          navigate(`/watch/${movie.id}`, { replace: true, state: { videoUrl: newUrl.toString() } });
+        }}
+      />
     );
   }
 

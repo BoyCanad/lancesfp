@@ -90,7 +90,7 @@ export default function AdminImport() {
             <div className="admin-import__card-info">
               <h3>{result.title || result.name}</h3>
               <p className="admin-import__meta">
-                {result.release_date || result.first_air_date || 'N/A'} • ★{result.vote_average.toFixed(1)}
+                {result.release_date || result.first_air_date || 'N/A'} • ★{(result.vote_average ?? 0).toFixed(1)}
               </p>
               <p className="admin-import__overview">{result.overview}</p>
               <button

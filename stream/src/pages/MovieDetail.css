@@ -929,3 +929,242 @@
     font-weight: 600;
   }
 }
+
+/* ─── Episodes Panel ─────────────────────────────────────────── */
+.episodes-panel {
+  padding: 0 4vw 60px;
+  background-color: #0b0b12;
+}
+
+/* Header: tab label + season dropdown */
+.episodes-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+  padding-bottom: 0;
+}
+
+.episodes-panel__tabs {
+  display: flex;
+  gap: 32px;
+}
+
+.episodes-panel__tab {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 16px 0;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.episodes-panel__tab--active {
+  color: #ffffff;
+}
+
+.episodes-panel__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Season dropdown */
+.episodes-panel__season-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.06)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 8px 38px 8px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  outline: none;
+  min-width: 150px;
+}
+
+.episodes-panel__season-select:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.episodes-panel__season-select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+/* Episode list */
+.episodes-panel__list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Individual episode row */
+.ep-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ep-row:last-child {
+  border-bottom: none;
+}
+
+.ep-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ep-row:hover .ep-row__play-icon {
+  opacity: 1;
+}
+
+/* Episode number */
+.ep-row__num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Thumbnail */
+.ep-row__thumb {
+  position: relative;
+  width: 160px;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #1e1e2e;
+}
+
+.ep-row__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.ep-row:hover .ep-row__thumb img {
+  transform: scale(1.04);
+}
+
+/* Play icon overlay */
+.ep-row__play-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Text body */
+.ep-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ep-row__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.ep-row__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ep-row__dur {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+}
+
+.ep-row__desc {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .episodes-panel {
+    padding: 0 16px 50px;
+  }
+
+  .episodes-panel__header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 4px;
+  }
+
+  .episodes-panel__season-select {
+    min-width: unset;
+    width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .ep-row {
+    gap: 12px;
+    padding: 12px 6px;
+  }
+
+  .ep-row__num {
+    font-size: 1.1rem;
+    min-width: 22px;
+  }
+
+  .ep-row__thumb {
+    width: 110px;
+  }
+
+  .ep-row__title {
+    font-size: 0.875rem;
+    white-space: normal;
+  }
+
+  .ep-row__desc {
+    display: none; /* hide desc on small screens to save space */
+  }
+}
+

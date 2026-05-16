@@ -19,7 +19,8 @@ import {
   LogOut
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { featuredMovies, trendingMovies, elBimboFeatured, makingOfLegacy, elBimboCollections } from '../data/movies';
+import { allMovies as staticAllMovies, type Movie } from '../data/movies';
+import { fetchAllMovies } from '../services/movieService';
 import { getMyList } from '../services/listService';
 import { getProfiles, getWatchProgress, getRecentlyWatched, getLikedMovies } from '../services/profileService';
 import type { Profile } from '../services/profileService';
@@ -37,6 +38,7 @@ export default function MyNetflix() {
   const [likedTitles, setLikedTitles] = useState<any[]>([]);
   const [myList, setMyList] = useState<any[]>([]);
   const [showMenu, setShowMenu] = useState(false);
+  const [allMovies, setAllMovies] = useState<Movie[]>(staticAllMovies);
 
   // PIN Modal states
   const [showPinModal, setShowPinModal] = useState(false);
@@ -57,76 +59,102 @@ export default function MyNetflix() {
     }
     
     getProfiles().then(setProfiles).catch(console.error);
+    fetchAllMovies().then(setAllMovies);
     
-    // Fetch My List
-    const fetchMyList = () => {
-      const savedIds = getMyList();
-      const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured, makingOfLegacy, ...elBimboCollections];
-      const items = savedIds.map(id => allMovies.find(m => m.id === id)).filter(Boolean);
-      setMyList(items);
-    };
-    fetchMyList();
-    window.addEventListener('mylist_updated', fetchMyList);
-    return () => window.removeEventListener('mylist_updated', fetchMyList);
+    window.addEventListener('mylist_updated', () => {
+      // Refresh myList if needed, or we can just let the other effect handle it
+    });
   }, []);
 
   useEffect(() => {
-    if (activeProfile?.id) {
+    if (!activeProfile?.id || !allMovies.length) return;
+
+    const fetchProfileData = async () => {
+      // 1. Fetch Moments
       supabase.from('clips')
         .select('*')
         .eq('profile_id', activeProfile.id)
         .order('created_at', { ascending: false })
         .then(({ data, error }) => {
-          if (error) {
-            console.warn('[MyNetflix] Failed to fetch moments. Ensure the "clips" table has "profile_id" and "created_at" columns.', error);
-            setMoments([]);
-            return;
-          }
-          if (data) setMoments(data);
+          if (!error && data) setMoments(data);
         });
 
-      // Fetch Continue Watching
+      // 2. Fetch Continue Watching
       getWatchProgress(activeProfile.id).then(progress => {
-        const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured];
         const watchedItems = progress
           .map(wp => {
             const movie = allMovies.find(m => m.id === wp.movie_id);
             if (!movie) return null;
+            let currentEpisode;
+            if (movie.mediaType === 'show' && movie.id.startsWith('tmdb-')) {
+              try {
+                const vidRaw = localStorage.getItem('vidLinkProgress');
+                if (vidRaw) {
+                  const vp = JSON.parse(vidRaw);
+                  const entry = vp[movie.id.replace('tmdb-', '')];
+                  if (entry?.last_season_watched && entry?.last_episode_watched) {
+                    const s = parseInt(entry.last_season_watched);
+                    const e = parseInt(entry.last_episode_watched);
+                    const season = movie.seasons?.find(ss => ss.seasonNumber === s);
+                    const ep = season?.episodes.find(ee => ee.episodeNumber === e);
+                    currentEpisode = { season: s, episode: e, title: ep?.title || `Episode ${e}` };
+                  }
+                }
+              } catch (e) {}
+            }
             return {
               ...movie,
-              progress: (wp.progress_ms / wp.duration_ms) * 100
+              progress: (wp.progress_ms / wp.duration_ms) * 100,
+              duration_ms: wp.duration_ms,
+              ...(currentEpisode ? { currentEpisode } : {})
             };
           })
-          .filter(Boolean);
+          .filter(Boolean) as Movie[];
         setContinueWatching(watchedItems);
       }).catch(console.error);
 
-      // Fetch Recently Watched
+      // 3. Fetch Recently Watched
       getRecentlyWatched(activeProfile.id).then(history => {
-        const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured];
         const historyItems = history
           .map(item => {
             const movie = allMovies.find(m => m.id === item.movie_id);
             if (!movie) return null;
-            return {
-              ...movie,
-              episode_info: item.episode_info
-            };
+            return { ...movie, episode_info: item.episode_info };
           })
-          .filter(Boolean);
+          .filter(Boolean) as Movie[];
         setRecentlyWatched(historyItems);
       }).catch(console.error);
 
-      // Fetch Liked Movies
+      // 4. Fetch Liked Titles
       getLikedMovies(activeProfile.id).then((likedIds: string[]) => {
-        const allMovies = [...featuredMovies, ...trendingMovies, elBimboFeatured];
-        const likedOnes = likedIds
-          .map((id: string) => allMovies.find(m => m.id === id))
-          .filter(Boolean);
-        setLikedTitles(likedOnes);
+        const items = likedIds
+          .map(id => allMovies.find(m => m.id === id))
+          .filter(Boolean) as Movie[];
+        setLikedTitles(items);
       }).catch(console.error);
-    }
-  }, [activeProfile]);
+
+      // 5. Fetch My List
+      const savedIds = getMyList();
+      const listItems = savedIds.map(id => allMovies.find(m => m.id === id)).filter(Boolean) as Movie[];
+      setMyList(listItems);
+    };
+
+    fetchProfileData();
+
+    // Auto-refresh when tab becomes visible
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchProfileData();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    
+    // Listen for list updates
+    window.addEventListener('mylist_updated', fetchProfileData);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('mylist_updated', fetchProfileData);
+    };
+  }, [activeProfile?.id, allMovies]);
 
   const handleProfileSwitch = (profile: any) => {
     setSelectedProfile(profile);
@@ -297,7 +325,7 @@ export default function MyNetflix() {
           <h2 className="mn-row__title">Moments You've Created & Shared</h2>
           <div className="mn-row__track">
             {moments.length > 0 ? moments.map((clip) => {
-              const movie = featuredMovies.find(m => m.id === clip.movie_id);
+              const movie = allMovies.find(m => m.id === clip.movie_id);
               return (
                 <div key={clip.id} className="mn-moment-card" onClick={() => navigate(`/${clip.movie_id}/clip/${clip.id}`)}>
                    <div className="mn-moment-thumbnail-wrapper">

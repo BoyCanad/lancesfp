@@ -118,20 +118,34 @@ export default function MovieDetail() {
       setInMyList(isInMyList(movie.id));
       const handleUpdate = () => setInMyList(isInMyList(movie.id));
       window.addEventListener('mylist_updated', handleUpdate);
-      
-      // Fetch Watch Progress
-      const stored = localStorage.getItem('activeProfile');
-      if (stored) {
-        const profile = JSON.parse(stored);
-        getWatchProgress(profile.id).then(allProgress => {
-          const movieProgress = allProgress.find(p => p.movie_id === movie.id);
-          if (movieProgress) setProgress(movieProgress);
-        });
-      }
-
       return () => window.removeEventListener('mylist_updated', handleUpdate);
     }
   }, [movie]);
+
+  // Fetch watch progress separately — also re-fetches when the tab regains focus
+  // so coming back from the player always shows the latest position.
+  useEffect(() => {
+    if (!movie) return;
+
+    const fetchProgress = () => {
+      const stored = localStorage.getItem('activeProfile');
+      if (!stored) return;
+      const profile = JSON.parse(stored);
+      getWatchProgress(profile.id).then(allProgress => {
+        const movieProgress = allProgress.find(p => p.movie_id === movie.id);
+        setProgress(movieProgress ?? null);
+      }).catch(() => {});
+    };
+
+    fetchProgress(); // run immediately on mount / movie change
+
+    // Re-fetch whenever the user navigates back to this tab/page
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchProgress();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [movie?.id]);
 
   useVideoFade(videoRef, isMuted, trailerActive);
 
@@ -214,6 +228,31 @@ export default function MovieDetail() {
       navigate('/login');
       return;
     }
+
+    // For TMDB TV shows with prior progress, resume the last watched episode
+    if (movie.id.startsWith('tmdb-') && movie.mediaType === 'show' && progress) {
+      const tmdbNumericId = movie.id.replace('tmdb-', '');
+      try {
+        const raw = localStorage.getItem('vidLinkProgress');
+        if (raw) {
+          const vidProgress = JSON.parse(raw);
+          const entry = vidProgress[tmdbNumericId];
+          if (entry?.last_season_watched && entry?.last_episode_watched) {
+            const s = entry.last_season_watched;
+            const e = entry.last_episode_watched;
+            const resumeUrl = `https://vidlink.pro/tv/${tmdbNumericId}/${s}/${e}?primaryColor=9146ff`;
+            navigate(`/watch/${movie.id}`, {
+              state: {
+                videoUrl: resumeUrl,
+                episodeTitle: `Season ${s} Episode ${e}`,
+              }
+            });
+            return;
+          }
+        }
+      } catch (_) { /* fall through to default */ }
+    }
+
     navigate(movie.xRay ? `/xray/${movie.id}` : `/watch/${movie.id}`);
   };
 
@@ -232,6 +271,7 @@ export default function MovieDetail() {
       } 
     });
   };
+
 
   const isMobile = windowWidth < 768;
 
@@ -360,6 +400,30 @@ export default function MovieDetail() {
 
             {progress && (
               <div className="mdetail-progress-section">
+                {(() => {
+                  if (movie.mediaType === 'show' && movie.id.startsWith('tmdb-')) {
+                    try {
+                      const vidRaw = localStorage.getItem('vidLinkProgress');
+                      if (vidRaw) {
+                        const vp = JSON.parse(vidRaw);
+                        const entry = vp[movie.id.replace('tmdb-', '')];
+                        if (entry?.last_season_watched && entry?.last_episode_watched) {
+                          const s = parseInt(entry.last_season_watched);
+                          const e = parseInt(entry.last_episode_watched);
+                          const season = movie.seasons?.find(ss => ss.seasonNumber === s);
+                          const ep = season?.episodes.find(ee => ee.episodeNumber === e);
+                          const title = ep?.title || `Episode ${e}`;
+                          return (
+                            <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '8px', fontWeight: '500' }}>
+                              S{s}:E{e} "{title}"
+                            </div>
+                          );
+                        }
+                      }
+                    } catch (err) {}
+                  }
+                  return null;
+                })()}
                 <div className="mdetail-progress-bar">
                   <div className="mdetail-progress-fill" style={{ width: `${progressPercent}%` }} />
                 </div>
@@ -383,18 +447,15 @@ export default function MovieDetail() {
       </div>
 
       {movie.seasons && movie.seasons.length > 0 && (
-        <div className="mdetail-tabs-section" style={{ padding: '0 4vw 40px' }}>
-          <div className="mdetail-tabs" style={{ display: 'flex', gap: '30px', borderBottom: '2px solid rgba(255,255,255,0.1)', marginBottom: '30px' }}>
-            <button className="mdetail-tab mdetail-tab--active" style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: 700, padding: '15px 0', textTransform: 'uppercase', position: 'relative' }}>
-              Episodes
-              <div style={{ position: 'absolute', bottom: '-2px', left: 0, width: '100%', height: '4px', background: '#e50914', borderRadius: '2px' }} />
-            </button>
-          </div>
-          <div className="episodes-section">
-            <div className="season-selector-wrapper" style={{ marginBottom: '25px' }}>
-              <select 
-                className="season-selector" 
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '8px 16px', borderRadius: '4px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer' }}
+        <div className="episodes-panel">
+          {/* Header row: "Episodes" tab + season picker */}
+          <div className="episodes-panel__header">
+            <div className="episodes-panel__tabs">
+              <span className="episodes-panel__tab episodes-panel__tab--active">Episodes</span>
+            </div>
+            {movie.seasons.length > 1 && (
+              <select
+                className="episodes-panel__season-select"
                 value={selectedSeason?.seasonNumber}
                 onChange={(e) => {
                   const s = movie.seasons!.find(s => s.seasonNumber === parseInt(e.target.value));
@@ -402,30 +463,40 @@ export default function MovieDetail() {
                 }}
               >
                 {movie.seasons.map(s => (
-                  <option key={s.id} value={s.seasonNumber} style={{ background: '#141414' }}>
-                    {s.title}
-                  </option>
+                  <option key={s.id} value={s.seasonNumber}>{s.title}</option>
                 ))}
               </select>
-            </div>
-            
-            <div className="episodes-list" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {selectedSeason?.episodes.map(episode => (
-                <div key={episode.id} className="episode-item" onClick={() => handleEpisodeClick(episode)} style={{ padding: '20px', borderRadius: '8px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '25px', alignItems: 'flex-start', background: 'transparent', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                  <div className="episode-index" style={{ fontSize: '1.5rem', color: '#666', minWidth: '30px', paddingTop: '10px' }}>{episode.episodeNumber}</div>
-                  <div className="episode-thumbnail-container" style={{ position: 'relative', width: '180px', aspectRatio: '16/9', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
-                    <img src={episode.thumbnail} alt={episode.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div className="episode-info-main" style={{ flex: 1 }}>
-                    <div className="episode-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
-                      <h4 className="episode-title" style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'white' }}>{episode.title}</h4>
-                      <span className="episode-duration" style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>{episode.duration}</span>
-                    </div>
-                    <p className="episode-desc" style={{ color: '#a3a3a3', fontSize: '0.9rem', margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{episode.description}</p>
+            )}
+          </div>
+
+          {/* Episode list */}
+          <div className="episodes-panel__list">
+            {selectedSeason?.episodes.map(episode => (
+              <div
+                key={episode.id}
+                className="ep-row"
+                onClick={() => handleEpisodeClick(episode)}
+              >
+                <span className="ep-row__num">{episode.episodeNumber}</span>
+
+                <div className="ep-row__thumb">
+                  <img src={episode.thumbnail} alt={episode.title} />
+                  <div className="ep-row__play-icon">
+                    <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="ep-row__body">
+                  <div className="ep-row__meta">
+                    <span className="ep-row__title">{episode.title}</span>
+                    <span className="ep-row__dur">{episode.duration}</span>
+                  </div>
+                  <p className="ep-row__desc">{episode.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

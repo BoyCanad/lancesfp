@@ -449,10 +449,10 @@
 
 .card__video-logo {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
-  max-width: 140px;
-  max-height: 60px;
+  bottom: 10px;
+  left: 10px;
+  max-width: 90px;
+  max-height: 40px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));

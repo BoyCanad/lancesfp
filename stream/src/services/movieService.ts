@@ -317,10 +317,10 @@ export async function upsertMovie(movie: Movie) {
         detailMobileBanner: movie.detailMobileBanner,
         isOriginal: movie.isOriginal ?? false,
         trailerUrl: movie.trailerUrl ?? null,
+        videoUrl: movie.videoUrl ?? null,
         logo: movie.logo ?? null,
         comingSoon: movie.comingSoon ?? false,
         seasons: movie.seasons ?? null,
-        // Add more fields if needed
       })
       .select()
       .single();

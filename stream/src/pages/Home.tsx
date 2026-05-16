@@ -45,12 +45,32 @@ export default function Home() {
           .map((wp) => {
             const movie = allMovies.find((m) => m.id === wp.movie_id);
             if (!movie) return null;
+            let currentEpisode;
+            if (movie.mediaType === 'show' && movie.id.startsWith('tmdb-')) {
+              try {
+                const vidRaw = localStorage.getItem('vidLinkProgress');
+                if (vidRaw) {
+                  const vp = JSON.parse(vidRaw);
+                  const entry = vp[movie.id.replace('tmdb-', '')];
+                  if (entry?.last_season_watched && entry?.last_episode_watched) {
+                    const s = parseInt(entry.last_season_watched);
+                    const e = parseInt(entry.last_episode_watched);
+                    const season = movie.seasons?.find(ss => ss.seasonNumber === s);
+                    const ep = season?.episodes.find(ee => ee.episodeNumber === e);
+                    currentEpisode = { season: s, episode: e, title: ep?.title || `Episode ${e}` };
+                  }
+                }
+              } catch (e) {}
+            }
+
             return {
               ...movie,
               progress: (wp.progress_ms / wp.duration_ms) * 100,
+              duration_ms: wp.duration_ms,
+              ...(currentEpisode ? { currentEpisode } : {})
             };
           })
-          .filter((m): m is Movie & { progress: number } => m !== null);
+          .filter(Boolean) as Movie[];
         setDynamicContinueWatching(watchedCW);
 
         // Check if El Bimbo Play has been watched
