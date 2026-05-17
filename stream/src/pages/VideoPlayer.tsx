@@ -858,7 +858,12 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   }, [location.state, currentTime]);
 
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
-  const videoSrc = movie?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+  const STREAM_API = 'http://localhost:3000'
+
+  const videoSrc =
+    movie?.id
+      ? `${STREAM_API}/stream/${movie.id}`
+      : ''
 
   useEffect(() => {
     // Reset hasStartedPlaying so the poster banner shows until the new video starts playing
@@ -872,7 +877,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       return;
     }
 
-    if (location.state?.videoUrl) {
+    if (location.state?.videoUrl && !location.state.videoUrl.includes('vidlink.pro')) {
       console.log('[Player] Playing from provided dynamic video URL:', location.state.videoUrl);
       setActiveSource(location.state.videoUrl);
       setIsUsingOfflineSource(false);
@@ -1270,6 +1275,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
     if (!videoRef.current) return;
 
+    const isTorrentStream = activeSource.includes('/stream/');
+
     if (activeSource.includes('.m3u8') && (!isUsingOfflineSource || !activeSource.startsWith('blob:'))) {
       // First, try MSE (hls.js). This works beautifully on Android Chrome and Desktop Safari/Chrome.
       // We must not force Android to native HLS, because Android native HLS often drops video layers (black screen).
@@ -1449,7 +1456,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         setVideoError("Your browser does not support HLS video streaming.");
         setIsLoading(false);
       }
-    } else if (activeSource) {
+    } else if (activeSource || isTorrentStream) {
       // Regular mp4 or other formats (including cached downloads)
       hlsManagedRef.current = false;
       videoRef.current.src = activeSource;
@@ -2426,55 +2433,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
   const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);
 
-  if (movie?.id?.startsWith('tmdb-')) {
-    const tmdbId = movie.id.replace('tmdb-', '');
-    const embedType = movie.mediaType === 'show' ? 'tv' : 'movie';
-    let tvParams = '/1/1'; // Default to S1 E1 for TV
-    if (embedType === 'tv') {
-      try {
-        const raw = localStorage.getItem('vidLinkProgress');
-        if (raw) {
-          const vidProgress = JSON.parse(raw);
-          const entry = vidProgress[tmdbId];
-          if (entry?.last_season_watched && entry?.last_episode_watched) {
-            tvParams = `/${entry.last_season_watched}/${entry.last_episode_watched}`;
-          }
-        }
-      } catch (e) { /* ignore parse errors */ }
-    }
 
-    let iframeSrc = embedType === 'movie'
-      ? `https://vidlink.pro/movie/${tmdbId}?primaryColor=9146ff`
-      : `https://vidlink.pro/tv/${tmdbId}${tvParams}?primaryColor=9146ff`;
-
-    if (location.state?.videoUrl && (
-      location.state.videoUrl.includes('vidlink.pro') ||
-      location.state.videoUrl.includes('vidking')
-    )) {
-      iframeSrc = location.state.videoUrl;
-    }
-
-    // Always enforce purple accent — strip any existing primaryColor then re-append
-    const iframeUrl = new URL(iframeSrc);
-    iframeUrl.searchParams.set('primaryColor', '9146ff');
-    iframeUrl.searchParams.set('autoplay', 'false');
-    iframeSrc = iframeUrl.toString();
-
-    return (
-      <VidlinkPlayer
-        iframeSrc={iframeSrc}
-        movie={movie}
-        onBack={() => navigate(-1)}
-        onChangeEpisode={(s, e) => {
-          const newUrl = new URL(iframeSrc);
-          newUrl.pathname = `/tv/${tmdbId}/${s}/${e}`;
-          newUrl.searchParams.set('primaryColor', '9146ff');
-          newUrl.searchParams.set('autoplay', 'false');
-          navigate(`/watch/${movie.id}`, { replace: true, state: { videoUrl: newUrl.toString() } });
-        }}
-      />
-    );
-  }
 
   return (
     <div
