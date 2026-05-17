@@ -71,7 +71,7 @@ const parseVTT = (vttData: string, preserveKaraoke = false): ParsedCue[] => {
       const parts = line.split('-->');
       const startStr = parts[0].trim();
       const endAndSettings = parts[1].trim();
-      
+
       // Split by whitespace to separate timestamp from settings
       const endParts = endAndSettings.split(/\s+/);
       const endStr = endParts[0];
@@ -145,7 +145,7 @@ const renderKaraokeSubtitle = (text: string, movieId?: string) => {
     // Add the karaoke highlighted text with the specified color
     const colorValue = match[1];
     let color = '#0030ff';
-    
+
     if (colorValue.includes('.')) {
       // Dual-color format: color0030ff.00ff83ff
       const parts = colorValue.split('.');
@@ -162,12 +162,12 @@ const renderKaraokeSubtitle = (text: string, movieId?: string) => {
         color = colorValue;
       }
     }
-    
+
     // Override color for ang-huling-el-bimbo-play: change 0030ff to 00ff83
     if ((movieId === 'ang-huling-el-bimbo-play' || movieId === 'ang-huling-el-bimbo-play-xray') && color === '#0030ff') {
       color = '#00ff83';
     }
-    
+
     // For dual-color, we could potentially render the unsung text in the second color
     // but the current implementation treats the entire match[2] as highlighted.
     match[2].split('\n').forEach((line, idx, arr) => {
@@ -295,7 +295,7 @@ function VidlinkPlayer({ iframeSrc, movie, onBack, onChangeEpisode }: {
           >
             <List size={20} /> Episodes
           </button>
-          
+
           {showEpisodes && (
             <div style={{
               position: 'absolute', top: '100%', right: 0, marginTop: '10px',
@@ -706,7 +706,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   useEffect(() => {
     if (movie?.subtitles && movie.subtitles.length > 0) {
       let matchedIndex = -1;
-      
+
       if (activeProfileId) {
         const storedAudioSubStr = localStorage.getItem(`lsfplus_audio_sub_${activeProfileId}`);
         if (storedAudioSubStr) {
@@ -733,14 +733,14 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             for (const pref of preferredLangs) {
               const prefLower = pref.toLowerCase();
               const possibleMatches = langMap[prefLower] || [prefLower];
-              
-              matchedIndex = movie.subtitles.findIndex(s => 
+
+              matchedIndex = movie.subtitles.findIndex(s =>
                 possibleMatches.includes(s.label.toLowerCase())
               );
-              
+
               if (matchedIndex !== -1) break;
             }
-          } catch(e) {}
+          } catch (e) { }
         }
       }
 
@@ -858,7 +858,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   }, [location.state, currentTime]);
 
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
-  const STREAM_API = 'http://localhost:3000'
+  const STREAM_API = 'https://sn4bl2i777ve.shares.zrok.io'
 
   const videoSrc =
     movie?.id
@@ -1476,13 +1476,13 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           playPendingRef.current = true;
         });
     }
-    
+
     // Reset volume as it might have been set to 0 by the inline trailer fade-out
     if (videoRef.current) {
-       videoRef.current.volume = 1;
-       videoRef.current.muted = false;
-       setIsMuted(false);
-       setVolume(1);
+      videoRef.current.volume = 1;
+      videoRef.current.muted = false;
+      setIsMuted(false);
+      setVolume(1);
     }
 
     // Safety timeout: if still loading after 20s, show an error instead of
@@ -1866,7 +1866,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           if (target) {
             const action = target.getAttribute('data-action');
             if (action === 'toggle') {
-              if (videoRef.current.paused) { videoRef.current.play().catch(() => {}); }
+              if (videoRef.current.paused) { videoRef.current.play().catch(() => { }); }
               else { videoRef.current.pause(); }
             } else if (action === 'rewind') {
               videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
@@ -1875,7 +1875,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             }
           } else if (e.target === videoRef.current || e.target === root) {
             // Clicked on the video or empty area
-            if (videoRef.current.paused) { videoRef.current.play().catch(() => {}); }
+            if (videoRef.current.paused) { videoRef.current.play().catch(() => { }); }
             else { videoRef.current.pause(); }
           }
         });
@@ -2413,13 +2413,13 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
     // No skip for short musical clips/performances
     const noSkipIds = [
-      'f2', 
-      'minsan', 
-      'tindahan-ni-aling-nena', 
-      'alapaap-overdrive', 
-      'spoliarium-graduation', 
-      'pare-ko', 
-      'tama-ka-ligaya', 
+      'f2',
+      'minsan',
+      'tindahan-ni-aling-nena',
+      'alapaap-overdrive',
+      'spoliarium-graduation',
+      'pare-ko',
+      'tama-ka-ligaya',
       'ang-huling-el-bimbo'
     ];
     if (noSkipIds.includes(movie?.id)) {
@@ -2443,14 +2443,14 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         onChangeEpisode={(season, episode) => {
           const tmdbNumericId = movie.id.replace('tmdb-', '');
           const newUrl = `https://vidlink.pro/tv/${tmdbNumericId}/${season}/${episode}?primaryColor=9146ff`;
-          
+
           let newEpisodeTitle = '';
           const targetSeason = movie.seasons?.find((s: any) => s.seasonNumber === season);
           const targetEpisode = targetSeason?.episodes?.find((e: any) => e.episodeNumber === episode);
           if (targetEpisode) {
             newEpisodeTitle = targetEpisode.title;
           }
-          
+
           navigate(`/watch/${movie.id}`, {
             replace: true,
             state: {
@@ -2585,7 +2585,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
           {/* Trailer Subtitle Overlay */}
           {currentTrailerSubtitle && isTrailerVideoVisible && (
-            <div 
+            <div
               className="inline-trailer-subtitle-overlay"
               style={{
                 position: 'absolute',
@@ -2599,7 +2599,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 transition: 'bottom 0.3s ease-in-out'
               }}
             >
-              <div 
+              <div
                 className="inline-trailer-subtitle-text"
                 style={{
                   color: 'white',
@@ -2748,7 +2748,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         >
           {/* Subtitles handled by custom overlay */}
         </video>
-        
+
         {/* Custom Subtitle Overlay — rendered BEFORE pause-info so that the pause gradient (z-index:200) correctly paints on top */}
         {activeSubtitle !== -1 && movie?.subtitles && parsedSubtitles[movie.subtitles[activeSubtitle]?.url] && (
           <div className={`custom-subtitle-overlay-container ${!isPlaying ? 'player-paused' : ''}`}>
@@ -3201,8 +3201,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                                 {activeAudioTrack === idx ? <Check size={20} className="check-icon" /> : <span className="spacer-icon" />}
                                 <span>{
                                   track.name === 'audio_1' ? 'Filipino [Original]' :
-                                  track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
-                                  (track.name || `Track ${idx + 1}`)
+                                    track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
+                                      (track.name || `Track ${idx + 1}`)
                                 }</span>
                               </li>
                             ))
@@ -3316,12 +3316,12 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
       {/* X-Ray Panel Overlay (Moved outside stage to allow portrait below-video layout) */}
       {showXRay && movie?.xRay && !isExpandingTrailer && !showRecommendation && (
-        <XRayPanel 
-          xRay={movie.xRay} 
-          currentTime={currentTime} 
-          isPortrait={isPortrait && isMobileWindow} 
-          onBack={() => navigate(-1)} 
-          onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }} 
+        <XRayPanel
+          xRay={movie.xRay}
+          currentTime={currentTime}
+          isPortrait={isPortrait && isMobileWindow}
+          onBack={() => navigate(-1)}
+          onSeek={(t) => { if (videoRef.current) videoRef.current.currentTime = t; }}
           onShowAllChange={setShowAllPanel}
           onToggle={setIsXRayExpanded}
         />
@@ -3551,8 +3551,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                           {activeAudioTrack === idx ? <Check size={20} className="mobile-check-icon" /> : <div className="mobile-spacer-icon" />}
                           <span>{
                             track.name === 'audio_1' ? 'Filipino [Original]' :
-                            track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
-                            (track.name || `Track ${idx + 1}`)
+                              track.name === 'audio_2' ? 'Filipino [Surround 5.1]' :
+                                (track.name || `Track ${idx + 1}`)
                           }</span>
                         </div>
                       </li>
