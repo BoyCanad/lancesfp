@@ -129,159 +129,318 @@ export default function Account() {
     }
   };
 
-  const MobileAccountView = () => (
-    <div className={`mobile-account ${isChangingPassword ? 'password-active' : ''}`}>
-      {!isChangingPassword ? (
-        <>
-          <header className="mobile-account-header">
-            <button className="mobile-account-back" onClick={() => navigate('/browse')}>
-              <ArrowLeft size={24} color="white" />
-            </button>
-            <div className="mobile-account-logo">
-              <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '30px' }} />
+  const MobileAccountView = () => {
+    return (
+      <div className={`mobile-account ${isChangingPassword ? 'password-active' : ''}`}>
+        {!isChangingPassword ? (
+          <>
+            {/* White Background Header */}
+            <header className="mobile-account-header">
+              <div className="mobile-account-logo" onClick={() => navigate('/browse')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <img 
+                  src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" 
+                  alt="LSFPlus" 
+                  style={{ height: '32px', display: 'block' }} 
+                />
+              </div>
+              <div className="mobile-account-profile-dropdown" onClick={() => navigate('/browse')}>
+                <img 
+                  src={activeProfile?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png'} 
+                  alt="Profile" 
+                />
+                <span className="mobile-dropdown-arrow">▼</span>
+              </div>
+            </header>
+
+            {/* Horizontal Navigation Tabs */}
+            <div className="mobile-tabs-container">
+              <div className="mobile-tabs-scroll">
+                <button 
+                  className={`mobile-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('overview')}
+                >
+                  Overview
+                </button>
+                <button 
+                  className={`mobile-tab-btn ${activeTab === 'membership' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('membership')}
+                >
+                  Membership
+                </button>
+                <button 
+                  className={`mobile-tab-btn ${activeTab === 'security' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('security')}
+                >
+                  Security
+                </button>
+                <button 
+                  className={`mobile-tab-btn ${activeTab === 'devices' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('devices')}
+                >
+                  Devices
+                </button>
+                <button 
+                  className={`mobile-tab-btn ${activeTab === 'profiles' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('profiles')}
+                >
+                  Profiles
+                </button>
+              </div>
+              <div className="mobile-tabs-fade-right">
+                <ChevronRight size={18} color="#666" />
+              </div>
             </div>
-          </header>
 
-          <div className="mobile-account-content">
-            <h1 className="mobile-account-title">Account</h1>
-            <p className="mobile-account-intro">
-              Visit your Account on lsfplus.com to update your payment details, change your plan and other account management features.
-            </p>
-
-            <section className="mobile-account-section">
-              <h2 className="mobile-section-title">Membership Details</h2>
-              <div className="mobile-card">
-                <div className="mobile-card-badge">Member since {memberSince}</div>
-                <div className="mobile-card-main">
-                  <h3 className="mobile-plan-name">Free Plan</h3>
-                  <p className="mobile-payment-info">{userEmail || 'zedsmash154@gmail.com'}</p>
-                </div>
-                
-                <div className="mobile-card-links">
-                  <button className="mobile-card-link" onClick={() => navigate('/change-plan')}>
-                    <span>Change plan</span>
-                    <ChevronRight size={20} color="#333" />
-                  </button>
-                  <button className="mobile-card-link">
-                    <span>View payment history</span>
-                    <ChevronRight size={20} color="#333" />
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className="mobile-account-section">
-              <h2 className="mobile-section-title">Security</h2>
-              <div className="mobile-card">
-                <button className="mobile-card-link mobile-card-link--large" onClick={() => setIsChangingPassword(true)}>
-                    <div className="mobile-card-link-left">
-                      <Lock size={22} color="#333" />
-                      <span>Password</span>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
-                </button>
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <Mail size={22} color="#333" />
-                      <div className="mobile-link-text">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span>Email</span>
-                          {isVerified ? (
-                            <div className="account-verified-row" style={{ marginTop: '0' }}>
-                              <Check size={12} color="#0071eb" />
-                              <span style={{ fontSize: '11px', color: '#0071eb' }}>Verified</span>
-                            </div>
-                          ) : (
-                            <div className="account-verified-row" style={{ marginTop: '0' }}>
-                              <ShieldAlert size={12} color="#e50914" />
-                              <span style={{ fontSize: '11px', color: '#e50914' }}>Unverified</span>
-                            </div>
-                          )}
-                        </div>
-                        <p>{userEmail || 'zedsmash154@gmail.com'}</p>
-                      </div>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
-                </button>
-              </div>
-            </section>
-
-            <section className="mobile-account-section">
-              <h2 className="mobile-section-title">Devices</h2>
-              <div className="mobile-card">
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <MonitorSmartphone size={22} color="#333" />
-                      <span>Access and devices</span>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
-                </button>
-              </div>
-            </section>
-
-            <section className="mobile-account-section">
-              <h2 className="mobile-section-title">Profiles</h2>
-              <div className="mobile-profiles-list">
-                {profiles.map((p) => (
-                  <div key={p.id} className="mobile-profile-item" onClick={() => navigate(`/ManageProfile/${p.id}`)}>
-                    <div className="mobile-profile-left">
-                      <img src={p.image} alt={p.name} className="mobile-profile-avatar" />
-                      <div className="mobile-profile-info">
-                        <span className="mobile-profile-name">{p.name}</span>
-                        <span className="mobile-profile-sub">All Maturity Ratings</span>
-                      </div>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
+            {/* Mobile Content Area */}
+            <div className="mobile-account-content">
+              
+              {activeTab === 'overview' && (
+                <>
+                  <div className="mobile-account-headings">
+                    <h1 className="mobile-account-title-large">Account</h1>
+                    <p className="mobile-account-subtitle-medium">Membership details</p>
                   </div>
-                ))}
-                
-                {profiles.length < 5 && (
-                  <button className="mobile-add-profile-btn" onClick={() => navigate('/CreateProfile')}>
-                    <div className="mobile-add-icon-wrapper">
-                      <span className="mobile-add-plus">+</span>
-                    </div>
-                    <span>Add Profile</span>
-                  </button>
-                )}
-              </div>
-            </section>
 
-            <section className="mobile-account-section">
-              <h2 className="mobile-section-title">Parental Controls</h2>
-              <div className="mobile-card">
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <ShieldAlert size={22} color="#333" />
-                      <span>Adjust parental controls</span>
+                  {/* Card 1: Membership details */}
+                  <div className="mobile-replicated-card">
+                    <div className="mobile-premium-badge">
+                      Member since {memberSince}
                     </div>
-                    <ChevronRight size={20} color="#333" />
+                    
+                    <div className="mobile-card-body-padding">
+                      <h2 className="mobile-card-plan-title">Premium plan</h2>
+                      <p className="mobile-card-next-payment">Next payment: 11 June 2026</p>
+                      
+                      <div className="mobile-card-payment-row">
+                        {/* Paytm logo Vector SVG */}
+                        <svg width="45" height="15" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18.8 9.5H8.3v21h5v-6.9h5.5c4.7 0 8-2.6 8-7.1 0-4.4-3.3-7-8-7zm-.6 9.4h-4.9V14h4.9c2 0 3.3 1 3.3 2.4s-1.3 2.5-3.3 2.5zm22.4-9.4c-4.4 0-7.8 2.6-7.8 7.1v13.9h5v-5.6c1.1 1 2.8 1.6 4.7 1.6 4.7 0 8.1-2.9 8.1-8.5V9.5h-5v8c0 2.5-1.4 3.7-3.4 3.7-1.9 0-3.1-1.1-3.1-3.3v-8.4h5v-9.5zm23.6 0H54v14c0 3.2 2 5 5 5 2.1 0 3.7-1 4.5-2.2v2h4.8V9.5h-4.8v8.3c0 2-1 3-2.5 3-1.6 0-2.3-1-2.3-2.6V9.5h5zm20.8 4.7V9.5h-4.8v9.4c0 2-1 3-2.5 3-1.6 0-2.3-1-2.3-2.6V9.5h-4.8v14c0 3.2 2 5 5 5 2.1 0 3.7-1 4.5-2.2v2h4.8v-14zm19.6-4.7h-5.2v21h4.8V9.5z" fill="#00baf2" />
+                          <path d="M109.8 9.5H99.3v21h5v-6.9h5.5c4.7 0 8-2.6 8-7.1 0-4.4-3.3-7-8-7zm-.6 9.4H104.3V14h4.9c2 0 3.3 1 3.3 2.4s-1.3 2.5-3.3 2.5z" fill="#002970" />
+                        </svg>
+                        <span className="mobile-card-masked-dots">•••• •••• •••• 5555</span>
+                      </div>
+                    </div>
+
+                    <div className="mobile-card-divider"></div>
+
+                    <button className="mobile-card-row-btn" onClick={() => setActiveTab('membership')}>
+                      <span>Manage membership</span>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+
+                  <p className="mobile-card-section-header">Quick links</p>
+
+                  {/* Card 2: Quick Links */}
+                  <div className="mobile-quick-links-card">
+                    <button className="mobile-link-row-item" onClick={() => navigate('/change-plan')}>
+                      <div className="mobile-link-row-left">
+                        <Layers size={22} />
+                        <span>Change plan</span>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                    
+                    <button className="mobile-link-row-item" onClick={() => setActiveTab('membership')}>
+                      <div className="mobile-link-row-left">
+                        <CreditCard size={22} />
+                        <span>Manage payment method</span>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+
+                    <button className="mobile-link-row-item" onClick={() => setActiveTab('devices')}>
+                      <div className="mobile-link-row-left">
+                        <MonitorSmartphone size={22} />
+                        <span>Manage access and devices</span>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'membership' && (
+                <>
+                  <div className="mobile-account-headings">
+                    <h1 className="mobile-account-title-large">Membership</h1>
+                    <p className="mobile-account-subtitle-medium">Plan & Payment details</p>
+                  </div>
+
+                  <div className="mobile-replicated-card">
+                    <div className="mobile-card-body-padding">
+                      <h2 className="mobile-card-plan-title">Premium plan</h2>
+                      <p className="mobile-card-next-payment" style={{ marginBottom: 0 }}>
+                        4K video resolution with spatial audio, ad-free watching and more.
+                      </p>
+                    </div>
+                    <div className="mobile-card-divider"></div>
+                    <button className="mobile-card-row-btn" onClick={() => navigate('/change-plan')}>
+                      <span>Change plan</span>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+
+                  <p className="mobile-card-section-header">Payment Method</p>
+                  <div className="mobile-replicated-card">
+                    <div className="mobile-card-body-padding">
+                      <h2 className="mobile-card-plan-title">Next payment</h2>
+                      <p className="mobile-card-next-payment">11 June 2026</p>
+                      
+                      <div className="mobile-card-payment-row">
+                        <div className="mastercard-icon" style={{ transform: 'scale(1.2)', transformOrigin: 'left center' }}>
+                          <div className="mc-circle red"></div>
+                          <div className="mc-circle orange"></div>
+                        </div>
+                        <span className="mobile-card-masked-dots" style={{ marginLeft: '12px' }}>•••• •••• •••• 5555</span>
+                      </div>
+                    </div>
+                    <div className="mobile-card-divider"></div>
+                    <button className="mobile-card-row-btn">
+                      <span>Redeem gift card or promo code</span>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                    <div className="mobile-card-divider"></div>
+                    <button className="mobile-card-row-btn">
+                      <span>View billing history</span>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'security' && (
+                <>
+                  <div className="mobile-account-headings">
+                    <h1 className="mobile-account-title-large">Security</h1>
+                    <p className="mobile-account-subtitle-medium">Protect your account</p>
+                  </div>
+
+                  <div className="mobile-quick-links-card">
+                    <button className="mobile-link-row-item" onClick={() => setIsChangingPassword(true)}>
+                      <div className="mobile-link-row-left">
+                        <Lock size={22} />
+                        <span>Update password</span>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+
+                    <button className="mobile-link-row-item">
+                      <div className="mobile-link-row-left">
+                        <Mail size={22} />
+                        <div className="mobile-link-text-stack">
+                          <span>Email</span>
+                          <p>{userEmail || 'zedsmash154@gmail.com'}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+
+                  <p className="mobile-card-section-header">Parental Controls & Privacy</p>
+                  <div className="mobile-quick-links-card">
+                    <button className="mobile-link-row-item">
+                      <div className="mobile-link-row-left">
+                        <ShieldAlert size={22} />
+                        <span>Adjust parental controls</span>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+
+                    <button className="mobile-link-row-item">
+                      <div className="mobile-link-row-left">
+                        <ShieldCheck size={22} />
+                        <span>Privacy and data settings</span>
+                      </div>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'devices' && (
+                <>
+                  <div className="mobile-account-headings">
+                    <h1 className="mobile-account-title-large">Devices</h1>
+                    <p className="mobile-account-subtitle-medium">Manage signed-in devices</p>
+                  </div>
+
+                  <div className="mobile-replicated-card">
+                    <div className="mobile-card-body-padding">
+                      <h2 className="mobile-card-plan-title">Access and devices</h2>
+                      <p className="mobile-card-next-payment" style={{ marginBottom: 0 }}>
+                        Review devices that have recently streamed on this account and sign out of individual sessions.
+                      </p>
+                    </div>
+                    <div className="mobile-card-divider"></div>
+                    <button className="mobile-card-row-btn">
+                      <span>Manage active devices</span>
+                      <ChevronRight size={20} color="#000" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'profiles' && (
+                <>
+                  <div className="mobile-account-headings">
+                    <h1 className="mobile-account-title-large">Profiles</h1>
+                    <p className="mobile-account-subtitle-medium">Manage profiles and restrictions</p>
+                  </div>
+
+                  <div className="mobile-quick-links-card" style={{ marginBottom: '20px' }}>
+                    {profiles.map((p) => (
+                      <button key={p.id} className="mobile-link-row-item" onClick={() => navigate(`/ManageProfile/${p.id}`)}>
+                        <div className="mobile-link-row-left">
+                          <img 
+                            src={p.image} 
+                            alt={p.name} 
+                            style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} 
+                          />
+                          <div className="mobile-link-text-stack">
+                            <span>{p.name}</span>
+                            <p>All Maturity Ratings</p>
+                          </div>
+                        </div>
+                        <ChevronRight size={20} color="#000" />
+                      </button>
+                    ))}
+                  </div>
+
+                  {profiles.length < 5 && (
+                    <button 
+                      className="mobile-action-btn" 
+                      onClick={() => navigate('/CreateProfile')}
+                      style={{ margin: '0 16px 30px 16px', width: 'calc(100% - 32px)', backgroundColor: '#fff', border: '1px solid #ccc' }}
+                    >
+                      + Add Profile
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Action Buttons at the Bottom */}
+              <div className="mobile-account-actions" style={{ padding: '10px 16px 100px 16px' }}>
+                <button className="mobile-action-btn" style={{ borderColor: '#e50914', color: '#e50914' }}>
+                  Cancel Membership
                 </button>
-                <button className="mobile-card-link mobile-card-link--large">
-                    <div className="mobile-card-link-left">
-                      <ShieldCheck size={22} color="#333" />
-                      <span>Privacy and data settings</span>
-                    </div>
-                    <ChevronRight size={20} color="#333" />
+                <button className="mobile-action-btn" style={{ borderColor: '#999', color: '#333' }}>
+                  Delete Account
                 </button>
               </div>
-            </section>
 
-            <div className="mobile-account-actions">
-              <button className="mobile-action-btn">Cancel Membership</button>
-              <button className="mobile-action-btn">Delete Account</button>
             </div>
-          </div>
-        </>
-      ) : (
-        <div className="mobile-password-view">
-           <header className="mobile-password-header">
+          </>
+        ) : (
+          <div className="mobile-password-view">
+            <header className="mobile-password-header">
               <button onClick={() => setIsChangingPassword(false)}>
                 <ArrowLeft size={24} />
               </button>
               <h1>Change password</h1>
-           </header>
-           <div className="mobile-password-content">
-             <form className="password-form" onSubmit={handlePasswordUpdate}>
+            </header>
+            <div className="mobile-password-content">
+              <form className="password-form" onSubmit={handlePasswordUpdate}>
                 {!location.state?.recover && (
                   <div className="password-input-group">
                     <input 
@@ -338,11 +497,12 @@ export default function Account() {
                   <button type="button" className="password-cancel-btn" onClick={() => setIsChangingPassword(false)}>Cancel</button>
                 </div>
               </form>
-           </div>
-        </div>
-      )}
-    </div>
-  );
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="account-page">

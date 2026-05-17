@@ -14,7 +14,6 @@ import {
   MessageSquareText,
   Copy,
   Gauge,
-  SkipForward,
   Scissors,
   ThumbsUp,
   FastForward,
@@ -24,8 +23,7 @@ import {
   MessageCircle,
   Camera,
   MoreHorizontal,
-  PictureInPicture2,
-  List
+  PictureInPicture2
 } from 'lucide-react';
 import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
@@ -190,162 +188,7 @@ const renderKaraokeSubtitle = (text: string, movieId?: string) => {
   return <>{result}</>;
 };
 
-// ─── VidlinkPlayer ────────────────────────────────────────────────────────────
-// Dedicated component so it can use hooks (useEffect) while being conditionally
-// returned from VideoPlayer (which has its own hook calls above).
-function VidlinkPlayer({ iframeSrc, movie, onBack, onChangeEpisode }: {
-  iframeSrc: string;
-  movie: import('../data/movies').Movie;
-  onBack: () => void;
-  onChangeEpisode?: (season: number, episode: number) => void;
-}) {
-  const [showEpisodes, setShowEpisodes] = useState(false);
-
-  useEffect(() => {
-    const handler = async (event: MessageEvent) => {
-      if (event.origin !== 'https://vidlink.pro') return;
-      if (event.data?.type !== 'MEDIA_DATA') return;
-
-      const mediaData = event.data.data;
-
-      // 1. Persist raw data for vidlink's own resume system
-      try {
-        const existing = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-        const updated = { ...existing, ...mediaData };
-        localStorage.setItem('vidLinkProgress', JSON.stringify(updated));
-      } catch (e) {
-        console.warn('[VidlinkPlayer] Failed to save vidLinkProgress', e);
-      }
-
-      // 2. Sync to Supabase watch_progress so it surfaces in Continue Watching
-      try {
-        const stored = localStorage.getItem('activeProfile');
-        if (!stored) return;
-        const profile = JSON.parse(stored);
-
-        // mediaData contains the entire history. Extract the entry for THIS specific movie/show
-        const tmdbNumericId = movie.id.replace('tmdb-', '');
-        const entry = mediaData[tmdbNumericId];
-        if (!entry) return;
-
-        let watched = entry?.progress?.watched ?? 0;
-        let duration = entry?.progress?.duration ?? 0;
-
-        // If it's a TV show, extract the specific progress for the last watched episode
-        if (entry?.type === 'tv' && entry?.last_season_watched && entry?.last_episode_watched) {
-          const s = entry.last_season_watched;
-          const e = entry.last_episode_watched;
-          const epProgress = entry?.show_progress?.[`s${s}e${e}`]?.progress;
-          if (epProgress) {
-            watched = epProgress.watched;
-            duration = epProgress.duration;
-          }
-        }
-
-        if (duration <= 0) return;
-
-        await updateWatchProgress(
-          profile.id,
-          movie.id,
-          Math.round(watched * 1000),   // seconds → ms
-          Math.round(duration * 1000)   // seconds → ms
-        );
-      } catch (e) {
-        console.warn('[VidlinkPlayer] Failed to sync watch progress', e);
-      }
-    };
-
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, [movie.id]);
-
-  return (
-    <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
-      <button
-        onClick={onBack}
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          zIndex: 50,
-          background: 'rgba(0,0,0,0.5)',
-          border: 'none',
-          borderRadius: '50%',
-          padding: '12px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-        }}
-      >
-        <ArrowLeft size={32} color="white" />
-      </button>
-
-      {movie?.mediaType === 'show' && movie?.seasons && movie.seasons.length > 0 && onChangeEpisode && (
-        <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 50 }}>
-          <button
-            onClick={() => setShowEpisodes(!showEpisodes)}
-            style={{
-              background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
-              padding: '8px 16px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-              backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', fontWeight: 500
-            }}
-          >
-            <List size={20} /> Episodes
-          </button>
-
-          {showEpisodes && (
-            <div style={{
-              position: 'absolute', top: '100%', right: 0, marginTop: '10px',
-              background: 'rgba(15,15,15,0.95)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '12px', padding: '16px', width: '300px', maxHeight: '60vh', overflowY: 'auto',
-              backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-            }}>
-              {movie.seasons.map((s: any) => (
-                <div key={s.id} style={{ marginBottom: '16px' }}>
-                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '8px', fontSize: '1.1rem' }}>Season {s.seasonNumber}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {s.episodes.map((ep: any) => (
-                      <button
-                        key={ep.id}
-                        onClick={() => {
-                          onChangeEpisode(s.seasonNumber, ep.episodeNumber);
-                          setShowEpisodes(false);
-                        }}
-                        style={{
-                          background: 'transparent', border: 'none', color: '#ccc', textAlign: 'left',
-                          padding: '8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem',
-                          display: 'flex', gap: '12px', alignItems: 'center'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'white'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ccc'; }}
-                      >
-                        <span style={{ color: '#9146ff', fontWeight: 'bold', minWidth: '24px' }}>{ep.episodeNumber}</span>
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ep.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <iframe
-        src={iframeSrc}
-        width="100%"
-        height="100%"
-        frameBorder="0"
-        allowFullScreen
-        allow="autoplay; fullscreen"
-        style={{ width: '100%', height: '100%', border: 'none' }}
-      />
-    </div>
-  );
-}
+// Removed VidlinkPlayer
 
 interface VideoPlayerProps {
   variant?: 'default' | 'xray';
@@ -491,74 +334,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [isPiP, setIsPiP] = useState(false);
 
-  const [showEpisodes, setShowEpisodes] = useState(false);
-
-  const { currentSeason, currentEpisode } = useMemo(() => {
-    const srcToParse = activeSource || location.state?.videoUrl || '';
-    if (!srcToParse) return { currentSeason: 1, currentEpisode: 1 };
-    try {
-      const pathParts = srcToParse.split('?')[0].split('/');
-      const lastPart = pathParts[pathParts.length - 1];
-      const match = lastPart.match(/^(.+)-s(\d+)ep(\d+)$/i);
-      if (match) {
-        return { currentSeason: parseInt(match[2], 10), currentEpisode: parseInt(match[3], 10) };
-      }
-      const url = new URL(srcToParse);
-      const s = parseInt(url.searchParams.get('season') || '1', 10);
-      const e = parseInt(url.searchParams.get('episode') || '1', 10);
-      return { currentSeason: s, currentEpisode: e };
-    } catch (_) {
-      return { currentSeason: 1, currentEpisode: 1 };
-    }
-  }, [activeSource, location.state?.videoUrl]);
-
-  const handleEpisodeChange = (season: number, episode: number) => {
-    if (!movie) return;
-    const tmdbNumericId = movie.id.replace('tmdb-', '');
-    const sPadded = String(season).padStart(2, '0');
-    const ePadded = String(episode).padStart(2, '0');
-    const newUrl = `https://sn4bl2i777ve.shares.zrok.io/stream/tmdb-${tmdbNumericId}-s${sPadded}ep${ePadded}`;
-
-    let newEpisodeTitle = '';
-    const targetSeason = movie.seasons?.find((s: any) => s.seasonNumber === season);
-    const targetEpisode = targetSeason?.episodes?.find((e: any) => e.episodeNumber === episode);
-    if (targetEpisode) {
-      newEpisodeTitle = targetEpisode.title;
-    }
-
-    navigate(`/watch/${movie.id}`, {
-      replace: true,
-      state: {
-        ...location.state,
-        videoUrl: newUrl,
-        episodeTitle: newEpisodeTitle
-      }
-    });
-    
-    setActiveSource(newUrl);
-  };
-
-  const handleNextEpisode = () => {
-    if (!movie?.seasons) return;
-    
-    let nextSeason = currentSeason;
-    let nextEpisode = currentEpisode + 1;
-    
-    const targetSeason = movie.seasons.find((s: any) => s.seasonNumber === nextSeason);
-    const hasNextEpInSeason = targetSeason?.episodes?.some((e: any) => e.episodeNumber === nextEpisode);
-    
-    if (!hasNextEpInSeason) {
-      nextSeason = currentSeason + 1;
-      nextEpisode = 1;
-    }
-    
-    const nextSeasonObj = movie.seasons.find((s: any) => s.seasonNumber === nextSeason);
-    const nextEpisodeObj = nextSeasonObj?.episodes?.find((e: any) => e.episodeNumber === nextEpisode);
-    
-    if (nextEpisodeObj) {
-      handleEpisodeChange(nextSeason, nextEpisode);
-    }
-  };
+  // Removed season, episode and episode changing parameters
 
   const latestTimeRef = useRef(0);
   const latestDurationRef = useRef(0);
@@ -867,11 +643,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   }, [movie]);
 
 
-  // Determine if it's a movie or series
-  const isMovie = movie?.mediaType !== 'show';
 
-  const seasonAndEpisode = isMovie ? "" : `S${currentSeason}:E${currentEpisode}`;
-  const episodeTitle = isMovie ? "" : (location.state?.episodeTitle || movie?.title || "Minsan");
 
   const showXRay = variant === 'xray' || !!movie?.xRay;
 
@@ -925,29 +697,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     return activeProg.startMs === location.state.subtitleProgramStartMs;
   }, [location.state, currentTime]);
 
-  // Use movie.videoUrl if available, otherwise fallback to the mock sample
-  const STREAM_API = 'https://sn4bl2i777ve.shares.zrok.io'
-
+  // Use movie.videoUrl if available, otherwise fallback to empty string
   const videoSrc = useMemo(() => {
-    if (!movie?.id) return '';
-    if (movie.mediaType === 'show') {
-      let s = 1;
-      let e = 1;
-      try {
-        const raw = localStorage.getItem('vidLinkProgress');
-        if (raw) {
-          const tmdbNumericId = movie.id.replace('tmdb-', '');
-          const vp = JSON.parse(raw);
-          const entry = vp[tmdbNumericId];
-          if (entry?.last_season_watched && entry?.last_episode_watched) {
-            s = parseInt(entry.last_season_watched, 10);
-            e = parseInt(entry.last_episode_watched, 10);
-          }
-        }
-      } catch (_) {}
-      return `${STREAM_API}/stream/${movie.id}-s${String(s).padStart(2, '0')}ep${String(e).padStart(2, '0')}`;
-    }
-    return `${STREAM_API}/stream/${movie.id}`;
+    return movie?.videoUrl || '';
   }, [movie]);
 
   useEffect(() => {
@@ -1029,7 +781,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       if (isAtCredits) {
         try {
           await deleteWatchProgress(activeProfileId, progressKey);
-          await addToRecentlyWatched(activeProfileId, progressKey, seasonAndEpisode);
+          await addToRecentlyWatched(activeProfileId, progressKey, location.state?.episodeTitle || "");
         } catch (e) {
           console.error('Failed to update watch history', e);
         }
@@ -2491,7 +2243,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
 
     // Normal skips
-    const skipLogoIds = ['f1', 'eb1', 'f4', 'f5'];
+    const skipLogoIds = ['f1', 'eb1', 'f4', 'f5', 'ang-huling-el-bimbo-play', 'ang-huling-el-bimbo-play-xray'];
     if (skipLogoIds.includes(movie?.id)) {
       return [{ start: 0.1, end: 10, skipTo: 10, label: "Skip Logo" }];
     }
@@ -2518,36 +2270,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
   const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);
 
-  // If we are playing from a Vidlink URL, render the VidlinkPlayer instead
-  if (location.state?.videoUrl?.includes('vidlink.pro')) {
-    return (
-      <VidlinkPlayer
-        iframeSrc={location.state.videoUrl}
-        movie={movie}
-        onBack={() => navigate(-1)}
-        onChangeEpisode={(season, episode) => {
-          const tmdbNumericId = movie.id.replace('tmdb-', '');
-          const newUrl = `https://vidlink.pro/tv/${tmdbNumericId}/${season}/${episode}?primaryColor=9146ff`;
-
-          let newEpisodeTitle = '';
-          const targetSeason = movie.seasons?.find((s: any) => s.seasonNumber === season);
-          const targetEpisode = targetSeason?.episodes?.find((e: any) => e.episodeNumber === episode);
-          if (targetEpisode) {
-            newEpisodeTitle = targetEpisode.title;
-          }
-
-          navigate(`/watch/${movie.id}`, {
-            replace: true,
-            state: {
-              ...location.state,
-              videoUrl: newUrl,
-              episodeTitle: newEpisodeTitle
-            }
-          });
-        }}
-      />
-    );
-  }
+  // Removed Vidlink iframe check
 
   return (
     <div
@@ -3238,10 +2961,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             {/* Title & Episode info (Desktop) */}
             <div className="title-info desktop-only">
               <span className="title-main">{movie?.id === 'after-hours' ? 'After Hours' : title}</span>
-              {movie?.id === 'after-hours' && location.state?.episodeTitle ? (
+              {location.state?.episodeTitle && (
                 <span className="title-episode">: {location.state.episodeTitle}</span>
-              ) : !isMovie && movie?.id !== 'after-hours' && (
-                <span className="title-episode">{seasonAndEpisode} {episodeTitle}</span>
               )}
               {currentProgramTitle && (
                 <span className="title-program" style={{ color: '#aaa', fontWeight: 600, fontSize: '0.95rem', marginLeft: '12px', borderLeft: '1px solid rgba(255,255,255,0.3)', paddingLeft: '12px' }}>
@@ -3251,56 +2972,6 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             </div>
 
             <div className="vplayer-controls-right desktop-only">
-              {!isMovie && (
-                <button className="vplayer-control-btn with-label tooltip" onClick={handleNextEpisode}>
-                  <SkipForward size={38} />
-                  <span className="tooltip-text">Next Episode</span>
-                </button>
-              )}
-
-              {!isMovie && (
-                <div className="subtitles-wrapper">
-                  <button
-                    className="vplayer-control-btn with-label tooltip"
-                    onClick={() => { setShowEpisodes(!showEpisodes); setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
-                  >
-                    <Copy size={38} />
-                    <span className="tooltip-text">Episodes</span>
-                  </button>
-                  {showEpisodes && (
-                    <div className="subtitles-menu" style={{ width: '300px', maxHeight: '400px', overflowY: 'auto' }}>
-                      <div className="menu-section">
-                        <h4 className="menu-header">Episodes</h4>
-                        <div className="scrollable-list">
-                          {movie?.seasons?.map((s: any) => (
-                            <div key={s.id} style={{ marginBottom: '16px' }}>
-                              <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
-                                Season {s.seasonNumber}
-                              </div>
-                              <ul className="menu-list">
-                                {s.episodes?.map((ep: any) => (
-                                  <li
-                                    key={ep.id}
-                                    className={`menu-item ${currentSeason === s.seasonNumber && currentEpisode === ep.episodeNumber ? 'active' : ''}`}
-                                    onClick={() => {
-                                      handleEpisodeChange(s.seasonNumber, ep.episodeNumber);
-                                      setShowEpisodes(false);
-                                    }}
-                                    style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
-                                  >
-                                    <span style={{ color: '#9146ff', fontWeight: 'bold', minWidth: '20px' }}>{ep.episodeNumber}</span>
-                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ep.title}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="subtitles-wrapper">
                 <button className="vplayer-control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
@@ -3430,7 +3101,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             </div>
             <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(true); setShowSpeedMenu(false); }}>
               <MessageSquareText size={20} />
-              <span>Audio & Subtitles</span>
+              <span>Audio & Subs</span>
             </div>
           </div>
         </div>

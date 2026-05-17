@@ -105,7 +105,7 @@ export const tmdbService = {
               episodeNumber: ep.episode_number,
               title: ep.name,
               description: ep.overview,
-              videoUrl: `https://sn4bl2i777ve.shares.zrok.io/stream/tmdb-${tmdb.id}-s${String(s.season_number).padStart(2, '0')}ep${String(ep.episode_number).padStart(2, '0')}`,
+              videoUrl: "",
               duration: ep.runtime ? `${ep.runtime}m` : 'N/A'
             }))
           };
@@ -133,7 +133,7 @@ export const tmdbService = {
       detailBanner: tmdb.backdrop_path ? `${IMAGE_BASE_URL}/original${tmdb.backdrop_path}` : '',
       detailMobileBanner: tmdb.backdrop_path ? `${IMAGE_BASE_URL}/w780${tmdb.backdrop_path}` : '',
       trailerUrl,
-      videoUrl: type === 'movie' ? `https://sn4bl2i777ve.shares.zrok.io/stream/tmdb-${tmdb.id}` : undefined,
+      videoUrl: undefined,
       logo,
       mediaType: type === 'tv' ? 'show' : 'movie',
       isOriginal: false,

@@ -46,44 +46,43 @@
 @media (max-width: 896px) and (orientation: portrait) {
   .video-stage-wrapper {
     width: 100vw;
-    height: calc(100vw * 9 / 16);
-    /* Strictly enforce 16:9 height */
+    height: 100dvh;
+    /* Occupy full screen to prevent vertical control compression in portrait */
     flex: none;
-    /* Prevent flexbox from squashing the wrapper */
     background-color: #000;
-    /* Prevent glow from bleeding into the 16:9 video letterboxing */
   }
 
-  /* Drastically shrink padding to fit the small 16:9 vertical window */
+  /* Spacing to look native and premium on portrait phone screen heights */
   .player-top-bar {
-    padding: 8px 15px !important;
+    padding: 20px 24px !important;
   }
 
   .player-controls-overlay {
-    padding: 8px 15px 2px 15px !important;
+    padding: 20px 24px 30px 24px !important;
+    /* Elegant spacing at bottom safe area */
   }
 
   .mobile-top-title {
-    font-size: 0.9rem !important;
+    font-size: 1.05rem !important;
   }
 
-  /* Shrink Center Controls */
+  /* Center mobile controls are placed perfectly at vertical center */
   .center-mobile-controls {
-    gap: 30px !important;
+    gap: 45px !important;
   }
 
   .center-play-btn {
-    transform: scale(1) !important;
+    transform: scale(1.3) !important;
   }
 
   .center-mobile-controls svg {
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
   }
 
   .center-play-btn svg {
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
   }
 
   /* Shrink skip intro text */
@@ -100,6 +99,22 @@
 
   .show-controls .skip-intro-btn {
     bottom: 60px;
+  }
+
+  /* Subtitles centered nicely over the video stage, not squished at the extreme bottom */
+  .custom-subtitle-overlay-container {
+    bottom: 38% !important;
+  }
+
+  .custom-subtitle-text {
+    font-size: 1.15rem !important;
+    line-height: 1.35 !important;
+    padding: 0 20px !important;
+  }
+
+  /* Push pause info overlay higher to clear bottom controls in portrait layout */
+  .player-pause-info {
+    padding: 0 24px 160px !important;
   }
 
   .timeline-slider {
@@ -127,7 +142,7 @@
   }
 
   .timeline-container {
-    padding-bottom: 2px !important;
+    padding-bottom: 0 !important;
   }
 
   .timeline-slider::-webkit-slider-thumb {
@@ -260,7 +275,8 @@
 }
 
 .custom-subtitle-text.is-positioned {
-  padding: 0 12px !important; /* Small safe area to prevent cut-off */
+  padding: 0 12px !important;
+  /* Small safe area to prevent cut-off */
   margin-left: 0 !important;
   margin-right: 0 !important;
   max-width: 95vw !important;
@@ -301,15 +317,20 @@
   }
 
   .player-controls-overlay {
-    padding: 10px 30px 2px 30px !important;
+    padding: 10px 30px 12px 30px !important;
   }
 
   .timeline-container {
-    padding-bottom: 2px !important;
+    padding-bottom: 0 !important;
   }
 
   .mobile-bottom-row {
     margin-top: -3px !important;
+  }
+
+  .mobile-top-title {
+    left: 185px !important; /* Balanced optical offset on wide landscape screens */
+    right: -185px !important;
   }
 }
 
@@ -505,18 +526,18 @@
   width: 100%;
   height: 8px;
   /* Base transparent track */
-  background-color: rgba(255, 255, 255, 0.2) !important; 
+  background-color: rgba(255, 255, 255, 0.2) !important;
   border-radius: 4px;
   outline: none;
   cursor: pointer;
   transition: height 0.1s ease;
-  
+
   /* The Premium Dark Purple Fill */
   background-image: linear-gradient(90deg, #4c1d95, #6b21a8) !important;
   background-repeat: no-repeat !important;
-  
+
   /* Forces modern browsers (like Safari/Chrome) to respect the purple */
-  accent-color: #6b21a8 !important; 
+  accent-color: #6b21a8 !important;
 }
 
 .timeline-slider:hover {
@@ -815,10 +836,16 @@
     display: none !important;
   }
 
-  .player-top-bar,
-  .player-controls-overlay {
+  .player-top-bar {
     padding: 20px 40px;
-    /* Safe area padding */
+  }
+
+  .player-controls-overlay {
+    padding: 20px 24px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    /* Unified stable spacing between progress bar and controls */
   }
 
   .skip-intro-btn {
@@ -832,19 +859,88 @@
     bottom: 110px;
   }
 
-  /* Top Bar */
-  .mobile-top-title {
-    color: white;
-    font-weight: 600;
-    font-size: 1.1rem;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: none;
+  /* Top Bar - Mathematically Dead-Centered absolute layout */
+  .player-top-bar {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .back-button {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    cursor: pointer !important;
+    padding: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    z-index: 5 !important;
+    flex: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .back-button svg {
+    width: 36px !important;
+    height: 36px !important;
   }
 
   .top-right-controls {
-    margin-left: auto;
+    display: flex !important;
+    align-items: center !important;
+    z-index: 5 !important;
+    margin-left: 0 !important; /* Reset margin-left auto to prevent rightward pushing */
+    flex: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .top-right-controls button {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    padding: 10px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .top-right-controls button svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .mobile-top-title {
+    position: absolute !important;
+    left: 0 !important; /* Perfect absolute centering by default on mobile portrait screens */
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    color: white !important;
+    padding: 0 50px !important; /* Safe boundaries to protect extreme screen edges */
+    pointer-events: none !important;
+    /* Let clicks pass through */
+    z-index: 2 !important;
+  }
+
+  .mobile-top-title span {
+    width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    text-align: center !important;
   }
 
   /* Center Playback Controls */
@@ -873,8 +969,8 @@
 
   /* Timeline */
   .timeline-container {
-    padding-bottom: 25px;
-    /* Room for bottom row */
+    padding-bottom: 0 !important;
+    /* Spacing managed by parent flex gap for absolute stability */
   }
 
   .timeline-slider {
@@ -1410,15 +1506,17 @@
 }
 
 .xray-mobile-top-bar .mobile-top-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  font-weight: 600;
-  font-size: 1.1rem;
-  pointer-events: none;
-  max-width: 60%;
-  text-align: center;
+  position: absolute !important;
+  left: calc(50% + 25px) !important; /* Optical offset to balance the two buttons on the right */
+  right: auto !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+  pointer-events: none !important;
+  max-width: 60% !important;
+  text-align: center !important;
 }
 
 .xray-mobile-top-bar .mobile-top-title span {
@@ -2391,7 +2489,8 @@
   /* Allow more room for long lists */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Keep the sheet fixed, scroll content only */
+  overflow: hidden;
+  /* Keep the sheet fixed, scroll content only */
 }
 
 
@@ -2450,7 +2549,8 @@
 
 .mobile-menu-scrollable {
   flex: 1;
-  overflow-y: hidden; /* Don't scroll the whole menu */
+  overflow-y: hidden;
+  /* Don't scroll the whole menu */
   padding-right: 5px;
   -webkit-overflow-scrolling: touch;
 }
@@ -2655,7 +2755,8 @@
 
 /* Individual section scrolling */
 .mobile-scroll-container {
-  max-height: 55vh; /* Limit height of each section */
+  max-height: 55vh;
+  /* Limit height of each section */
   overflow-y: auto;
   padding-right: 10px;
 }
@@ -3609,5 +3710,62 @@
 @media (max-width: 896px) and (orientation: portrait) {
   .player-pause-info {
     padding-bottom: 40px;
+  }
+}
+
+/* ── Responsive Screen Adjustments (Tablet & Medium Screens) ───────────────── */
+@media (max-width: 1200px) and (min-width: 897px) {
+  .bottom-controls {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: relative;
+  }
+
+  .title-info.desktop-only {
+    position: static !important;
+    transform: none !important;
+    left: auto !important;
+    margin: 0 auto !important;
+    max-width: 40% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center;
+    gap: 2px !important;
+    pointer-events: none;
+  }
+
+  .title-main {
+    font-size: 1.1rem !important;
+    max-width: 100% !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+
+  .title-episode {
+    font-size: 0.9rem !important;
+    max-width: 100% !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+
+  .vplayer-controls-left,
+  .vplayer-controls-right {
+    gap: 15px !important;
+  }
+
+  .vplayer-control-btn svg {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Shrink Volume Slider */
+  .vplayer-volume-container:hover .vplayer-volume-slider {
+    width: 60px !important;
   }
 }
