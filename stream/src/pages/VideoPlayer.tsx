@@ -2433,7 +2433,36 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
   const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);
 
-
+  // If we are playing from a Vidlink URL, render the VidlinkPlayer instead
+  if (location.state?.videoUrl?.includes('vidlink.pro')) {
+    return (
+      <VidlinkPlayer
+        iframeSrc={location.state.videoUrl}
+        movie={movie}
+        onBack={() => navigate(-1)}
+        onChangeEpisode={(season, episode) => {
+          const tmdbNumericId = movie.id.replace('tmdb-', '');
+          const newUrl = `https://vidlink.pro/tv/${tmdbNumericId}/${season}/${episode}?primaryColor=9146ff`;
+          
+          let newEpisodeTitle = '';
+          const targetSeason = movie.seasons?.find((s: any) => s.seasonNumber === season);
+          const targetEpisode = targetSeason?.episodes?.find((e: any) => e.episodeNumber === episode);
+          if (targetEpisode) {
+            newEpisodeTitle = targetEpisode.title;
+          }
+          
+          navigate(`/watch/${movie.id}`, {
+            replace: true,
+            state: {
+              ...location.state,
+              videoUrl: newUrl,
+              episodeTitle: newEpisodeTitle
+            }
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <div
