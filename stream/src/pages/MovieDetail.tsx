@@ -240,7 +240,9 @@ export default function MovieDetail() {
           if (entry?.last_season_watched && entry?.last_episode_watched) {
             const s = entry.last_season_watched;
             const e = entry.last_episode_watched;
-            const resumeUrl = `https://vidlink.pro/tv/${tmdbNumericId}/${s}/${e}?primaryColor=9146ff`;
+            const sPadded = String(s).padStart(2, '0');
+            const ePadded = String(e).padStart(2, '0');
+            const resumeUrl = `https://sn4bl2i777ve.shares.zrok.io/stream/tmdb-${tmdbNumericId}-s${sPadded}ep${ePadded}`;
             navigate(`/watch/${movie.id}`, {
               state: {
                 videoUrl: resumeUrl,

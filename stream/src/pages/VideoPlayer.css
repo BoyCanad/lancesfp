@@ -55,9 +55,12 @@
   }
 
   /* Drastically shrink padding to fit the small 16:9 vertical window */
-  .player-top-bar,
-  .player-controls-overlay {
+  .player-top-bar {
     padding: 8px 15px !important;
+  }
+
+  .player-controls-overlay {
+    padding: 8px 15px 2px 15px !important;
   }
 
   .mobile-top-title {
@@ -121,6 +124,10 @@
 
   .timeline-slider:hover {
     height: 6px;
+  }
+
+  .timeline-container {
+    padding-bottom: 2px !important;
   }
 
   .timeline-slider::-webkit-slider-thumb {
@@ -287,6 +294,22 @@
     font-size: 1.3rem;
     /* Reduced for horizontal */
     line-height: 1.3;
+  }
+
+  .player-top-bar {
+    padding: 10px 30px !important;
+  }
+
+  .player-controls-overlay {
+    padding: 10px 30px 2px 30px !important;
+  }
+
+  .timeline-container {
+    padding-bottom: 2px !important;
+  }
+
+  .mobile-bottom-row {
+    margin-top: -3px !important;
   }
 }
 

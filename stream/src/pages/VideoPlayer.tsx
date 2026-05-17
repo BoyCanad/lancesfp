@@ -491,6 +491,75 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [isPiP, setIsPiP] = useState(false);
 
+  const [showEpisodes, setShowEpisodes] = useState(false);
+
+  const { currentSeason, currentEpisode } = useMemo(() => {
+    const srcToParse = activeSource || location.state?.videoUrl || '';
+    if (!srcToParse) return { currentSeason: 1, currentEpisode: 1 };
+    try {
+      const pathParts = srcToParse.split('?')[0].split('/');
+      const lastPart = pathParts[pathParts.length - 1];
+      const match = lastPart.match(/^(.+)-s(\d+)ep(\d+)$/i);
+      if (match) {
+        return { currentSeason: parseInt(match[2], 10), currentEpisode: parseInt(match[3], 10) };
+      }
+      const url = new URL(srcToParse);
+      const s = parseInt(url.searchParams.get('season') || '1', 10);
+      const e = parseInt(url.searchParams.get('episode') || '1', 10);
+      return { currentSeason: s, currentEpisode: e };
+    } catch (_) {
+      return { currentSeason: 1, currentEpisode: 1 };
+    }
+  }, [activeSource, location.state?.videoUrl]);
+
+  const handleEpisodeChange = (season: number, episode: number) => {
+    if (!movie) return;
+    const tmdbNumericId = movie.id.replace('tmdb-', '');
+    const sPadded = String(season).padStart(2, '0');
+    const ePadded = String(episode).padStart(2, '0');
+    const newUrl = `https://sn4bl2i777ve.shares.zrok.io/stream/tmdb-${tmdbNumericId}-s${sPadded}ep${ePadded}`;
+
+    let newEpisodeTitle = '';
+    const targetSeason = movie.seasons?.find((s: any) => s.seasonNumber === season);
+    const targetEpisode = targetSeason?.episodes?.find((e: any) => e.episodeNumber === episode);
+    if (targetEpisode) {
+      newEpisodeTitle = targetEpisode.title;
+    }
+
+    navigate(`/watch/${movie.id}`, {
+      replace: true,
+      state: {
+        ...location.state,
+        videoUrl: newUrl,
+        episodeTitle: newEpisodeTitle
+      }
+    });
+    
+    setActiveSource(newUrl);
+  };
+
+  const handleNextEpisode = () => {
+    if (!movie?.seasons) return;
+    
+    let nextSeason = currentSeason;
+    let nextEpisode = currentEpisode + 1;
+    
+    const targetSeason = movie.seasons.find((s: any) => s.seasonNumber === nextSeason);
+    const hasNextEpInSeason = targetSeason?.episodes?.some((e: any) => e.episodeNumber === nextEpisode);
+    
+    if (!hasNextEpInSeason) {
+      nextSeason = currentSeason + 1;
+      nextEpisode = 1;
+    }
+    
+    const nextSeasonObj = movie.seasons.find((s: any) => s.seasonNumber === nextSeason);
+    const nextEpisodeObj = nextSeasonObj?.episodes?.find((e: any) => e.episodeNumber === nextEpisode);
+    
+    if (nextEpisodeObj) {
+      handleEpisodeChange(nextSeason, nextEpisode);
+    }
+  };
+
   const latestTimeRef = useRef(0);
   const latestDurationRef = useRef(0);
 
@@ -799,11 +868,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
 
   // Determine if it's a movie or series
-  // For now, let's assume if it has 'h' in duration or is one of the featured musicals, it's a movie
-  const isMovie = movie?.duration?.includes('h') || movie?.id?.startsWith('f') || movie?.id?.includes('el-bimbo') || movie?.duration?.includes('m');
+  const isMovie = movie?.mediaType !== 'show';
 
-  const seasonAndEpisode = isMovie ? "" : "S1:E1";
-  const episodeTitle = isMovie ? "" : (movie?.title || "Minsan");
+  const seasonAndEpisode = isMovie ? "" : `S${currentSeason}:E${currentEpisode}`;
+  const episodeTitle = isMovie ? "" : (location.state?.episodeTitle || movie?.title || "Minsan");
 
   const showXRay = variant === 'xray' || !!movie?.xRay;
 
@@ -860,10 +928,27 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   // Use movie.videoUrl if available, otherwise fallback to the mock sample
   const STREAM_API = 'https://sn4bl2i777ve.shares.zrok.io'
 
-  const videoSrc =
-    movie?.id
-      ? `${STREAM_API}/stream/${movie.id}`
-      : ''
+  const videoSrc = useMemo(() => {
+    if (!movie?.id) return '';
+    if (movie.mediaType === 'show') {
+      let s = 1;
+      let e = 1;
+      try {
+        const raw = localStorage.getItem('vidLinkProgress');
+        if (raw) {
+          const tmdbNumericId = movie.id.replace('tmdb-', '');
+          const vp = JSON.parse(raw);
+          const entry = vp[tmdbNumericId];
+          if (entry?.last_season_watched && entry?.last_episode_watched) {
+            s = parseInt(entry.last_season_watched, 10);
+            e = parseInt(entry.last_episode_watched, 10);
+          }
+        }
+      } catch (_) {}
+      return `${STREAM_API}/stream/${movie.id}-s${String(s).padStart(2, '0')}ep${String(e).padStart(2, '0')}`;
+    }
+    return `${STREAM_API}/stream/${movie.id}`;
+  }, [movie]);
 
   useEffect(() => {
     // Reset hasStartedPlaying so the poster banner shows until the new video starts playing
@@ -3167,17 +3252,54 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
             <div className="vplayer-controls-right desktop-only">
               {!isMovie && (
-                <button className="vplayer-control-btn with-label tooltip">
+                <button className="vplayer-control-btn with-label tooltip" onClick={handleNextEpisode}>
                   <SkipForward size={38} />
                   <span className="tooltip-text">Next Episode</span>
                 </button>
               )}
 
               {!isMovie && (
-                <button className="vplayer-control-btn with-label tooltip">
-                  <Copy size={38} />
-                  <span className="tooltip-text">Episodes</span>
-                </button>
+                <div className="subtitles-wrapper">
+                  <button
+                    className="vplayer-control-btn with-label tooltip"
+                    onClick={() => { setShowEpisodes(!showEpisodes); setShowSubtitlesMenu(false); setShowSpeedMenu(false); }}
+                  >
+                    <Copy size={38} />
+                    <span className="tooltip-text">Episodes</span>
+                  </button>
+                  {showEpisodes && (
+                    <div className="subtitles-menu" style={{ width: '300px', maxHeight: '400px', overflowY: 'auto' }}>
+                      <div className="menu-section">
+                        <h4 className="menu-header">Episodes</h4>
+                        <div className="scrollable-list">
+                          {movie?.seasons?.map((s: any) => (
+                            <div key={s.id} style={{ marginBottom: '16px' }}>
+                              <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '8px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px' }}>
+                                Season {s.seasonNumber}
+                              </div>
+                              <ul className="menu-list">
+                                {s.episodes?.map((ep: any) => (
+                                  <li
+                                    key={ep.id}
+                                    className={`menu-item ${currentSeason === s.seasonNumber && currentEpisode === ep.episodeNumber ? 'active' : ''}`}
+                                    onClick={() => {
+                                      handleEpisodeChange(s.seasonNumber, ep.episodeNumber);
+                                      setShowEpisodes(false);
+                                    }}
+                                    style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+                                  >
+                                    <span style={{ color: '#9146ff', fontWeight: 'bold', minWidth: '20px' }}>{ep.episodeNumber}</span>
+                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ep.title}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="subtitles-wrapper">
