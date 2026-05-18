@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getProfiles } from '../services/profileService';
 import type { Profile } from '../services/profileService';
 import { allMovies } from '../data/movies';
+import EmbeddedVideoPlayer from '../components/EmbeddedVideoPlayer';
 import './WindowsXP.css';
 
 interface XPWindow {
@@ -376,8 +377,9 @@ export default function WindowsXP() {
     } else if (item.target === 'media' && item.movieId) {
       const movie = allMovies.find(m => m.id === item.movieId);
       if (movie) {
+        console.log('WindowsXP: Opening video', movie.title, 'trailerUrl:', movie.trailerUrl, 'videoUrl:', movie.videoUrl);
         setWmpTitle(movie.title);
-        setWmpVideoUrl(movie.trailerUrl || movie.videoUrl || '');
+        setWmpVideoUrl(movie.videoUrl || movie.trailerUrl || '');
         openApp('wmpWin');
       }
     } else {
@@ -812,12 +814,9 @@ export default function WindowsXP() {
               <div className="wmp-content">
                 <div className="wmp-display-area">
                   {wmpVideoUrl ? (
-                    <video 
-                      ref={videoRef}
-                      src={wmpVideoUrl} 
-                      className="wmp-video-screen"
-                      controls
-                      autoPlay
+                    <EmbeddedVideoPlayer 
+                      videoUrl={wmpVideoUrl} 
+                      title={wmpTitle}
                     />
                   ) : (
                     <div className="wmp-placeholder">
@@ -829,8 +828,6 @@ export default function WindowsXP() {
                 <div className="wmp-controls-panel">
                   <div className="wmp-track-info">{wmpTitle}</div>
                   <div className="wmp-buttons-row">
-                    <button className="wmp-btn" onClick={() => videoRef.current?.play()}>▶ Play</button>
-                    <button className="wmp-btn" onClick={() => videoRef.current?.pause()}>⏸ Pause</button>
                     <button className="wmp-btn" onClick={() => { setWmpVideoUrl(''); setWmpTitle('Welcome to Windows Media Player'); }}>⏹ Stop</button>
                   </div>
                 </div>

@@ -231,19 +231,6 @@ export default function ProfilePicker() {
                   {t('profile.manage')}
                 </button>
               )}
-              <button
-                className="profile-picker__manage-btn xp-mode-btn"
-                onClick={() => navigate('/xp')}
-                style={{
-                  background: 'linear-gradient(to bottom, #245edb 0%, #3f8cf3 50%, #245edb 100%)',
-                  borderColor: '#0022AA',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                }}
-              >
-                Windows XP Mode 💻
-              </button>
             </>
           )}
         </div>
