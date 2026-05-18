@@ -41,6 +41,7 @@ import LanguageSettings from './pages/LanguageSettings';
 import ChangePlan from './pages/ChangePlan';
 import SignUp from './pages/SignUp';
 import AdminImport from './pages/AdminImport';
+import WindowsXP from './pages/WindowsXP';
 import './App.css';
 
 function App() {
@@ -57,6 +58,7 @@ function App() {
 
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
+  const isXP = pathname === '/xp';
   const isManageProfile = pathname.startsWith('/ManageProfile') || pathname.startsWith('/EditProfile') || pathname.startsWith('/IconPicker') || pathname === '/CreateProfile' || pathname.startsWith('/ProfileLock') || pathname.startsWith('/LanguageSettings');
   const isAuth = pathname === '/login' || pathname === '/introduction' || pathname === '/signup';
   const isForgotPassword = pathname === '/forgot-password';
@@ -91,7 +93,7 @@ function App() {
 
   const isGenrePage = pathname.startsWith('/genre');
 
-  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage || isDownloads;
+  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isXP && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage || isDownloads;
 
   useEffect(() => {
     // Helper: check if Supabase already persisted a valid session in localStorage
@@ -250,6 +252,7 @@ function App() {
       '/forgot-password': 'Reset Password',
       '/change-plan': 'Change Plan',
       '/CreateProfile': 'Create Profile',
+      '/xp': 'Windows XP Professional',
       '/collections/el-bimbo': 'El Bimbo Collection',
       '/ang-huling-el-bimbo-play': 'Ang Huling El Bimbo',
       '/ang-huling-el-bimbo': 'Ang Huling El Bimbo',
@@ -373,6 +376,7 @@ function App() {
         } />
         <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
         <Route path="/admin/import" element={session ? <AdminImport /> : <Navigate to="/login" replace />} />
+        <Route path="/xp" element={session ? <WindowsXP /> : <Navigate to="/login" replace />} />
         <Route path="/:id" element={<MovieDetail />} />
       </Routes>
 

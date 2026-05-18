@@ -213,7 +213,7 @@ export default function ProfilePicker() {
           )}
         </ul>
 
-        <div className="profile-picker__actions">
+        <div className="profile-picker__actions" style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {isManaging ? (
             <button
               className="profile-picker__done-btn"
@@ -222,14 +222,29 @@ export default function ProfilePicker() {
               {t('profile.done')}
             </button>
           ) : (
-            !isMobile && (
+            <>
+              {!isMobile && (
+                <button
+                  className="profile-picker__manage-btn"
+                  onClick={() => setIsManaging(true)}
+                >
+                  {t('profile.manage')}
+                </button>
+              )}
               <button
-                className="profile-picker__manage-btn"
-                onClick={() => setIsManaging(true)}
+                className="profile-picker__manage-btn xp-mode-btn"
+                onClick={() => navigate('/xp')}
+                style={{
+                  background: 'linear-gradient(to bottom, #245edb 0%, #3f8cf3 50%, #245edb 100%)',
+                  borderColor: '#0022AA',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+                }}
               >
-                {t('profile.manage')}
+                Windows XP Mode 💻
               </button>
-            )
+            </>
           )}
         </div>
       </div>
