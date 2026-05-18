@@ -193,11 +193,11 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           <p className="hero__desc">{movie.description}</p>
           <div className="hero__actions">
             <button 
-              className={`hero__btn hero__btn--play ${movie.comingSoon ? 'hero__btn--disabled' : ''}`} 
-              onClick={() => !movie.comingSoon && handlePlay(movie)}
-              disabled={movie.comingSoon}
+              className={`hero__btn hero__btn--play ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'hero__btn--disabled' : ''}`} 
+              onClick={() => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlay(movie)}
+              disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
             >
-              {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? t('hero.remind_me') : t('hero.play')}
+              {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? t('hero.remind_me') : t('hero.play')}
             </button>
             <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> {t('hero.more_info')}</button>
             <HeroListButton movie={movie} />
@@ -257,11 +257,11 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                     <p className="hero__desc">{movie.description}</p>
                     <div className="hero__actions">
                       <button 
-                        className={`hero__btn hero__btn--play ${movie.comingSoon ? 'hero__btn--disabled' : ''}`} 
-                        onClick={() => !movie.comingSoon && handlePlay(movie)}
-                        disabled={movie.comingSoon}
+                        className={`hero__btn hero__btn--play ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'hero__btn--disabled' : ''}`} 
+                        onClick={() => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlay(movie)}
+                        disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
                       >
-                        {movie.comingSoon ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon ? t('hero.remind_me') : t('hero.play')}
+                        {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? t('hero.remind_me') : t('hero.play')}
                       </button>
                       <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> {t('hero.more_info')}</button>
                       <HeroListButton movie={movie} />

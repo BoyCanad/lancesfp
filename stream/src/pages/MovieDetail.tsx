@@ -232,7 +232,7 @@ export default function MovieDetail() {
     navigate(movie.xRay ? `/xray/${movie.id}` : `/watch/${movie.id}`);
   };
 
-  const handleEpisodeClick = async (episode: any) => {
+  const handleEpisodeClick = async (episode: any, seasonNumber: number) => {
     if (!movie) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -243,7 +243,9 @@ export default function MovieDetail() {
       state: { 
         videoUrl: episode.videoUrl, 
         episodeTitle: episode.title, 
-        episodeId: episode.id
+        episodeId: episode.id,
+        seasonNumber: seasonNumber,
+        episodeNumber: episode.episodeNumber
       } 
     });
   };
@@ -269,6 +271,8 @@ export default function MovieDetail() {
 
   // Progress Calculation
   const progressPercent = progress ? (progress.progress_ms / progress.duration_ms) * 100 : 0;
+  const isTMDB = movie.id.startsWith('tmdb-');
+  const isPlayDisabled = movie.comingSoon || (!isTMDB && !movie.videoUrl && (!movie.seasons || movie.seasons.length === 0));
   const remainingMs = progress ? progress.duration_ms - progress.progress_ms : 0;
   
   const formatRemaining = (ms: number) => {
@@ -364,10 +368,10 @@ export default function MovieDetail() {
           <div className="mdetail-actions">
             <button
                onClick={handlePlayClick}
-               className={`mdetail-btn ${progress ? 'mdetail-btn-resume' : 'mdetail-btn-play'} ${movie.comingSoon ? 'mdetail-btn-disabled' : ''}`}
-               disabled={movie.comingSoon}
+               className={`mdetail-btn ${progress ? 'mdetail-btn-resume' : 'mdetail-btn-play'} ${isPlayDisabled ? 'mdetail-btn-disabled' : ''}`}
+               disabled={isPlayDisabled}
             >
-              {movie.comingSoon ? <Bell size={18} fill="white" /> : <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} />} {movie.comingSoon ? 'Remind Me' : (progress ? 'Resume' : 'Play')}
+              {isPlayDisabled ? <Bell size={18} fill="white" /> : <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} />} {isPlayDisabled ? 'Remind Me' : (progress ? 'Resume' : 'Play')}
             </button>
 
             {movie.videoUrl && (
@@ -451,7 +455,7 @@ export default function MovieDetail() {
               <div
                 key={episode.id}
                 className="ep-row"
-                onClick={() => handleEpisodeClick(episode)}
+                onClick={() => selectedSeason && handleEpisodeClick(episode, selectedSeason.seasonNumber)}
               >
                 <span className="ep-row__num">{episode.episodeNumber}</span>
 

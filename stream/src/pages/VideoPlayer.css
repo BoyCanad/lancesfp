@@ -46,43 +46,44 @@
 @media (max-width: 896px) and (orientation: portrait) {
   .video-stage-wrapper {
     width: 100vw;
-    height: 100dvh;
-    /* Occupy full screen to prevent vertical control compression in portrait */
+    height: calc(100vw * 9 / 16);
+    /* Strictly enforce 16:9 height */
     flex: none;
+    /* Prevent flexbox from squashing the wrapper */
     background-color: #000;
+    /* Prevent glow from bleeding into the 16:9 video letterboxing */
   }
 
-  /* Spacing to look native and premium on portrait phone screen heights */
+  /* Drastically shrink padding to fit the small 16:9 vertical window */
   .player-top-bar {
-    padding: 20px 24px !important;
+    padding: 8px 15px !important;
   }
 
   .player-controls-overlay {
-    padding: 20px 24px 30px 24px !important;
-    /* Elegant spacing at bottom safe area */
+    padding: 8px 15px 2px 15px !important;
   }
 
   .mobile-top-title {
-    font-size: 1.05rem !important;
+    font-size: 0.9rem !important;
   }
 
-  /* Center mobile controls are placed perfectly at vertical center */
+  /* Shrink Center Controls */
   .center-mobile-controls {
-    gap: 45px !important;
+    gap: 30px !important;
   }
 
   .center-play-btn {
-    transform: scale(1.3) !important;
+    transform: scale(1) !important;
   }
 
   .center-mobile-controls svg {
-    width: 36px;
-    height: 36px;
+    width: 24px;
+    height: 24px;
   }
 
   .center-play-btn svg {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
   }
 
   /* Shrink skip intro text */
@@ -99,22 +100,6 @@
 
   .show-controls .skip-intro-btn {
     bottom: 60px;
-  }
-
-  /* Subtitles centered nicely over the video stage, not squished at the extreme bottom */
-  .custom-subtitle-overlay-container {
-    bottom: 38% !important;
-  }
-
-  .custom-subtitle-text {
-    font-size: 1.15rem !important;
-    line-height: 1.35 !important;
-    padding: 0 20px !important;
-  }
-
-  /* Push pause info overlay higher to clear bottom controls in portrait layout */
-  .player-pause-info {
-    padding: 0 24px 160px !important;
   }
 
   .timeline-slider {
@@ -142,7 +127,7 @@
   }
 
   .timeline-container {
-    padding-bottom: 0 !important;
+    padding-bottom: 2px !important;
   }
 
   .timeline-slider::-webkit-slider-thumb {
@@ -275,8 +260,7 @@
 }
 
 .custom-subtitle-text.is-positioned {
-  padding: 0 12px !important;
-  /* Small safe area to prevent cut-off */
+  padding: 0 12px !important; /* Small safe area to prevent cut-off */
   margin-left: 0 !important;
   margin-right: 0 !important;
   max-width: 95vw !important;
@@ -317,20 +301,15 @@
   }
 
   .player-controls-overlay {
-    padding: 10px 30px 12px 30px !important;
+    padding: 10px 30px 2px 30px !important;
   }
 
   .timeline-container {
-    padding-bottom: 0 !important;
+    padding-bottom: 2px !important;
   }
 
   .mobile-bottom-row {
     margin-top: -3px !important;
-  }
-
-  .mobile-top-title {
-    left: 185px !important; /* Balanced optical offset on wide landscape screens */
-    right: -185px !important;
   }
 }
 
@@ -526,18 +505,18 @@
   width: 100%;
   height: 8px;
   /* Base transparent track */
-  background-color: rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.2) !important; 
   border-radius: 4px;
   outline: none;
   cursor: pointer;
   transition: height 0.1s ease;
-
+  
   /* The Premium Dark Purple Fill */
   background-image: linear-gradient(90deg, #4c1d95, #6b21a8) !important;
   background-repeat: no-repeat !important;
-
+  
   /* Forces modern browsers (like Safari/Chrome) to respect the purple */
-  accent-color: #6b21a8 !important;
+  accent-color: #6b21a8 !important; 
 }
 
 .timeline-slider:hover {
@@ -836,16 +815,10 @@
     display: none !important;
   }
 
-  .player-top-bar {
-    padding: 20px 40px;
-  }
-
+  .player-top-bar,
   .player-controls-overlay {
-    padding: 20px 24px;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    /* Unified stable spacing between progress bar and controls */
+    padding: 20px 40px;
+    /* Safe area padding */
   }
 
   .skip-intro-btn {
@@ -859,88 +832,19 @@
     bottom: 110px;
   }
 
-  /* Top Bar - Mathematically Dead-Centered absolute layout */
-  .player-top-bar {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-  }
-
-  .back-button {
-    background: none !important;
-    border: none !important;
-    color: white !important;
-    cursor: pointer !important;
-    padding: 10px !important;
-    display: flex !important;
-    align-items: center !important;
-    z-index: 5 !important;
-    flex: none !important;
-    width: auto !important;
-    height: auto !important;
-  }
-
-  .back-button svg {
-    width: 36px !important;
-    height: 36px !important;
+  /* Top Bar */
+  .mobile-top-title {
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
 
   .top-right-controls {
-    display: flex !important;
-    align-items: center !important;
-    z-index: 5 !important;
-    margin-left: 0 !important; /* Reset margin-left auto to prevent rightward pushing */
-    flex: none !important;
-    width: auto !important;
-    height: auto !important;
-  }
-
-  .top-right-controls button {
-    background: none !important;
-    border: none !important;
-    color: white !important;
-    padding: 10px !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  .top-right-controls button svg {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
-  .mobile-top-title {
-    position: absolute !important;
-    left: 0 !important; /* Perfect absolute centering by default on mobile portrait screens */
-    right: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    font-size: 1.05rem !important;
-    font-weight: 600 !important;
-    color: white !important;
-    padding: 0 50px !important; /* Safe boundaries to protect extreme screen edges */
-    pointer-events: none !important;
-    /* Let clicks pass through */
-    z-index: 2 !important;
-  }
-
-  .mobile-top-title span {
-    width: 100% !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: block !important;
-    text-align: center !important;
+    margin-left: auto;
   }
 
   /* Center Playback Controls */
@@ -969,8 +873,8 @@
 
   /* Timeline */
   .timeline-container {
-    padding-bottom: 0 !important;
-    /* Spacing managed by parent flex gap for absolute stability */
+    padding-bottom: 25px;
+    /* Room for bottom row */
   }
 
   .timeline-slider {
@@ -1506,17 +1410,15 @@
 }
 
 .xray-mobile-top-bar .mobile-top-title {
-  position: absolute !important;
-  left: calc(50% + 25px) !important; /* Optical offset to balance the two buttons on the right */
-  right: auto !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  color: #fff !important;
-  font-weight: 600 !important;
-  font-size: 1.1rem !important;
-  pointer-events: none !important;
-  max-width: 60% !important;
-  text-align: center !important;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1rem;
+  pointer-events: none;
+  max-width: 60%;
+  text-align: center;
 }
 
 .xray-mobile-top-bar .mobile-top-title span {
@@ -1526,10 +1428,16 @@
   display: block;
 }
 
-.xray-fullscreen-btn,
-.xray-mobile-top-bar .back-button {
+.xray-fullscreen-btn {
   flex-shrink: 0;
   margin-left: auto;
+  background: none !important;
+}
+
+.xray-mobile-top-bar .back-button {
+  flex-shrink: 0;
+  margin-right: auto;
+  margin-left: 0;
   background: none !important;
 }
 
@@ -1601,6 +1509,19 @@
 
   .xray-mobile-top-bar {
     padding: 8px 15px;
+  }
+
+  @media (orientation: landscape) {
+    .xray-mobile-top-bar .back-button {
+      margin-left: 4px !important;
+      margin-right: 0 !important;
+      order: 2;
+    }
+    .xray-mobile-top-bar .top-right-controls {
+      margin-left: auto !important;
+      margin-right: 0 !important;
+      order: 1;
+    }
   }
 }
 
@@ -2489,8 +2410,7 @@
   /* Allow more room for long lists */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  /* Keep the sheet fixed, scroll content only */
+  overflow: hidden; /* Keep the sheet fixed, scroll content only */
 }
 
 
@@ -2549,8 +2469,7 @@
 
 .mobile-menu-scrollable {
   flex: 1;
-  overflow-y: hidden;
-  /* Don't scroll the whole menu */
+  overflow-y: hidden; /* Don't scroll the whole menu */
   padding-right: 5px;
   -webkit-overflow-scrolling: touch;
 }
@@ -2755,8 +2674,7 @@
 
 /* Individual section scrolling */
 .mobile-scroll-container {
-  max-height: 55vh;
-  /* Limit height of each section */
+  max-height: 55vh; /* Limit height of each section */
   overflow-y: auto;
   padding-right: 10px;
 }
@@ -3713,59 +3631,430 @@
   }
 }
 
-/* ── Responsive Screen Adjustments (Tablet & Medium Screens) ───────────────── */
-@media (max-width: 1200px) and (min-width: 897px) {
-  .bottom-controls {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    position: relative;
+/* ── Vidrock Player Premium Embed Styles ── */
+.vidrock-container {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background-color: #000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+/* Auto-hide controls */
+.vidrock-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vidrock-container.hide-controls:not(.drawer-open) .vidrock-top-bar {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.vidrock-glass-btn {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.vidrock-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+  box-shadow: 0 4px 30px rgba(107, 33, 168, 0.3);
+}
+
+.vidrock-glass-btn:active {
+  transform: scale(0.95);
+}
+
+.vidrock-glass-btn-rect {
+  border-radius: 12px;
+  padding: 0 18px;
+  height: 48px;
+  width: auto;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.vidrock-title-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+}
+
+.vidrock-title-main {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.vidrock-title-episode {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Premium Sidebar Drawer for Episodes */
+.vidrock-episodes-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 380px;
+  max-width: 85vw;
+  height: 100%;
+  background: rgba(12, 12, 12, 0.82);
+  backdrop-filter: blur(35px) saturate(160%);
+  -webkit-backdrop-filter: blur(35px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -15px 0 50px rgba(0, 0, 0, 0.8);
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vidrock-episodes-drawer.open {
+  transform: translateX(0);
+}
+
+.vidrock-drawer-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vidrock-drawer-title {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.vidrock-drawer-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.vidrock-drawer-close:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.vidrock-drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Customize scrollbars for the drawer */
+.vidrock-drawer-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vidrock-drawer-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vidrock-drawer-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.vidrock-drawer-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 33, 168, 0.6);
+}
+
+.vidrock-season-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vidrock-season-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.vidrock-season-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: white;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.vidrock-season-select:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.vidrock-season-select option {
+  background: #141414;
+  color: white;
+}
+
+.vidrock-episodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vidrock-ep-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vidrock-ep-card:hover {
+  background: rgba(107, 33, 168, 0.12);
+  border-color: rgba(107, 33, 168, 0.4);
+  transform: translateY(-2px);
+}
+
+.vidrock-ep-card.active {
+  background: rgba(107, 33, 168, 0.25);
+  border-color: #9146ff;
+  box-shadow: 0 4px 20px rgba(107, 33, 168, 0.2);
+}
+
+.vidrock-ep-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vidrock-ep-num {
+  color: #9146ff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.vidrock-ep-card.active .vidrock-ep-num {
+  color: #c084fc;
+}
+
+.vidrock-ep-duration {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.vidrock-ep-title {
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.vidrock-ep-desc {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Backdrop when drawer is open */
+.vidrock-drawer-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 150;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.4s ease;
+}
+
+.vidrock-drawer-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vidrock-iframe-container {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  position: relative;
+  z-index: 50;
+}
+
+.vidrock-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}
+
+.vidrock-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 40;
+}
+
+.vidrock-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #9146ff;
+  border-radius: 50%;
+  animation: vidrock-spin 0.8s linear infinite;
+}
+
+@keyframes vidrock-spin {
+  to { transform: rotate(360deg); }
+}
+
+.vidrock-loading-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+  .vidrock-top-bar {
+    padding: 15px;
   }
 
-  .title-info.desktop-only {
-    position: static !important;
-    transform: none !important;
-    left: auto !important;
-    margin: 0 auto !important;
-    max-width: 40% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center;
-    gap: 2px !important;
-    pointer-events: none;
+  .vidrock-glass-btn {
+    width: 40px;
+    height: 40px;
   }
 
-  .title-main {
-    font-size: 1.1rem !important;
-    max-width: 100% !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
+  .vidrock-glass-btn svg {
+    width: 20px;
+    height: 20px;
   }
 
-  .title-episode {
-    font-size: 0.9rem !important;
-    max-width: 100% !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
+  .vidrock-glass-btn-rect {
+    width: auto;
+    height: 40px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+    border-radius: 10px;
   }
 
-  .vplayer-controls-left,
-  .vplayer-controls-right {
-    gap: 15px !important;
+  .vidrock-title-main {
+    font-size: 1rem;
   }
 
-  .vplayer-control-btn svg {
-    width: 32px !important;
-    height: 32px !important;
+  .vidrock-title-episode {
+    font-size: 0.8rem;
   }
 
-  /* Shrink Volume Slider */
-  .vplayer-volume-container:hover .vplayer-volume-slider {
-    width: 60px !important;
+  .vidrock-episodes-drawer {
+    width: 320px;
+  }
+
+  .vidrock-drawer-header {
+    padding: 16px;
+  }
+
+  .vidrock-drawer-title {
+    font-size: 1.15rem;
+  }
+
+  .vidrock-drawer-content {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .vidrock-ep-card {
+    padding: 10px 12px;
+  }
+
+  .vidrock-ep-title {
+    font-size: 0.88rem;
+  }
+
+  .vidrock-ep-desc {
+    font-size: 0.78rem;
   }
 }

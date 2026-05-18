@@ -242,12 +242,12 @@ function Top10Card({
               <div className="top10-card__controls">
                 <div className="top10-card__controls-left">
                   <button
-                    className={`top10-card__btn top10-card__btn--play ${movie.comingSoon ? 'top10-card__btn--disabled' : ''}`}
-                    onClick={handlePlay}
-                    disabled={movie.comingSoon}
+                    className={`top10-card__btn top10-card__btn--play ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'top10-card__btn--disabled' : ''}`}
+                    onClick={(e) => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlay(e)}
+                    disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
                   >
-                    {movie.comingSoon
-                      ? <Bell size={13} color="black" fill="black" />
+                    {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))
+                      ? <Bell size={14} color="white" fill="white" />
                       : <Play size={12} fill="black" color="black" />}
                   </button>
                   <button

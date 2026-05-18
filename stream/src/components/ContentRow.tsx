@@ -296,11 +296,11 @@ export const MovieCard = memo(({
                 {showProgress ? (
                   <>
                     <button 
-                      className={`card__btn card__btn--play-large ${movie.comingSoon ? 'card__btn--disabled' : ''}`} 
-                      onClick={(e) => !movie.comingSoon && handlePlayClick(e)}
-                      disabled={movie.comingSoon}
+                      className={`card__btn card__btn--play-large ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'card__btn--disabled' : ''}`} 
+                      onClick={(e) => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlayClick(e)}
+                      disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
                     >
-                      {movie.comingSoon ? <Bell size={20} fill="black" color="black" /> : <Play size={20} fill="black" color="black" />}
+                      {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={20} fill="black" color="black" /> : <Play size={20} fill="black" color="black" />}
                     </button>
                     <button className="card__btn card__btn--circle" onClick={(e) => e.stopPropagation()}>
                       <Check size={18} color="white" />
@@ -315,11 +315,11 @@ export const MovieCard = memo(({
                 ) : (
                   <>
                     <button 
-                      className={`card__btn card__btn--play card__btn--white ${movie.comingSoon ? 'card__btn--disabled' : ''}`} 
-                      onClick={(e) => !movie.comingSoon && handlePlayClick(e)}
-                      disabled={movie.comingSoon}
+                      className={`card__btn card__btn--play card__btn--white ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'card__btn--disabled' : ''}`} 
+                      onClick={(e) => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlayClick(e)}
+                      disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
                     >
-                      {movie.comingSoon ? <Bell size={14} color="white" fill="white" /> : <Play size={12} fill="black" color="black" />}
+                      {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={14} color="white" fill="white" /> : <Play size={12} fill="black" color="black" />}
                     </button>
                     <button 
                       className={`card__btn card__btn--icon ${inMyList ? 'active' : ''}`} 

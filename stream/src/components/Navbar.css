@@ -256,6 +256,8 @@
     background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0));
   }
 
+
+
   .navbar__mobile-inner {
     flex-direction: column;
     width: 100%;

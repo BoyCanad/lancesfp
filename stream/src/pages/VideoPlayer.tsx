@@ -23,7 +23,8 @@ import {
   MessageCircle,
   Camera,
   MoreHorizontal,
-  PictureInPicture2
+  PictureInPicture2,
+  List
 } from 'lucide-react';
 import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
@@ -188,7 +189,341 @@ const renderKaraokeSubtitle = (text: string, movieId?: string) => {
   return <>{result}</>;
 };
 
-// Removed VidlinkPlayer
+
+
+interface VidrockPlayerProps {
+  movie: Movie;
+  onBack: () => void;
+  locationState: any;
+}
+
+function VidrockPlayer({ movie, onBack, locationState }: VidrockPlayerProps) {
+  const tmdbId = movie.id.replace('tmdb-', '');
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const [showControls, setShowControls] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isIframeLoading, setIsIframeLoading] = useState(true);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch active profile id
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('activeProfile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        setActiveProfileId(profile.id);
+      }
+    } catch (e) {}
+  }, []);
+
+  const [currentSeason, setCurrentSeason] = useState<number>(() => {
+    if (locationState?.seasonNumber) return Number(locationState.seasonNumber);
+    try {
+      const rawRock = localStorage.getItem('vidRockProgress');
+      if (rawRock) {
+        const list = JSON.parse(rawRock);
+        if (Array.isArray(list)) {
+          const entry = list.find(item => String(item.id) === String(tmdbId));
+          if (entry?.last_season_watched) return Number(entry.last_season_watched);
+        }
+      }
+    } catch (e) {}
+    try {
+      const raw = localStorage.getItem('vidLinkProgress');
+      if (raw) {
+        const vp = JSON.parse(raw);
+        const entry = vp[tmdbId];
+        if (entry?.last_season_watched) return Number(entry.last_season_watched);
+      }
+    } catch (e) {}
+    return 1;
+  });
+
+  const [currentEpisode, setCurrentEpisode] = useState<number>(() => {
+    if (locationState?.episodeNumber) return Number(locationState.episodeNumber);
+    try {
+      const rawRock = localStorage.getItem('vidRockProgress');
+      if (rawRock) {
+        const list = JSON.parse(rawRock);
+        if (Array.isArray(list)) {
+          const entry = list.find(item => String(item.id) === String(tmdbId));
+          if (entry?.last_episode_watched) return Number(entry.last_episode_watched);
+        }
+      }
+    } catch (e) {}
+    try {
+      const raw = localStorage.getItem('vidLinkProgress');
+      if (raw) {
+        const vp = JSON.parse(raw);
+        const entry = vp[tmdbId];
+        if (entry?.last_episode_watched) return Number(entry.last_episode_watched);
+      }
+    } catch (e) {}
+    return 1;
+  });
+
+  // Automatically update local storage and Supabase watch progress when season/episode changes
+  useEffect(() => {
+    if (!tmdbId) return;
+
+    // Save to localStorage
+    try {
+      const raw = localStorage.getItem('vidLinkProgress');
+      const vp = raw ? JSON.parse(raw) : {};
+      vp[tmdbId] = {
+        ...vp[tmdbId],
+        last_season_watched: currentSeason,
+        last_episode_watched: currentEpisode
+      };
+      localStorage.setItem('vidLinkProgress', JSON.stringify(vp));
+    } catch (e) {}
+
+    // Save progress to Supabase
+    if (activeProfileId && movie.id) {
+      updateWatchProgress(activeProfileId, movie.id, 300000, 1000000); // 30% progress to register Continue Watching
+    }
+  }, [currentSeason, currentEpisode, activeProfileId, movie.id, tmdbId]);
+
+  // Listen to messages from vidrock.net / vidlink.pro iframe to track exact watch progress and episode transitions
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://vidrock.net' && event.origin !== 'https://vidlink.pro') return;
+
+      if (event.data?.type === 'MEDIA_DATA') {
+        const mediaDataArray = event.data.data;
+        // 1. Store the exact mediaData array as requested by the API
+        localStorage.setItem('vidRockProgress', JSON.stringify(mediaDataArray));
+
+        // 2. Parse and find progress for the current title
+        if (Array.isArray(mediaDataArray)) {
+          const currentItem = mediaDataArray.find(item => String(item.id) === String(tmdbId));
+          if (currentItem) {
+            let watchedSeconds = 0;
+            let durationSeconds = 0;
+
+            if (currentItem.type === 'tv') {
+              const lastS = currentItem.last_season_watched ? Number(currentItem.last_season_watched) : currentSeason;
+              const lastEp = currentItem.last_episode_watched ? Number(currentItem.last_episode_watched) : currentEpisode;
+
+              // Synchronize React states in real-time
+              if (lastS !== currentSeason) setCurrentSeason(lastS);
+              if (lastEp !== currentEpisode) setCurrentEpisode(lastEp);
+
+              // Update compatible 'vidLinkProgress' key
+              try {
+                const rawLink = localStorage.getItem('vidLinkProgress');
+                const vpLink = rawLink ? JSON.parse(rawLink) : {};
+                vpLink[tmdbId] = {
+                  ...vpLink[tmdbId],
+                  last_season_watched: lastS,
+                  last_episode_watched: lastEp
+                };
+                localStorage.setItem('vidLinkProgress', JSON.stringify(vpLink));
+              } catch (e) {}
+
+              // Extract progress for active episode
+              if (currentItem.show_progress) {
+                const activeKey = `s${lastS}e${lastEp}`;
+                const epProg = currentItem.show_progress[activeKey];
+                if (epProg?.progress) {
+                  watchedSeconds = epProg.progress.watched;
+                  durationSeconds = epProg.progress.duration;
+                }
+              }
+            } else {
+              // Movie progress
+              if (currentItem.progress) {
+                watchedSeconds = currentItem.progress.watched;
+                durationSeconds = currentItem.progress.duration;
+              }
+            }
+
+            // Sync progress to Supabase
+            const progressMs = Math.round(watchedSeconds * 1000);
+            const durationMs = Math.round(durationSeconds * 1000);
+            if (activeProfileId && movie.id && durationMs > 0) {
+              updateWatchProgress(activeProfileId, movie.id, progressMs, durationMs);
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [tmdbId, activeProfileId, movie.id, currentSeason, currentEpisode]);
+
+  // Handle auto-hiding of controls
+  const resetControlsTimeout = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+  };
+
+  useEffect(() => {
+    resetControlsTimeout();
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseMove = () => {
+    resetControlsTimeout();
+  };
+
+  const handleTouchStart = () => {
+    resetControlsTimeout();
+  };
+
+  // Formulate iframe source URL
+  const iframeSrc = useMemo(() => {
+    if (movie.mediaType === 'show') {
+      return `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`;
+    }
+    return `https://vidlink.pro/movie/${tmdbId}`;
+  }, [movie.mediaType, tmdbId, currentSeason, currentEpisode]);
+
+  // Find active season and episode titles
+  const activeSeasonObj = useMemo(() => {
+    return movie.seasons?.find(s => s.seasonNumber === currentSeason);
+  }, [movie.seasons, currentSeason]);
+
+  const activeEpisodeObj = useMemo(() => {
+    return activeSeasonObj?.episodes.find(e => e.episodeNumber === currentEpisode);
+  }, [activeSeasonObj, currentEpisode]);
+
+  const episodeTitle = activeEpisodeObj?.title || `Episode ${currentEpisode}`;
+
+  const handleEpisodeChange = (sNum: number, eNum: number) => {
+    setIsIframeLoading(true);
+    setCurrentSeason(sNum);
+    setCurrentEpisode(eNum);
+    setDrawerOpen(false);
+  };
+
+  return (
+    <div
+      className={`vidrock-container ${!showControls ? 'hide-controls' : ''} ${drawerOpen ? 'drawer-open' : ''}`}
+      onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
+    >
+      {/* Loading Overlay */}
+      {isIframeLoading && (
+        <div className="vidrock-loading-overlay">
+          <div className="vidrock-loading-spinner" />
+          <div className="vidrock-loading-text">Buffering Stream...</div>
+        </div>
+      )}
+
+      {/* Top Controls Overlay */}
+      <div className="vidrock-top-bar">
+        <button className="vidrock-glass-btn" onClick={onBack} title="Go Back">
+          <ArrowLeft size={24} />
+        </button>
+
+        <div className="vidrock-title-info">
+          <span className="vidrock-title-main">{movie.title}</span>
+          {movie.mediaType === 'show' && (
+            <span className="vidrock-title-episode">
+              Season {currentSeason}, Episode {currentEpisode} — "{episodeTitle}"
+            </span>
+          )}
+        </div>
+
+        {movie.mediaType === 'show' && movie.seasons && movie.seasons.length > 0 ? (
+          <button
+            className="vidrock-glass-btn vidrock-glass-btn-rect"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <List size={20} />
+            <span>Episodes</span>
+          </button>
+        ) : (
+          <div style={{ width: 48 }} /> // Spacer to balance layout
+        )}
+      </div>
+
+      {/* Episodes Selection Sidebar Drawer */}
+      <div className={`vidrock-episodes-drawer ${drawerOpen ? 'open' : ''}`}>
+        <div className="vidrock-drawer-header">
+          <h3 className="vidrock-drawer-title">Select Episode</h3>
+          <button className="vidrock-drawer-close" onClick={() => setDrawerOpen(false)}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="vidrock-drawer-content">
+          {movie.seasons && movie.seasons.length > 1 && (
+            <div className="vidrock-season-select-wrapper">
+              <label className="vidrock-season-label">Season</label>
+              <select
+                className="vidrock-season-select"
+                value={currentSeason}
+                onChange={(e) => {
+                  const sNum = Number(e.target.value);
+                  const seasonObj = movie.seasons?.find(s => s.seasonNumber === sNum);
+                  const firstEp = seasonObj?.episodes[0]?.episodeNumber || 1;
+                  setCurrentSeason(sNum);
+                  setCurrentEpisode(firstEp);
+                }}
+              >
+                {movie.seasons.map((s) => (
+                  <option key={s.id} value={s.seasonNumber}>
+                    Season {s.seasonNumber}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="vidrock-episodes-list">
+            {activeSeasonObj?.episodes.map((ep) => (
+              <button
+                key={ep.id}
+                className={`vidrock-ep-card ${ep.episodeNumber === currentEpisode ? 'active' : ''}`}
+                onClick={() => handleEpisodeChange(currentSeason, ep.episodeNumber)}
+              >
+                <div className="vidrock-ep-card-top">
+                  <span className="vidrock-ep-num">Episode {ep.episodeNumber}</span>
+                  <span className="vidrock-ep-duration">{ep.duration}</span>
+                </div>
+                <span className="vidrock-ep-title">{ep.title}</span>
+                {ep.description && <p className="vidrock-ep-desc">{ep.description}</p>}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Drawer Backdrop Overlay */}
+      <div
+        className={`vidrock-drawer-backdrop ${drawerOpen ? 'show' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+      />
+
+      {/* Iframe Stage */}
+      <div className="vidrock-iframe-container">
+        <iframe
+          key={iframeSrc} // Triggers iframe reload on change
+          src={iframeSrc}
+          className="vidrock-iframe"
+          allowFullScreen
+          allow="autoplay; fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+          onLoad={() => setIsIframeLoading(false)}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface VideoPlayerProps {
   variant?: 'default' | 'xray';
@@ -280,7 +615,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [showSubtitlesMenu, setShowSubtitlesMenu] = useState(false);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [videoError, setVideoError] = useState<string | null>(null);
+  const [, setVideoError] = useState<string | null>(null);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(0);
   const [audioTracks, setAudioTracks] = useState<any[]>([]);
   const [activeAudioTrack, setActiveAudioTrack] = useState<number>(0);
@@ -334,7 +669,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [isPiP, setIsPiP] = useState(false);
 
-  // Removed season, episode and episode changing parameters
+
 
   const latestTimeRef = useRef(0);
   const latestDurationRef = useRef(0);
@@ -498,18 +833,23 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   // Mock Data fallback
   const allMovies = [...featuredMovies, afterHours, makingOfLegacy];
   const baseMovieFromId = useMemo(() => {
-    return allMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || featuredMovies[0];
+    return allMovies.find(m => m.id === id || (id && m.title.toLowerCase().includes(id))) || null;
   }, [id]);
 
   const [dbMovie, setDbMovie] = useState<Movie | null>(null);
+  const [isDbMovieLoading, setIsDbMovieLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
+      setIsDbMovieLoading(true);
       fetchMovieById(id).then(m => {
         if (m) {
           setDbMovie(m);
         }
+        setIsDbMovieLoading(false);
       });
+    } else {
+      setIsDbMovieLoading(false);
     }
   }, [id]);
 
@@ -526,7 +866,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
     return baseMovie;
   }, [baseMovie, location.state?.subtitlesUrl]);
-  const title = location.state?.episodeTitle || movie?.title || "Ang Huling El Bimbo";
+  const title = location.state?.episodeTitle || movie?.title || "";
 
   useEffect(() => {
     if (title) {
@@ -1806,7 +2146,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             title: title || movie.title,
             artist: 'LSFPlus',
             artwork: (movie.thumbnail || movie.banner)
-              ? [{ src: movie.thumbnail || movie.banner, sizes: '512x512', type: 'image/jpeg' }]
+              ? [{ src: movie.thumbnail || movie.banner || '', sizes: '512x512', type: 'image/jpeg' }]
               : []
           });
         }
@@ -2243,8 +2583,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
 
     // Normal skips
-    const skipLogoIds = ['f1', 'eb1', 'f4', 'f5', 'ang-huling-el-bimbo-play', 'ang-huling-el-bimbo-play-xray'];
-    if (skipLogoIds.includes(movie?.id)) {
+    const skipLogoIds = ['f1', 'eb1', 'f4', 'f5'];
+    if (movie?.id && skipLogoIds.includes(movie.id)) {
       return [{ start: 0.1, end: 10, skipTo: 10, label: "Skip Logo" }];
     }
 
@@ -2259,7 +2599,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       'tama-ka-ligaya',
       'ang-huling-el-bimbo'
     ];
-    if (noSkipIds.includes(movie?.id)) {
+    if (movie?.id && noSkipIds.includes(movie.id)) {
       return [];
     }
 
@@ -2270,7 +2610,24 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
   const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);
 
-  // Removed Vidlink iframe check
+
+  if (isDbMovieLoading || !movie) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#fff', opacity: 0.5 }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (movie && movie.id && movie.id.startsWith('tmdb-')) {
+    return (
+      <VidrockPlayer
+        movie={movie as Movie}
+        onBack={() => navigate(-1)}
+        locationState={location.state}
+      />
+    );
+  }
 
   return (
     <div
@@ -2718,15 +3075,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           </>
         )}
 
-        {isLoading && !videoError && (
+        {isLoading && (
           <div className="player-loading-overlay">
             <div className="loading-spinner"></div>
-          </div>
-        )}
-
-        {videoError && (
-          <div className="video-error-overlay">
-            <p>{videoError}</p>
           </div>
         )}
 
@@ -2771,6 +3122,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         {/* X-Ray mobile-only top bar (title + fullscreen) */}
         {showXRay && !isExpandingTrailer && !showRecommendation && (
           <div className={`xray-mobile-top-bar mobile-only ${showControls ? 'show' : ''}`}>
+            <button className="back-button" onClick={() => navigate(-1)} aria-label="Back" style={{ background: 'none', border: 'none', padding: '8px' }}>
+              <ArrowLeft size={28} />
+            </button>
 
             <div className="mobile-top-title" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0, padding: '0 10px' }}>
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
@@ -2787,9 +3141,6 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             <div className="top-right-controls" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
               <button className="flag-button xray-fullscreen-btn" onClick={toggleFullscreen} aria-label="Toggle fullscreen">
                 {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-              </button>
-              <button className="back-button" onClick={() => navigate(-1)} aria-label="Back" style={{ background: 'none', border: 'none', padding: '8px' }}>
-                <ArrowLeft size={28} />
               </button>
             </div>
           </div>
@@ -3101,7 +3452,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
             </div>
             <div className="mobile-bottom-btn" onClick={() => { setShowSubtitlesMenu(true); setShowSpeedMenu(false); }}>
               <MessageSquareText size={20} />
-              <span>Audio & Subs</span>
+              <span>Audio & Subtitles</span>
             </div>
           </div>
         </div>

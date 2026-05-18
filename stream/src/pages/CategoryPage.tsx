@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronDown, Play, Plus, Check, Info, ArrowLeft, Search } from 'lucide-react';
-import { elBimboFeatured, afterHours, allMovies, type Movie } from '../data/movies';
+import { elBimboFeatured, allMovies, type Movie } from '../data/movies';
 import { isInMyList, addToMyList, removeFromMyList } from '../services/listService';
 import { getWatchProgress } from '../services/profileService';
 import { useVideoFade } from '../hooks/useVideoFade';
@@ -43,6 +43,15 @@ export default function CategoryPage() {
   const [dynamicContinueWatching, setDynamicContinueWatching] = useState<any[]>([]);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const [isVideoEnded, setIsVideoEnded] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth > 768);
@@ -96,6 +105,7 @@ export default function CategoryPage() {
 
   useEffect(() => {
     const filtered = allMovies.filter(m => {
+      if (m.id === 'after-hours' && genreId.toLowerCase() === 'shows') return false;
       if (genreId.toLowerCase() === 'shows') return m.mediaType === 'show';
       if (genreId.toLowerCase() === 'movies') return m.mediaType === 'movie';
       
@@ -112,7 +122,7 @@ export default function CategoryPage() {
 
   const isShowContext = genreId.toLowerCase() === 'shows' || (genreId.toLowerCase() === 'documentary' && typeFilter === 'show');
   const featured = movies.length > 0 ? (isShowContext ? movies.find(m => m.id === 'beyond-the-last-dance') || movies[0] : movies[0]) : null;
-  const desktopHero = isShowContext ? (movies.find(m => m.id === 'beyond-the-last-dance') || afterHours) : (featured || elBimboFeatured);
+  const desktopHero = isShowContext ? (movies.find(m => m.id === 'beyond-the-last-dance') || movies[0]) : (featured || elBimboFeatured);
 
   useEffect(() => {
     if (featured) setInMyList(isInMyList(featured.id));
@@ -133,7 +143,7 @@ export default function CategoryPage() {
       setIsHeroMinimal(true);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [genreId, typeFilter, desktopHero.id]);
+  }, [genreId, typeFilter, desktopHero?.id]);
 
   // Handle visibility-based pause and volume fade
   useVideoFade(heroVideoRef, heroMuted, !!desktopHero?.trailerUrl && !isVideoEnded);
@@ -228,10 +238,10 @@ export default function CategoryPage() {
 
     if (genreId.toLowerCase() === 'shows') {
       rows.push(
-        { title: 'LSFPlus Originals', items: allMovies.filter(m => m.mediaType === 'show' && m.isOriginal) },
-        { title: 'Documentaries', items: allMovies.filter(m => m.mediaType === 'show' && m.genre.includes('Documentary')) },
-        { title: 'Live & Event Shows', items: allMovies.filter(m => m.mediaType === 'show' && (m.genre.includes('Live') || m.streamStatus === 'live')) },
-        { title: 'Classroom Chronicles', items: allMovies.filter(m => m.mediaType === 'show' && (m.genre.includes('Classroom') || m.genre.includes('STEM'))) },
+        { title: 'LSFPlus Originals', items: allMovies.filter(m => m.mediaType === 'show' && m.isOriginal && m.id !== 'after-hours') },
+        { title: 'Documentaries', items: allMovies.filter(m => m.mediaType === 'show' && m.genre.includes('Documentary') && m.id !== 'after-hours') },
+        { title: 'Live & Event Shows', items: allMovies.filter(m => m.mediaType === 'show' && (m.genre.includes('Live') || m.streamStatus === 'live') && m.id !== 'after-hours') },
+        { title: 'Classroom Chronicles', items: allMovies.filter(m => m.mediaType === 'show' && (m.genre.includes('Classroom') || m.genre.includes('STEM')) && m.id !== 'after-hours') },
       );
     } else if (genreId.toLowerCase() === 'movies') {
       rows.push(
@@ -319,11 +329,9 @@ export default function CategoryPage() {
               <h2 className="cp__hero-title">{desktopHero.title}</h2>
             )}
             
-            {desktopHero.mediaType === 'show' && (
-              <div className="cp__hero-status">
-                {desktopHero.comingSoon ? "New Episodes Coming Soon" : "Watch Season 1 Now"}
-              </div>
-            )}
+            <div className="cp__hero-status" style={{ visibility: desktopHero.mediaType === 'show' ? 'visible' : 'hidden' }}>
+              {desktopHero.mediaType === 'show' ? (desktopHero.comingSoon ? "New Episodes Coming Soon" : "Watch Season 1 Now") : "\u00A0"}
+            </div>
 
             <p className="cp__hero-desc">{desktopHero.description}</p>
             
@@ -372,7 +380,7 @@ export default function CategoryPage() {
   // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
   return (
     <div className="category-page">
-      <header className="category-page__header">
+      <header className={`category-page__header ${scrolled ? 'category-page__header--scrolled' : ''}`}>
         <div className="category-page__header-left">
           <button className="category-page__icon-btn" onClick={() => navigate('/browse')}><ArrowLeft size={26} color="white" strokeWidth={2.5}/></button>
           <h1 className="category-page__header-title">Categories</h1>
@@ -391,14 +399,18 @@ export default function CategoryPage() {
 
       <div className="category-page__content cp__rows--mobile">
         {featured ? (
-          <div className="category-page__hero-card">
-            <img src={featured.mobileBanner || featured.mobileThumbnail || featured.banner || featured.thumbnail} className="category-page__hero-img" alt={featured.title} />
+          <div className="category-page__hero-card" onClick={() => handleMovieClick(featured)} style={{ cursor: 'pointer' }}>
+            <img 
+              src={genreId.toLowerCase() === 'movies' ? '/images/el-bimbo-mobile-carousel.jpg' : (featured.mobileBanner || featured.mobileThumbnail || featured.banner || featured.thumbnail)} 
+              className="category-page__hero-img" 
+              alt={featured.title} 
+            />
             <div className="category-page__hero-overlay">
               {featured.logo ? <img src={featured.logo} alt={featured.title} className="category-page__hero-logo" /> : <h2 className="category-page__hero-title">{featured.title}</h2>}
               <div className="category-page__hero-genres">{featured.genre.slice(0, 4).join(' • ')}</div>
               <div className="category-page__hero-actions">
-                <button className="category-page__play-btn" onClick={() => handleMovieClick(featured)}><Play size={20} fill="black" /> <span>Play</span></button>
-                <button className="category-page__mylist-btn" onClick={handleToggleList}>{inMyList ? <Check size={22} color="#00ff00" /> : <Plus size={22} color="white" />}<span>{inMyList ? 'Added' : 'My List'}</span></button>
+                <button className="category-page__play-btn" onClick={(e) => { e.stopPropagation(); handleMovieClick(featured); }}><Play size={20} fill="black" /> <span>Play</span></button>
+                <button className="category-page__mylist-btn" onClick={(e) => { e.stopPropagation(); handleToggleList(); }}>{inMyList ? <Check size={22} color="#00ff00" /> : <Plus size={22} color="white" />}<span>{inMyList ? 'Added' : 'My List'}</span></button>
               </div>
             </div>
           </div>

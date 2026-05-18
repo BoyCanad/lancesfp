@@ -29,7 +29,13 @@
   align-items: center;
   padding: 0 16px;
   z-index: 100;
-  background: transparent;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.category-page__header--scrolled {
+  background: #141414 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .category-page__header-left,
@@ -83,6 +89,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  cursor: pointer;
 }
 
 .category-page__hero-img {
@@ -97,23 +104,23 @@
   position: relative;
   z-index: 10;
   background: linear-gradient(to top, #000 0%, transparent 100%);
-  padding: 240px 16px 16px;
+  padding: 10px 16px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .category-page__hero-logo {
-  max-width: 90%;
-  max-height: 180px;
+  max-width: 95%;
+  max-height: 220px;
   object-fit: contain;
-  margin-bottom: 12px;
+  margin-bottom: -25px; /* Pulls genres tight against the expanded logo content bounds */
 }
 
 .category-page__hero-genres {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .category-page__hero-actions {
@@ -355,7 +362,7 @@
   }
 
   .cp__hero-content--minimal .cp__hero-logo {
-    transform: translateY(6vw) translateX(-2vw) scale(0.9);
+    transform: translateY(12vw) translateX(-2vw) scale(0.9);
   }
 
   .cp__hero-brand {
