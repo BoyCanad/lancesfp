@@ -5,7 +5,7 @@ import { Play, Plus, Share2, Library, VolumeX, Volume2, ArrowLeft, Check, Bell }
 import { supabase } from '../supabaseClient';
 import { allMovies as staticAllMovies, elBimboCollections as staticElBimboCollections, archiveMovies as staticArchiveMovies } from '../data/movies';
 import type { Movie } from '../data/movies';
-import { fetchMovieById, fetchMovieRows } from '../services/movieService';
+import { fetchMovieById, fetchMovieRows, fetchTop10MovieIds } from '../services/movieService';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getWatchProgress, type WatchProgress } from '../services/profileService';
@@ -102,6 +102,26 @@ export default function MovieDetail() {
   const [inMyList, setInMyList] = useState(false);
   const [progress, setProgress] = useState<WatchProgress | null>(null);
   const [pageReady, setPageReady] = useState(false);
+  const [top10Rank, setTop10Rank] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (movie) {
+      fetchTop10MovieIds().then((ids) => {
+        if (active) {
+          const index = ids.indexOf(movie.id);
+          if (index !== -1) {
+            setTop10Rank(index + 1);
+          } else {
+            setTop10Rank(null);
+          }
+        }
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [movie?.id]);
 
   // Seasons state
   const [selectedSeason, setSelectedSeason] = useState(movie?.seasons?.[0]);
@@ -362,6 +382,18 @@ export default function MovieDetail() {
               <span key={g} className="mdetail-genre-pill">{g}</span>
             ))}
           </div>
+
+          {top10Rank !== null && (
+            <div className="mdetail-top10-row">
+              <div className="mdetail-top10-badge" aria-label="Top 10 Title">
+                <span className="mdetail-top10-badge-top">TOP</span>
+                <span className="mdetail-top10-badge-num">10</span>
+              </div>
+              <span className="mdetail-top10-text">
+                #{top10Rank} in Titles Today
+              </span>
+            </div>
+          )}
 
           <p className="mdetail-description">{movie.description}</p>
 

@@ -2,7 +2,6 @@ import HeroCarousel from '../components/HeroCarousel';
 import ContentRow from '../components/ContentRow';
 import Top10Row from '../components/Top10Row';
 import CollectionShowcase from '../components/CollectionShowcase';
-import LiveStreamSection from '../components/LiveStreamSection';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Movie } from '../data/movies';
@@ -11,6 +10,7 @@ import { fetchAllMovies, fetchHomeRows, type ResolvedHomeRow } from '../services
 import { allMovies as staticAllMovies } from '../data/movies';
 import type { Profile } from '../services/profileService';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getMyList } from '../services/listService';
 import './Home.css';
 
 export default function Home() {
@@ -21,6 +21,7 @@ export default function Home() {
   const [hasWatchedElBimbo, setHasWatchedElBimbo] = useState(false);
   const [homeRows, setHomeRows] = useState<ResolvedHomeRow[]>([]);
   const [allMovies, setAllMovies] = useState<Movie[]>(staticAllMovies);
+  const [myListMovies, setMyListMovies] = useState<Movie[]>([]);
 
   // Fetch all home rows from Supabase (with static fallback)
   useEffect(() => {
@@ -81,6 +82,21 @@ export default function Home() {
     });
   }, [allMovies]);
 
+  // Handle My List updates
+  useEffect(() => {
+    const updateMyList = () => {
+      const listIds = getMyList();
+      const listMovies = listIds
+        .map((id) => allMovies.find((m) => m.id === id))
+        .filter(Boolean) as Movie[];
+      setMyListMovies(listMovies);
+    };
+
+    updateMyList();
+    window.addEventListener('mylist_updated', updateMyList);
+    return () => window.removeEventListener('mylist_updated', updateMyList);
+  }, [allMovies]);
+
   // "Because you watched" row (only shown after watching El Bimbo)
   const recommendedIds = [
     'beyond-the-last-dance',
@@ -128,11 +144,17 @@ export default function Home() {
           />
         )}
 
+        {/* My List */}
+        {myListMovies.length > 0 && (
+          <ContentRow
+            title="My List"
+            movies={myListMovies}
+          />
+        )}
+
         {/* Dynamic rows fetched from Supabase home_rows table */}
         {homeRows.map((row) => {
-          if (row.row_type === 'live') {
-            return <LiveStreamSection key={row.id} />;
-          }
+          if (row.row_type === 'live') return null;
 
           if (row.row_type === 'top10') {
             return (

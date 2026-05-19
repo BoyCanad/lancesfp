@@ -1122,6 +1122,7 @@
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1167,4 +1168,80 @@
     display: none; /* hide desc on small screens to save space */
   }
 }
+
+/* ─── Movie Detail Top 10 Styling ─── */
+.mdetail-top10-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  animation: fadeInCard 0.4s ease-out;
+}
+
+.mdetail-top10-badge {
+  width: 28px;
+  height: 38px;
+  background: linear-gradient(135deg, #e50914 0%, #b81d24 100%);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 4px;
+  pointer-events: none;
+  font-family: 'Inter', 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 950;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+}
+
+.mdetail-top10-badge-top,
+.mdetail-top10-badge-num {
+  color: #ffffff !important;
+}
+
+.mdetail-top10-badge-top {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  margin-bottom: 1.5px;
+}
+
+.mdetail-top10-badge-num {
+  font-size: 15px;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.mdetail-top10-text {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 768px) {
+  .mdetail-top10-row {
+    margin-bottom: 18px;
+  }
+  .mdetail-top10-text {
+    font-size: 15px;
+  }
+  .mdetail-top10-badge {
+    width: 24px;
+    height: 34px;
+    padding-top: 3px;
+  }
+  .mdetail-top10-badge-top {
+    font-size: 6px;
+  }
+  .mdetail-top10-badge-num {
+    font-size: 13px;
+  }
+}
+
 

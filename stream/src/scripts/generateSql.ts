@@ -70,6 +70,9 @@ ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "squareThumbnail" TEXT;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "tallTrailerUrl" TEXT;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "mediaType" TEXT DEFAULT 'movie';
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "xRay" JSONB;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS skip_intro_start NUMERIC;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS skip_intro_end NUMERIC;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS end_credits_time NUMERIC;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 `;
 
@@ -81,7 +84,7 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay"
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
 ) VALUES (
   ${escapeSql(m.id)},
   ${escapeSql(m.title)},
@@ -118,7 +121,10 @@ INSERT INTO movies (
   ${escapeSql(m.squareThumbnail)},
   ${escapeSql(m.tallTrailerUrl)},
   ${escapeSql(m.mediaType || 'movie')},
-  ${escapeJson(m.xRay || null)}
+  ${escapeJson(m.xRay || null)},
+  ${m.skipIntroStart ?? 'null'},
+  ${m.skipIntroEnd ?? 'null'},
+  ${m.endCreditsTime ?? 'null'}
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
   thumbnail = EXCLUDED.thumbnail,
@@ -154,7 +160,10 @@ INSERT INTO movies (
   "squareThumbnail" = EXCLUDED."squareThumbnail",
   "tallTrailerUrl" = EXCLUDED."tallTrailerUrl",
   "mediaType" = EXCLUDED."mediaType",
-  "xRay" = EXCLUDED."xRay";
+  "xRay" = EXCLUDED."xRay",
+  skip_intro_start = EXCLUDED.skip_intro_start,
+  skip_intro_end = EXCLUDED.skip_intro_end,
+  end_credits_time = EXCLUDED.end_credits_time;
 `).join('\n');
 
 fs.writeFileSync('seed.sql', schemaSql + '\n' + sql);

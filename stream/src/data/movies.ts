@@ -92,6 +92,10 @@ export interface Movie {
   mediaType?: 'movie' | 'show';
   xRay?: XRayData;
   comingSoon?: boolean;
+  recentlyAdded?: boolean;
+  skipIntroStart?: number;
+  skipIntroEnd?: number;
+  endCreditsTime?: number;
 }
 
 export const makingOfLegacy: Movie = {
@@ -649,6 +653,7 @@ export const trendingMovies: Movie[] = [
     squareThumbnail: "/images/clips/square/BLHTS.webp",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/BLHT-trailer.vtt",
     mediaType: 'movie',
+    recentlyAdded: true,
   },
   {
     id: "a-day-in-my-life-stem",
@@ -666,6 +671,7 @@ export const trendingMovies: Movie[] = [
     squareThumbnail: "/images/clips/square/ADIML.webp",
     trailerVttUrl: "https://boycanad.github.io/stream-storage-2/ADIML-trailer.vtt",
     mediaType: 'movie',
+    recentlyAdded: true,
   },
   {
     id: "t1",

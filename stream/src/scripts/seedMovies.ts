@@ -76,8 +76,10 @@ function toRow(m: Movie) {
     seasons: m.seasons ?? null,
     squareThumbnail: m.squareThumbnail ?? null,
     tallTrailerUrl: m.tallTrailerUrl ?? null,
-    mediaType: m.mediaType ?? 'movie',
     xRay: m.xRay ?? null,
+    skip_intro_start: m.skipIntroStart ?? null,
+    skip_intro_end: m.skipIntroEnd ?? null,
+    end_credits_time: m.endCreditsTime ?? null,
   };
 }
 

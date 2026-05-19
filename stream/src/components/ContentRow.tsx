@@ -6,6 +6,7 @@ import type { Movie } from '../data/movies';
 import { supabase } from '../supabaseClient';
 import { addToMyList, removeFromMyList, isInMyList } from '../services/listService';
 import { HDBadge, SpatialAudioBadge } from './AudioBadges';
+import { fetchTop10MovieIds } from '../services/movieService';
 import './ContentRow.css';
 
 interface ContentRowProps {
@@ -43,9 +44,24 @@ export const MovieCard = memo(({
   const [hasFinishedOnce, setHasFinishedOnce] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // Default to audio on as requested
   const [inMyList, setInMyList] = useState(false);
+  const [isTop10, setIsTop10] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoElemRef = useRef<HTMLVideoElement>(null);
   const ytIframeRef = useRef<HTMLIFrameElement>(null);
+
+  const isRecentlyAdded = movie.recentlyAdded || movie.id === 'bukang-liwayway-takipsilim' || movie.id === 'a-day-in-my-life-stem';
+
+  useEffect(() => {
+    let active = true;
+    fetchTop10MovieIds().then((ids) => {
+      if (active) {
+        setIsTop10(ids.includes(movie.id));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [movie.id]);
 
   useEffect(() => {
     if (ytIframeRef.current && ytIframeRef.current.contentWindow) {
@@ -208,7 +224,18 @@ export const MovieCard = memo(({
           </div>
         )}
         
-        {/* Thumbnail logic continue... */}
+        {isTop10 && (
+          <div className="card__top10-badge" aria-label="Top 10 Title">
+            <span className="card__top10-badge-top">TOP</span>
+            <span className="card__top10-badge-num">10</span>
+          </div>
+        )}
+
+        {isRecentlyAdded && (
+          <div className="card__recently-added-badge" aria-label="Recently Added Title">
+            Recently Added
+          </div>
+        )}
       </div>
 
       {/* Progress bar below thumb */}
@@ -286,6 +313,19 @@ export const MovieCard = memo(({
                 {movie.logo && (
                   <img src={movie.logo} alt="" className="card__video-logo" />
                 )}
+              </div>
+            )}
+            
+            {isTop10 && (
+              <div className="card__top10-badge card__top10-badge--expanded" aria-label="Top 10 Title">
+                <span className="card__top10-badge-top">TOP</span>
+                <span className="card__top10-badge-num">10</span>
+              </div>
+            )}
+
+            {isRecentlyAdded && (
+              <div className="card__recently-added-badge card__recently-added-badge--expanded" aria-label="Recently Added Title">
+                Recently Added
               </div>
             )}
           </div>

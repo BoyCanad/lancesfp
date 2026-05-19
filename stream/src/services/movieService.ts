@@ -102,6 +102,9 @@ function mapRow(row: any): Movie {
     mediaType: row.mediaType || staticEquivalent.mediaType || 'movie',
     xRay: row.xRay ?? staticEquivalent.xRay,
     comingSoon: row.comingSoon ?? staticEquivalent.comingSoon ?? (!row.videoUrl && !staticEquivalent.videoUrl),
+    skipIntroStart: row.skip_intro_start ?? staticEquivalent.skipIntroStart,
+    skipIntroEnd: row.skip_intro_end ?? staticEquivalent.skipIntroEnd,
+    endCreditsTime: row.end_credits_time ?? staticEquivalent.endCreditsTime,
   };
 }
 
@@ -202,6 +205,42 @@ export interface ResolvedHomeRow extends HomeRowConfig {
 
 let _homeRowsCache: HomeRowConfig[] | null = null;
 let _homeRowsCacheTime = 0;
+let _top10IdsCache: string[] | null = null;
+let _top10IdsCacheTime = 0;
+
+export async function fetchTop10MovieIds(): Promise<string[]> {
+  const now = Date.now();
+  if (_top10IdsCache && now - _top10IdsCacheTime < CACHE_TTL_MS) {
+    return _top10IdsCache as string[];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('home_rows')
+      .select('movie_ids')
+      .eq('row_type', 'top10')
+      .eq('enabled', true)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data?.movie_ids && data.movie_ids.length > 0) {
+      _top10IdsCache = data.movie_ids.slice(0, 10);
+      _top10IdsCacheTime = now;
+      return _top10IdsCache as string[];
+    }
+  } catch (err) {
+    console.warn('[movieService] fetchTop10MovieIds failed, using static fallback:', err);
+  }
+
+  // Fallback
+  const allMovies = await fetchAllMovies();
+  _top10IdsCache = [...allMovies]
+    .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+    .slice(0, 10)
+    .map((m) => m.id);
+  _top10IdsCacheTime = now;
+  return _top10IdsCache as string[];
+}
 
 export async function fetchHomeRows(): Promise<ResolvedHomeRow[]> {
   const now = Date.now();
@@ -292,6 +331,8 @@ export async function fetchHomeRows(): Promise<ResolvedHomeRow[]> {
 export function invalidateHomeRowsCache() {
   _homeRowsCache = null;
   _homeRowsCacheTime = 0;
+  _top10IdsCache = null;
+  _top10IdsCacheTime = 0;
 }
 
 // ─── Mutate: Upsert a movie ──────────────────────────────────────────────────
@@ -321,6 +362,9 @@ export async function upsertMovie(movie: Movie) {
         logo: movie.logo ?? null,
         comingSoon: movie.comingSoon ?? false,
         seasons: movie.seasons ?? null,
+        skip_intro_start: movie.skipIntroStart ?? null,
+        skip_intro_end: movie.skipIntroEnd ?? null,
+        end_credits_time: movie.endCreditsTime ?? null,
       })
       .select()
       .single();

@@ -1110,7 +1110,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
       // Sync "Mark as Done" with the same logic used for recommendation triggers
       let isAtCredits = false;
-      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
+      if (movie?.endCreditsTime !== undefined && movie.endCreditsTime > 0) {
+        isAtCredits = time >= movie.endCreditsTime;
+      } else if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
         isAtCredits = time >= 2910;
       } else if (duration > 0 && (duration - time) <= 15) {
         // Default: 15 seconds before the end
@@ -2300,7 +2302,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         'spoliarium-graduation': 328,    // 5:28
         'pare-ko': 395,                 // 6:35
         'tama-ka-ligaya': 293,          // 4:53
-        'ang-huling-el-bimbo': 680      // 11:20
+        'ang-huling-el-bimbo': 680,     // 11:20
+        'bukang-liwayway-takipsilim': 760 // 12:40
       };
 
       if (movie?.id && movieTriggers[movie.id]) {
@@ -2571,6 +2574,11 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   };
 
   const skipPoints = useMemo(() => {
+    // Dynamic Skip Intro from DB
+    if (movie?.skipIntroStart !== undefined && movie?.skipIntroEnd !== undefined && movie.skipIntroEnd > 0) {
+      return [{ start: movie.skipIntroStart, end: movie.skipIntroEnd, skipTo: movie.skipIntroEnd, label: "Skip Intro" }];
+    }
+
     // Special past stream
     if (movie?.id === 'after-hours') {
       if (location.state?.episodeTitle?.includes('April 20, 2026')) {
@@ -2580,6 +2588,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         ];
       }
       return [];
+    }
+
+    if (movie?.id === 'bukang-liwayway-takipsilim') {
+      return [{ start: 0.1, end: 29, skipTo: 29, label: "Skip Intro" }];
     }
 
     // Normal skips
@@ -2605,7 +2617,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
     // Default 30s skip for others
     return [{ start: 0.1, end: 30, skipTo: 30, label: "Skip Intro" }];
-  }, [movie?.id, location.state?.episodeTitle]);
+  }, [movie?.id, movie?.skipIntroStart, movie?.skipIntroEnd, location.state?.episodeTitle]);
 
   const activeSkipPoint = skipPoints.find(p => currentTime >= p.start && currentTime < p.end);
   const recentlyPassedSkipPoint = skipPoints.find(p => currentTime >= p.end && currentTime < p.end + 3);

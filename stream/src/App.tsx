@@ -272,13 +272,15 @@ function App() {
 
     let title = pageTitles[pathname] || 'LSFPlus';
 
+    if (pathname.startsWith('/watch/') || pathname.startsWith('/xray/') || pathname.startsWith('/trailer/')) {
+      return; // Let the video player components manage their own movie titles
+    }
+
     if (pathname === '/search') {
       const query = new URLSearchParams(location.search).get('q');
       title = query ? `Search: ${query}` : 'Search';
     } else if (pathname.startsWith('/genre/')) {
       title = 'Browse';
-    } else if (pathname.startsWith('/watch/') || pathname.startsWith('/xray/') || pathname.startsWith('/trailer/')) {
-      title = 'Watching';
     } else if (pathname.startsWith('/ManageProfile/') || pathname.startsWith('/EditProfile/') || pathname.startsWith('/ProfileLock/') || pathname.startsWith('/IconPicker/')) {
       title = 'Manage Profiles';
     }

@@ -61,8 +61,9 @@
 /* Arrow buttons */
 .top10-row__arrow {
   position: absolute;
-  top: 160px;
   bottom: 160px;
+  height: 195px;
+  transform: translateY(15px);
   z-index: 200;
   color: white;
   width: 4%;
@@ -580,3 +581,39 @@
     display: none;
   }
 }
+
+/* Recently Added Badge inside Top 10 Row Cards */
+.top10-row .card__recently-added-badge {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e50914;
+  color: #ffffff !important;
+  font-family: 'Inter', 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 3px;
+  text-transform: none;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  z-index: 90;
+  pointer-events: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  animation: fadeInCard 0.3s ease-out;
+}
+
+.top10-row .card__recently-added-badge--expanded {
+  bottom: 0;
+  transform: translateX(-50%) scale(1.1);
+  transform-origin: bottom center;
+  z-index: 120;
+}
+
+/* Smoothly fade out Recently Added badge when the trailer is playing */
+.top10-row .top10-card__expanded--playing .card__recently-added-badge {
+  opacity: 0;
+  pointer-events: none;
+}
+

@@ -54,6 +54,8 @@ function Top10Card({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const isRecentlyAdded = movie.recentlyAdded || movie.id === 'bukang-liwayway-takipsilim' || movie.id === 'a-day-in-my-life-stem';
+
   useEffect(() => {
     setInMyList(isInMyList(movie.id));
     const handleUpdate = () => setInMyList(isInMyList(movie.id));
@@ -183,6 +185,11 @@ function Top10Card({
             className="top10-card__img"
             loading="lazy"
           />
+          {isRecentlyAdded && (
+            <div className="card__recently-added-badge" aria-label="Recently Added Title">
+              Recently Added
+            </div>
+          )}
         </div>
 
         {/* Expanded hover card — scales from thumbnail footprint */}
@@ -226,6 +233,12 @@ function Top10Card({
                     <img src={movie.logo} alt="" className="top10-card__video-logo" />
                   )}
                 </>
+              )}
+
+              {isRecentlyAdded && (
+                <div className="card__recently-added-badge card__recently-added-badge--expanded" aria-label="Recently Added Title">
+                  Recently Added
+                </div>
               )}
             </div>
 
