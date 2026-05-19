@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -40,12 +40,29 @@ export default function Account() {
   const [signOutAll, setSignOutAll] = useState(true);
 
   const [memberSince, setMemberSince] = useState<string>('April 2020');
+  const [planId, setPlanId] = useState<string>('free');
+
+  const PLAN_NAMES: Record<string, string> = {
+    'free': 'Free Plan',
+    'all-access': 'All-Access Plan',
+    'vip': 'VIP Plan',
+  };
+  const PLAN_DESCRIPTIONS: Record<string, string> = {
+    'free': '4K video resolution with spatial audio, ad-free watching and more.',
+    'all-access': '4K video resolution, exclusive titles & games, ad-free watching on up to 4 devices.',
+    'vip': 'Amazing quality 4K HDR, early access to titles & games, VIP room access, and unlimited devices.',
+  };
+  const planName = PLAN_NAMES[planId] ?? 'Free Plan';
+  const planDesc = PLAN_DESCRIPTIONS[planId] ?? '4K video resolution with spatial audio, ad-free watching and more.';
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserEmail(user.email ?? null);
         setIsVerified(user.user_metadata?.signup_completed === true);
+        if (user.user_metadata?.plan) {
+          setPlanId(user.user_metadata.plan);
+        }
         if (user.created_at) {
           const date = new Date(user.created_at);
           const month = date.toLocaleString('default', { month: 'long' });
@@ -208,7 +225,7 @@ export default function Account() {
                     </div>
                     
                     <div className="mobile-card-body-padding">
-                      <h2 className="mobile-card-plan-title">Premium plan</h2>
+                      <h2 className="mobile-card-plan-title">{planName}</h2>
                       <p className="mobile-card-next-payment">Next payment: 11 June 2026</p>
                       
                       <div className="mobile-card-payment-row">
@@ -269,9 +286,9 @@ export default function Account() {
 
                   <div className="mobile-replicated-card">
                     <div className="mobile-card-body-padding">
-                      <h2 className="mobile-card-plan-title">Premium plan</h2>
+                      <h2 className="mobile-card-plan-title">{planName}</h2>
                       <p className="mobile-card-next-payment" style={{ marginBottom: 0 }}>
-                        4K video resolution with spatial audio, ad-free watching and more.
+                        {planDesc}
                       </p>
                     </div>
                     <div className="mobile-card-divider"></div>
@@ -647,7 +664,7 @@ export default function Account() {
                       
                       <div className="account-card__body">
                         <div className="account-plan-info">
-                          <h2 className="account-plan-title">Free plan</h2>
+                          <h2 className="account-plan-title">{planName}</h2>
                           <p className="account-payment-date">{userEmail || 'zedsmash154@gmail.com'}</p>
                         </div>
                       </div>
@@ -917,8 +934,8 @@ export default function Account() {
                       <div className="membership-card-top-border"></div>
                       <div className="membership-card-content">
                         <div className="membership-plan-info">
-                          <h2 className="membership-plan-name">Free Plan</h2>
-                          <p className="membership-plan-desc">4K video resolution with spatial audio, ad-free watching and more.</p>
+                          <h2 className="membership-plan-name">{planName}</h2>
+                          <p className="membership-plan-desc">{planDesc}</p>
                         </div>
 
                         <div className="membership-actions">
@@ -975,3 +992,4 @@ export default function Account() {
   </div>
   );
 }
+

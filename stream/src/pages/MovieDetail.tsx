@@ -444,11 +444,13 @@ export default function MovieDetail() {
             )}
 
             <div className="mdetail-quick-actions">
-              <button className={`mdetail-quick-btn ${inMyList ? 'active' : ''}`} onClick={handleListToggle}>
-                {inMyList ? <Check size={28} color="white" strokeWidth={1.5} /> : <Plus size={28} color="white" strokeWidth={1.5} />}
-                <span>My List</span>
-              </button>
-              <RateButton movieId={movie.id} />
+              {!movie.comingSoon && (
+                <button className={`mdetail-quick-btn ${inMyList ? 'active' : ''}`} onClick={handleListToggle}>
+                  {inMyList ? <Check size={28} color="white" strokeWidth={1.5} /> : <Plus size={28} color="white" strokeWidth={1.5} />}
+                  <span>My List</span>
+                </button>
+              )}
+              {!movie.comingSoon && <RateButton movieId={movie.id} />}
               <button className="mdetail-quick-btn">
                 <Share2 size={24} color="white" strokeWidth={1.5} />
                 <span>Share</span>

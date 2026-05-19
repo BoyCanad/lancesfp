@@ -74,7 +74,7 @@ export default function SignUp() {
     try {
       const { error } = await supabase.auth.updateUser({ 
         password,
-        data: { signup_completed: true }
+        data: { signup_completed: true, plan: selectedPlan }
       });
       if (error) throw error;
       

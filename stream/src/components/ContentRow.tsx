@@ -361,16 +361,20 @@ export const MovieCard = memo(({
                     >
                       {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={14} color="white" fill="white" /> : <Play size={12} fill="black" color="black" />}
                     </button>
-                    <button 
-                      className={`card__btn card__btn--icon ${inMyList ? 'active' : ''}`} 
-                      onClick={handleListToggle}
-                      title={inMyList ? "Remove from My List" : "Add to My List"}
-                    >
-                      {inMyList ? <Check size={14} color="white" /> : <Plus size={14} color="white" />}
-                    </button>
-                    <button className="card__btn card__btn--icon" onClick={handleLikeToggle}>
-                      <ThumbsUp size={12} color={isLiked ? "#46d369" : "white"} fill={isLiked ? "#46d369" : "transparent"} />
-                    </button>
+                    {!movie.comingSoon && (
+                      <button 
+                        className={`card__btn card__btn--icon ${inMyList ? 'active' : ''}`} 
+                        onClick={handleListToggle}
+                        title={inMyList ? "Remove from My List" : "Add to My List"}
+                      >
+                        {inMyList ? <Check size={14} color="white" /> : <Plus size={14} color="white" />}
+                      </button>
+                    )}
+                    {!movie.comingSoon && (
+                      <button className="card__btn card__btn--icon" onClick={handleLikeToggle}>
+                        <ThumbsUp size={12} color={isLiked ? "#46d369" : "white"} fill={isLiked ? "#46d369" : "transparent"} />
+                      </button>
+                    )}
                   </>
                 )}
               </div>
