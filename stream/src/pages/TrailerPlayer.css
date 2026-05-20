@@ -95,7 +95,7 @@
   align-items: flex-end;
   gap: 20px;
   z-index: 10;
-  max-width: 40vw;
+  max-width: 50vw;
 }
 
 .trailer-movie-logo {
@@ -172,11 +172,15 @@
   .trailer-bottom-right {
     bottom: 30px;
     right: 20px;
+    left: auto;
     width: auto;
+    max-width: calc(100vw - 40px);
     align-items: flex-end;
   }
   .trailer-movie-logo {
     max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
   }
   .trailer-mute-btn {
     top: 20px;

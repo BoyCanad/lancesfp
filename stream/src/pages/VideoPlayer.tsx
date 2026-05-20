@@ -632,6 +632,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [dismissedRecommendation, setDismissedRecommendation] = useState(false);
   const [isExpandingTrailer, setIsExpandingTrailer] = useState(false);
+  const [activeTrailerIndex, setActiveTrailerIndex] = useState(0);
+  const [isBannerSwitching, setIsBannerSwitching] = useState(false);
   const [nextCountdown, setNextCountdown] = useState(10);
   const [trailerCues, setTrailerCues] = useState<ParsedCue[]>([]);
   const [currentTrailerSubtitle, setCurrentTrailerSubtitle] = useState<string>('');
@@ -788,10 +790,15 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         }, 2000);
         return () => clearTimeout(timer);
       } else {
-        setIsTrailerVideoVisible(true);
-        if (trailerVideoRef.current) {
-          trailerVideoRef.current.play().catch(() => { });
-        }
+        // Start in static-banner-state so the branding aligns with next-up-overlay
+        setIsTrailerVideoVisible(false);
+        const timer = setTimeout(() => {
+          setIsTrailerVideoVisible(true);
+          if (trailerVideoRef.current) {
+            trailerVideoRef.current.play().catch(() => { });
+          }
+        }, 50); // Small delay allows CSS to register the initial position before moving
+        return () => clearTimeout(timer);
       }
     } else {
       setIsTrailerVideoVisible(false);
@@ -1328,8 +1335,10 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   }, [showRecommendation, isPlaying, nextCountdown, isExpandingTrailer]);
 
   // Fade audio then pause main video when inline trailer takes over
+  const activeNextMovie = isMobileWindow ? nextThreeMovies[activeTrailerIndex] : nextMovie;
+
   useEffect(() => {
-    if (isExpandingTrailer && nextMovie?.id) {
+    if (isExpandingTrailer && activeNextMovie?.id) {
       const video = videoRef.current;
       if (!video) return;
 
@@ -1338,8 +1347,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       setCurrentTrailerSubtitle('');
 
       // Fetch trailer subtitles if available
-      if (nextMovie.trailerVttUrl) {
-        fetch(nextMovie.trailerVttUrl)
+      if (activeNextMovie.trailerVttUrl) {
+        fetch(activeNextMovie.trailerVttUrl)
           .then(res => res.text())
           .then(data => {
             const parsed = parseVTT(data);
@@ -1366,7 +1375,25 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         clearInterval(fadeInterval);
       };
     }
-  }, [isExpandingTrailer, nextMovie]);
+  }, [isExpandingTrailer, activeNextMovie]);
+
+  // Handle trailer video reload when active index changes on mobile
+  useEffect(() => {
+    if (isExpandingTrailer && isMobileWindow) {
+      // 1. Immediately show the banner for the new active trailer
+      setIsTrailerVideoVisible(false);
+      
+      // 2. Wait 2 seconds (time for the new banner to show)
+      const timer = setTimeout(() => {
+        setIsTrailerVideoVisible(true); // Fades out the banner, fades in the video
+        if (trailerVideoRef.current) {
+          trailerVideoRef.current.load();
+          trailerVideoRef.current.play().catch(() => {});
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTrailerIndex, isExpandingTrailer, isMobileWindow]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -1839,20 +1866,30 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   };
 
   const handleTrailerEnded = () => {
-    // 1. Hide the video, show the static banner again
+    // 1. Hide the video, show the static banner again (fade back to banner)
     setIsTrailerVideoVisible(false);
 
-    // 2. Wait 5 seconds (user requested wait time)
-    setTimeout(() => {
-      if (isExpandingTrailer) {
-        // 3. Trigger the cinematic cross-fade back to the video
-        setIsTrailerVideoVisible(true);
-        if (trailerVideoRef.current) {
-          trailerVideoRef.current.currentTime = 0;
-          trailerVideoRef.current.play().catch(() => { });
+    if (isMobileWindow) {
+      // 2. On mobile, wait 1.5 seconds for the user to see the current banner, 
+      // then initiate a fade out of the banner before swapping.
+      setTimeout(() => {
+        if (isExpandingTrailer) {
+          setIsBannerSwitching(true); // Fade out current banner
+          
+          setTimeout(() => {
+            setActiveTrailerIndex(prev => (prev + 1) % nextThreeMovies.length);
+            
+            setTimeout(() => {
+              setIsBannerSwitching(false); // Fade in new banner
+            }, 100);
+          }, 600); // Wait 600ms for banner to fade out before swapping src
         }
-      }
-    }, 5000);
+      }, 1500); 
+    } else {
+      // 1. Hide the video, show the static banner again (fade back to banner)
+      setIsTrailerVideoVisible(false);
+      // Do NOT play the trailer again on desktop after it finishes.
+    }
   };
 
   const handleDismissRecommendation = () => {
@@ -2736,17 +2773,17 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       )}
 
       {/* ── Inline Trailer Overlay (TrailerPlayer look) — shows when countdown hits 0 ── */}
-      {isExpandingTrailer && nextMovie && (
-        <div className="inline-trailer-overlay inline-trailer-overlay--visible">
+      {isExpandingTrailer && activeNextMovie && (
+        <div className={`inline-trailer-overlay inline-trailer-overlay--visible ${isBannerSwitching ? 'banner-switching' : ''}`}>
           {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
           <img
-            src={nextMovie.banner || nextMovie.mobileCardBanner || nextMovie.cardBanner || nextMovie.thumbnail}
-            className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerVideoVisible ? 'fade-out' : ''}`}
+            src={activeNextMovie.banner || activeNextMovie.mobileCardBanner || activeNextMovie.cardBanner || activeNextMovie.thumbnail}
+            className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerVideoVisible ? 'fade-out' : ''} ${isBannerSwitching ? 'banner-switching-fade' : ''}`}
             alt=""
           />
 
           {/* Render trailer video. On desktop it shows immediately, on mobile it fades in after banner expansion. */}
-          {nextMovie.trailerUrl && (!isMobileWindow || isExpandingTrailer) && (
+          {activeNextMovie.trailerUrl && (!isMobileWindow || isExpandingTrailer) && (
             <video
               ref={trailerVideoRef}
               className={`inline-trailer-video ${isTrailerVideoVisible ? 'fade-in' : 'hidden-video'}`}
@@ -2756,7 +2793,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
               onTimeUpdate={handleTrailerTimeUpdate}
               onEnded={handleTrailerEnded}
             >
-              <source src={nextMovie.trailerUrl} type="video/mp4" />
+              <source src={activeNextMovie.trailerUrl} type="video/mp4" />
             </video>
           )}
 
@@ -2823,22 +2860,20 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           </div>
 
           {/* Bottom Branding (Desktop Right, Mobile Left) */}
-          <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} ${!isTrailerVideoVisible ? 'static-banner-state' : ''} fade-in-actions`}>
-            {!isMobileWindow && (
-              nextMovie.logo ? (
-                <img src={nextMovie.logo} alt={nextMovie.title} className="inline-trailer-logo" />
-              ) : (
-                <h2 className="inline-trailer-title">{nextMovie.title}</h2>
-              )
+          <div className={`inline-trailer-branding ${isMobileWindow ? 'mobile-trailer-branding' : ''} ${!isTrailerVideoVisible ? 'static-banner-state' : ''} ${isBannerSwitching ? 'banner-switching-fade' : ''} fade-in-actions`}>
+            {activeNextMovie.logo ? (
+              <img src={activeNextMovie.logo} alt={activeNextMovie.title} className="inline-trailer-logo" />
+            ) : (
+              <h2 className="inline-trailer-title">{activeNextMovie.title}</h2>
             )}
 
-            {/* Description (Desktop only, only during banner pause phase) */}
-            {!isTrailerVideoVisible && !isMobileWindow && <p className="inline-trailer-desc">{nextMovie.description}</p>}
+            {/* Description (Desktop only, transitions handled by CSS) */}
+            {!isMobileWindow && <p className="inline-trailer-desc">{activeNextMovie.description}</p>}
 
             <div className="inline-trailer-actions">
               <button
                 className="inline-trailer-btn inline-trailer-btn--play"
-                onClick={() => navigate(`/watch/${nextMovie.id}`)}
+                onClick={() => navigate(`/watch/${activeNextMovie.id}`)}
               >
                 <Play size={17} fill={isMobileWindow ? "black" : "white"} color={isMobileWindow ? "black" : "white"} strokeWidth={0} /> Play
               </button>
@@ -2850,8 +2885,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 <button
                   className="inline-trailer-btn inline-trailer-btn--info"
                   onClick={() => {
-                    if (nextMovie.id === 'f2') navigate('/minsan');
-                    else if (nextMovie.id === 'f1' || nextMovie.id === 'eb1') navigate('/ang-huling-el-bimbo-play');
+                    if (activeNextMovie.id === 'f2') navigate('/minsan');
+                    else if (activeNextMovie.id === 'f1' || activeNextMovie.id === 'eb1') navigate('/ang-huling-el-bimbo-play');
                     else navigate('/browse');
                   }}
                 >
@@ -2859,12 +2894,28 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 </button>
               )}
             </div>
+            
+            {/* Mobile Circle Indicators */}
+            {isMobileWindow && (
+              <div className="mobile-trailer-indicators">
+                {nextThreeMovies.map((_, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`trailer-indicator ${idx === activeTrailerIndex ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveTrailerIndex(idx);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Age Rating Overlay - Netflix Style (Placed at root for absolute 0,0 alignment) */}
-      <div className={`age-rating-overlay${showXRay && !isExpandingTrailer && !showRecommendation ? ' age-rating-overlay--xray' : ''} ${ratingRemainingTime > 0 ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
+      <div className={`age-rating-overlay${showXRay && !isExpandingTrailer && !showRecommendation ? ' age-rating-overlay--xray' : ''} ${ratingRemainingTime > 0 && !showRecommendation && !isExpandingTrailer ? 'show' : (hasShownRatingRef.current ? 'hide' : '')}`}>
         <div className="age-rating-content">
           <h4 className="age-rating-main">RATED {movie.ageRating}</h4>
           {movie.contentWarnings && movie.contentWarnings.length > 0 && (
