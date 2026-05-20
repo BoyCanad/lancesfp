@@ -8,29 +8,29 @@ interface SplashScreenProps {
 const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoSrc, setVideoSrc] = useState(() => {
-    return window.innerWidth <= 768 ? '/videos/splash_m.mp4' : '/videos/splash_d.mp4';
-  });
+  const [isSafari, setIsSafari] = useState(false);
 
   useEffect(() => {
-    // Choose video based on screen width
-    const updateVideoSrc = () => {
-      const newSrc = window.innerWidth <= 768 ? '/videos/splash_m.mp4' : '/videos/splash_d.mp4';
-      if (newSrc !== videoSrc) {
-        setVideoSrc(newSrc);
-      }
-    };
+    // Choose format based on browser (Safari doesn't support WebM alpha channel)
+    const ua = navigator.userAgent.toLowerCase();
+    const isSafariBrowser = ua.includes('safari') && !ua.includes('chrome') && !ua.includes('android');
+    setIsSafari(isSafariBrowser);
 
-    updateVideoSrc();
-    window.addEventListener('resize', updateVideoSrc);
+    let timer: NodeJS.Timeout;
+    if (isSafariBrowser) {
+      // The WebP animation duration is 5.56 seconds. We trigger completion then.
+      timer = setTimeout(() => {
+        handleComplete();
+      }, 5560);
+    }
 
     // Safety timeout in case video fails to load or play
     const safetyTimeout = setTimeout(() => {
       handleComplete();
-    }, 5000); // Max 5 seconds
+    }, 6000); // Max 6 seconds
 
     return () => {
-      window.removeEventListener('resize', updateVideoSrc);
+      if (timer) clearTimeout(timer);
       clearTimeout(safetyTimeout);
     };
   }, []);
@@ -49,9 +49,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   return (
     <div className={`splash-screen ${!isVisible ? 'splash-screen--hidden' : ''}`}>
-      {videoSrc && (
+      {isSafari ? (
+        <img
+          src="/videos/splash.webp"
+          alt="Loading..."
+          className="splash-video"
+        />
+      ) : (
         <video
-          key={videoSrc}
           ref={videoRef}
           className="splash-video"
           autoPlay
@@ -60,7 +65,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           onEnded={handleVideoEnded}
           onError={handleComplete}
         >
-          <source src={videoSrc} type="video/mp4" />
+          <source src="/videos/splash.webm" type="video/webm" />
+          <source src="/videos/splash_d.mp4" type="video/mp4" />
         </video>
       )}
     </div>
