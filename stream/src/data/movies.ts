@@ -216,7 +216,7 @@ export const featuredMovies: Movie[] = [
     title: "Ang Huling El Bimbo Play - Bonus X-Ray Edition",
     logo: "/images/el-bimbo-x-ray-logo.webp",
     thumbnail: "/images/el-bimbo-x-ray.webp",
-    banner: "/images/el-bimbo-x-ray.webp",
+    banner: "/images/el-bimbo-banner.jpg",
     cardBanner: "/images/el-bimbo-x-ray.webp",
     mobileCardBanner: "/images/el-bimbo-x-ray.webp",
     mobileBanner: "/images/el-bimbo-x-ray.webp",

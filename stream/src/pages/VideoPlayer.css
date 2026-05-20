@@ -1713,6 +1713,18 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: opacity;
+}
+
+.inline-trailer-gradient {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 58;
+  pointer-events: none;
+  background: radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 40%, transparent 70%);
 }
 
 /* Top-left: Back to Browse — slides in from the left */
@@ -1764,55 +1776,63 @@
 }
 
 /* Bottom-right: branding + buttons — slides up from below */
+/* 1. CONTAINER */
 .inline-trailer-branding {
   position: absolute;
   bottom: 56px;
   right: 60px;
+  width: 42vw;        /* <--- FIX: Replaced 'auto' with a hard vw unit */
+  max-width: 480px;   /* <--- FIX: Bumped to 480px to accommodate the playing logo size */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 20px;
   z-index: 60;
-  max-width: 42vw;
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: bottom, right, width, max-width, gap;
 }
 
+/* 1:1 Pixel Match with .next-up-content */
 .inline-trailer-branding.static-banner-state {
   bottom: 12%;
   right: 5%;
   width: 40%;
   max-width: 450px;
+  gap: 0px; 
 }
 
-.inline-trailer-branding.static-banner-state .inline-trailer-logo,
-.inline-trailer-branding.static-banner-state .inline-trailer-title {
-  max-width: 350px;
-  margin-bottom: 20px;
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.inline-trailer-branding.static-banner-state .inline-trailer-title {
-  font-size: 2.5rem;
-  /* Match countdown font size */
-}
-
+/* 4. Description Smooth Reveal (Ensure this stayed the same from before) */
 .inline-trailer-desc {
   font-size: 0.95rem;
   line-height: 1.4;
-  margin: 0;
+  margin: 0 !important;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9);
   color: #e5e5e5;
   text-align: right;
-  max-width: 450px;
+  width: 100%;
+  
+  /* Hiding State (Trailer is playing) */
   opacity: 0;
   max-height: 0;
   overflow: hidden;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(15px); 
+  
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              max-height 0.7s cubic-bezier(0.25, 1, 0.5, 1),
+              transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: opacity, max-height, transform;
 }
 
 .inline-trailer-branding.static-banner-state .inline-trailer-desc {
+  /* Showing State (Countdown / Trailer Ended) */
   opacity: 1;
   max-height: 150px;
+  margin-bottom: 25px !important;
+  transform: translateY(0); 
+  
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1) 0.2s, 
+              max-height 0.9s cubic-bezier(0.25, 1, 0.5, 1),
+              transform 0.9s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Logo fades in softly to replace the next-up logo perfectly */
@@ -1820,13 +1840,12 @@
 .inline-trailer-title {
   opacity: 0;
   animation: trailerBrandingIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Actions fade in after logo */
 .inline-trailer-actions {
   display: flex;
-  gap: 12px;
+  gap: 15px;
 }
 
 .fade-in-actions .inline-trailer-actions {
@@ -1844,21 +1863,44 @@
   }
 }
 
+/* 2. LOGO */
 .inline-trailer-logo {
-  max-width: 480px;
-  max-height: 200px;
+  width: 100%;       /* <--- FIX: Replaced 'auto' with 100% to allow smooth math interpolation */
+  max-width: 530px;  /* <--- Expanded playing size (desktop only) */
+  max-height: 230px;
   object-fit: contain;
+  object-position: right bottom; /* <--- FIX: Anchors the image strictly to the right side so it never floats away from the buttons while scaling */
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 0;
+  transition: all 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: max-width, max-height, margin-bottom, width;
 }
 
+/* 1:1 Pixel Match with .next-up-logo */
+.inline-trailer-branding.static-banner-state .inline-trailer-logo {
+  width: 90%;
+  max-width: 350px;
+  max-height: 400px; /* <--- FIX: Raises the ceiling so tall logos can fully expand! */
+  margin-bottom: 20px;
+}
+
+/* 3. TITLE STATES */
 .inline-trailer-title {
   color: white;
-  font-size: 2.8rem;
+  font-size: 2.8rem; /* Trailer Playing Size */
   font-weight: 800;
   margin: 0;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
   text-align: right;
+  transition: all 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: font-size, margin-bottom;
+  transform: none !important; 
+}
+
+/* 1:1 Pixel Match with .next-up-title-text */
+.inline-trailer-branding.static-banner-state .inline-trailer-title {
+  font-size: 2.5rem; /* Countdown Size */
+  margin-bottom: 20px;
 }
 
 .inline-trailer-btn {
@@ -1993,35 +2035,6 @@
     left: auto;
   }
 
-  .inline-trailer-branding {
-    bottom: 20px;
-    left: 20px;
-    right: auto;
-    max-width: 90vw;
-    align-items: flex-start;
-  }
-
-  .inline-trailer-branding.static-banner-state {
-    bottom: 20px;
-    left: 20px;
-    right: auto;
-    width: auto;
-    max-width: 90vw;
-    align-items: flex-start;
-  }
-
-  .inline-trailer-branding.static-banner-state .inline-trailer-logo,
-  .inline-trailer-branding.static-banner-state .inline-trailer-title {
-    width: auto;
-    max-width: 280px;
-    margin-bottom: 15px;
-  }
-
-  .inline-trailer-logo {
-    max-width: 280px;
-    max-height: 120px;
-  }
-
   .inline-trailer-btn {
     padding: 8px 16px;
     font-size: 14px;
@@ -2114,8 +2127,10 @@
   height: 100%;
   object-fit: cover;
   z-index: 55;
-  /* Stays on top to manage the fade */
-  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(1);
+  transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1), 
+              transform 1.6s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: opacity, transform;
 }
 
 .mobile-expand-animation {
@@ -2124,7 +2139,8 @@
 }
 
 .inline-trailer-banner.fade-out {
-  opacity: 0;
+  opacity: 0 !important;
+  transform: scale(1.05); /* Subtle zoom-in as it fades out */
   pointer-events: none;
 }
 
@@ -2769,30 +2785,14 @@
 /* Trailer Visibility States */
 .hidden-video {
   opacity: 0 !important;
-  transition: opacity 1s ease-in-out !important;
 }
 
 .inline-trailer-video.fade-in {
   opacity: 1 !important;
-  transition: opacity 1s ease-in-out !important;
-}
-
-.inline-trailer-banner.fade-out {
-  opacity: 0 !important;
-  transition: opacity 1s ease-in-out !important;
 }
 
 /* Inline Trailer Branding Styles */
-.inline-trailer-desc {
-  color: #e5e5e5;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  margin: 0 0 25px 0;
-  max-width: 100%;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9);
-  opacity: 0;
-  animation: trailerBrandingIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
-}
+
 
 .inline-trailer-btn {
   display: flex;
@@ -4108,5 +4108,37 @@
 
   .vidrock-ep-desc {
     font-size: 0.78rem;
+  }
+}
+
+/* 5. MOBILE OVERRIDES */
+@media (max-width: 896px) {
+  .inline-trailer-branding,
+  .inline-trailer-branding.static-banner-state {
+    bottom: 20px;
+    left: 20px;
+    right: auto;
+    width: 90vw;
+    max-width: none;
+    align-items: flex-start;
+  }
+  .inline-trailer-branding.static-banner-state .inline-trailer-logo,
+  .inline-trailer-branding.static-banner-state .inline-trailer-title {
+    margin-bottom: 15px;
+  }
+
+  .inline-trailer-logo {
+    object-position: left bottom; /* Flips the anchor to the left for mobile layout */
+    max-width: 310px;             /* Compact logo size on mobile while playing */
+    max-height: 135px;
+  }
+
+  .inline-trailer-branding.static-banner-state .inline-trailer-logo {
+    max-width: 360px;             /* Enlarged logo size on mobile static banner state */
+    max-height: 160px;
+  }
+
+  .inline-trailer-gradient {
+    background: radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.75) 50%, transparent 80%);
   }
 }

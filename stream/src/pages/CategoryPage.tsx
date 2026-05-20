@@ -122,7 +122,7 @@ export default function CategoryPage() {
 
   const isShowContext = genreId.toLowerCase() === 'shows' || (genreId.toLowerCase() === 'documentary' && typeFilter === 'show');
   const featured = movies.length > 0 ? (isShowContext ? movies.find(m => m.id === 'beyond-the-last-dance') || movies[0] : movies[0]) : null;
-  const desktopHero = isShowContext ? (movies.find(m => m.id === 'beyond-the-last-dance') || movies[0]) : (featured || elBimboFeatured);
+  const desktopHero = (isShowContext ? (movies.find(m => m.id === 'beyond-the-last-dance') || movies[0]) : featured) || elBimboFeatured;
 
   useEffect(() => {
     if (featured) setInMyList(isInMyList(featured.id));

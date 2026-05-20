@@ -638,6 +638,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [trailerCues, setTrailerCues] = useState<ParsedCue[]>([]);
   const [currentTrailerSubtitle, setCurrentTrailerSubtitle] = useState<string>('');
   const [isTrailerVideoVisible, setIsTrailerVideoVisible] = useState(false);
+  const [isTrailerActuallyPlaying, setIsTrailerActuallyPlaying] = useState(false);
   const [is2xPressing, setIs2xPressing] = useState(false);
   const [previewTime, setPreviewTime] = useState(0);
   const [previewPos, setPreviewPos] = useState(0);
@@ -775,35 +776,42 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   }, [isPlaying, hasStartedPlaying]);
 
 
+  // Unified Trailer Playback Logic (Handles Expansion & Mobile Swapping)
   useEffect(() => {
     if (isExpandingTrailer) {
+      // Reset visibility states before starting
+      setIsTrailerVideoVisible(false);
+      setIsTrailerActuallyPlaying(false);
+
       if (isMobileWindow) {
+        // Mobile: wait 2 seconds for the banner expansion animation to finish
         const timer = setTimeout(() => {
           setIsTrailerVideoVisible(true);
-          // Force play on mobile to ensure autoplay happens after expansion
           if (trailerVideoRef.current) {
-            trailerVideoRef.current.load();
             trailerVideoRef.current.play().catch(err => {
-              console.error("Trailer play failed:", err);
+              console.error("Trailer play failed on mobile:", err);
             });
           }
         }, 2000);
         return () => clearTimeout(timer);
       } else {
-        // Start in static-banner-state so the branding aligns with next-up-overlay
-        setIsTrailerVideoVisible(false);
+        // Desktop: immediate playback with a tiny 50ms delay for CSS to catch up
         const timer = setTimeout(() => {
           setIsTrailerVideoVisible(true);
           if (trailerVideoRef.current) {
-            trailerVideoRef.current.play().catch(() => { });
+            trailerVideoRef.current.play().catch(err => {
+              console.error("Trailer play failed on desktop:", err);
+            });
           }
-        }, 50); // Small delay allows CSS to register the initial position before moving
+        }, 50);
         return () => clearTimeout(timer);
       }
     } else {
+      // Cleanup when trailer is closed
       setIsTrailerVideoVisible(false);
+      setIsTrailerActuallyPlaying(false);
     }
-  }, [isExpandingTrailer, isMobileWindow]);
+  }, [isExpandingTrailer, isMobileWindow, activeTrailerIndex]);
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const hasShownRatingRef = useRef<boolean>(false);
   const hlsManagedRef = useRef<boolean>(false);
@@ -1377,23 +1385,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
   }, [isExpandingTrailer, activeNextMovie]);
 
-  // Handle trailer video reload when active index changes on mobile
-  useEffect(() => {
-    if (isExpandingTrailer && isMobileWindow) {
-      // 1. Immediately show the banner for the new active trailer
-      setIsTrailerVideoVisible(false);
-      
-      // 2. Wait 2 seconds (time for the new banner to show)
-      const timer = setTimeout(() => {
-        setIsTrailerVideoVisible(true); // Fades out the banner, fades in the video
-        if (trailerVideoRef.current) {
-          trailerVideoRef.current.load();
-          trailerVideoRef.current.play().catch(() => {});
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [activeTrailerIndex, isExpandingTrailer, isMobileWindow]);
+
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -1866,8 +1858,9 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   };
 
   const handleTrailerEnded = () => {
-    // 1. Hide the video, show the static banner again (fade back to banner)
+    // 1. Hide the video, show the static banner again
     setIsTrailerVideoVisible(false);
+    setIsTrailerActuallyPlaying(false); // <--- ADD THIS LINE to crossfade the banner image back in
 
     if (isMobileWindow) {
       // 2. On mobile, wait 1.5 seconds for the user to see the current banner, 
@@ -2778,7 +2771,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           {/* Seamless Mobile Expansion: Render banner and video together for cross-fade */}
           <img
             src={activeNextMovie.banner || activeNextMovie.mobileCardBanner || activeNextMovie.cardBanner || activeNextMovie.thumbnail}
-            className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerVideoVisible ? 'fade-out' : ''} ${isBannerSwitching ? 'banner-switching-fade' : ''}`}
+            className={`inline-trailer-banner ${isMobileWindow ? 'mobile-expand-animation' : ''} ${isTrailerActuallyPlaying ? 'fade-out' : ''} ${isBannerSwitching ? 'banner-switching-fade' : ''}`}
             alt=""
           />
 
@@ -2786,16 +2779,20 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           {activeNextMovie.trailerUrl && (!isMobileWindow || isExpandingTrailer) && (
             <video
               ref={trailerVideoRef}
+              key={activeNextMovie.trailerUrl} /* <--- Forces clean remount on URL change */
+              src={activeNextMovie.trailerUrl} /* <--- Move src here */
               className={`inline-trailer-video ${isTrailerVideoVisible ? 'fade-in' : 'hidden-video'}`}
               playsInline
               autoPlay={false}
               muted={false}
               onTimeUpdate={handleTrailerTimeUpdate}
               onEnded={handleTrailerEnded}
-            >
-              <source src={activeNextMovie.trailerUrl} type="video/mp4" />
-            </video>
+              onPlaying={() => setIsTrailerActuallyPlaying(true)}
+            />
           )}
+
+          {/* Bottom-right/left gradient overlay to ensure text/buttons remain readable over bright trailers/banners */}
+          <div className="inline-trailer-gradient" />
 
           {/* Trailer Subtitle Overlay */}
           {currentTrailerSubtitle && isTrailerVideoVisible && (
@@ -2875,7 +2872,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
                 className="inline-trailer-btn inline-trailer-btn--play"
                 onClick={() => navigate(`/watch/${activeNextMovie.id}`)}
               >
-                <Play size={17} fill={isMobileWindow ? "black" : "white"} color={isMobileWindow ? "black" : "white"} strokeWidth={0} /> Play
+                <Play size={17} fill="black" color="black" /> Play
               </button>
               {isMobileWindow ? (
                 <button className="inline-trailer-btn inline-trailer-btn--mylist">
