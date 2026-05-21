@@ -18,6 +18,20 @@
   pointer-events: none;
 }
 
+/* Black blocker layer — sits behind the video, fades away once video is playing */
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+.splash-bg--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .splash-video {
   width: 100%;
   height: 100%;

@@ -288,113 +288,105 @@ function App() {
     document.title = pathname === '/browse' ? 'Home | LSFPlus' : `${title} | LSFPlus`;
   }, [pathname, session, location.search]);
 
-  if (checkingAuth) {
-    // Show splash immediately if it's the first entry, otherwise show spinner
-    if (showSplash) {
-      return (
-        <div className="app">
-          <SplashScreen 
-            onComplete={() => {
-              setShowSplash(false);
-              sessionStorage.setItem('splashShown', 'true');
-            }} 
-          />
-        </div>
-      );
-    }
-    return <LoadingSpinner visible={true} />;
-  }
-
   return (
     <div className="app">
+      {/* Splash Screen is always rendered as a fixed overlay if active */}
       {showSplash && (
         <SplashScreen 
           onComplete={() => {
             setShowSplash(false);
-            sessionStorage.setItem('splashShown', 'true');
+            // sessionStorage.setItem('splashShown', 'true');
           }} 
         />
       )}
-      <LoadingSpinner visible={pageLoading && !showSplash} profileImage={transitionProfile} />
-      {showNavAndFooter && !isMyNetflix && <Navbar />}
 
-      <Routes>
-        <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
-        
-        <Route path="/" element={
-          session 
-            ? (session.user.user_metadata?.signup_completed ? <ProfilePicker /> : <Navigate to="/signup" replace />) 
-            : <Introduction />
-        } />
-        <Route path="/introduction" element={<Introduction />} />
-        <Route path="/CreateProfile" element={session ? <CreateProfile /> : <Navigate to="/login" replace />} />
-        <Route path="/ProfileLock/:id" element={session ? <ProfileLock /> : <Navigate to="/login" replace />} />
-        <Route path="/ManageProfile/:id" element={session ? <ManageProfile /> : <Navigate to="/login" replace />} />
-        <Route path="/EditProfile/:id" element={session ? <EditProfile /> : <Navigate to="/login" replace />} />
-        <Route path="/IconPicker/:id" element={session ? <IconPicker /> : <Navigate to="/login" replace />} />
-        
-        <Route path="/browse" element={
-          session 
-            ? (session.user.user_metadata?.signup_completed ? <Home /> : <Navigate to="/signup" replace />) 
-            : <Navigate to="/login" replace />
-        } />
-        <Route path="/my-list" element={<MyList />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/genre/:genreId" element={<CategoryPage />} />
-        <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
-        <Route path="/ang-huling-el-bimbo-play-xray" element={<MovieDetail />} />
-        <Route path="/minsan" element={<MovieDetail />} />
-        <Route path="/tindahan-ni-aling-nena" element={<MovieDetail />} />
-        <Route path="/alapaap-overdrive" element={<MovieDetail />} />
-        <Route path="/spoliarium-graduation" element={<MovieDetail />} />
-        <Route path="/pare-ko" element={<MovieDetail />} />
-        <Route path="/tama-ka-ligaya" element={<MovieDetail />} />
-        <Route path="/ang-huling-el-bimbo" element={<MovieDetail />} />
-        <Route path="/beyond-the-last-dance" element={<MovieDetail />} />
-        <Route path="/after-hours" element={<AfterHoursDetail />} />
-        <Route path="/bukang-liwayway-takipsilim" element={<MovieDetail />} />
-        <Route path="/a-day-in-my-life-stem" element={<MovieDetail />} />
-        <Route path="/11-stem-a" element={<StemADetail />} />
-        <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
-        <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
-        <Route path="/xray/:id" element={session ? <XRayVideoPlayer /> : <Navigate to="/login" replace />} />
-        <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
-        <Route path="/clips" element={session ? <Clips /> : <Navigate to="/login" replace />} />
-        <Route path="/games" element={session ? <Games /> : <Navigate to="/login" replace />} />
-        <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
-        <Route path="/music/:id" element={<MusicPlayer />} />
-        <Route path="/music" element={<MusicPlayer />} />
-        <Route path="/live" element={session ? <LivePlayer /> : <Navigate to="/login" replace />} />
-
-        <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
-        <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
-        <Route path="/change-plan" element={session ? <ChangePlan /> : <Navigate to="/login" replace />} />
-        <Route path="/signup" element={
-          session 
-            ? (session.user.user_metadata?.signup_completed ? <Navigate to="/" replace /> : <SignUp />) 
-            : <Navigate to="/login" replace />
-        } />
-        <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
-        <Route path="/admin/import" element={session ? <AdminImport /> : <Navigate to="/login" replace />} />
-        <Route path="/xp" element={session ? <WindowsXP /> : <Navigate to="/login" replace />} />
-        <Route path="/:id" element={<MovieDetail />} />
-      </Routes>
-
-      {showNavAndFooter && (
+      {/* Render the background content (auth check OR full app) */}
+      {checkingAuth ? (
+        <LoadingSpinner visible={true} />
+      ) : (
         <>
-          {!isMyNetflix && (
-            <footer className="app__footer">
-              <div className="app__footer-logo">
-                <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '32px' }} />
-              </div>
-              <p className="app__footer-text">
-                © 2025 LSFPlus, Inc. {t('footer.rights')}
-              </p>
-            </footer>
+          <LoadingSpinner visible={pageLoading} profileImage={transitionProfile} />
+          {showNavAndFooter && !isMyNetflix && <Navbar />}
+
+          <Routes>
+            <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
+            
+            <Route path="/" element={
+              session 
+                ? (session.user.user_metadata?.signup_completed ? <ProfilePicker /> : <Navigate to="/signup" replace />) 
+                : <Introduction />
+            } />
+            <Route path="/introduction" element={<Introduction />} />
+            <Route path="/CreateProfile" element={session ? <CreateProfile /> : <Navigate to="/login" replace />} />
+            <Route path="/ProfileLock/:id" element={session ? <ProfileLock /> : <Navigate to="/login" replace />} />
+            <Route path="/ManageProfile/:id" element={session ? <ManageProfile /> : <Navigate to="/login" replace />} />
+            <Route path="/EditProfile/:id" element={session ? <EditProfile /> : <Navigate to="/login" replace />} />
+            <Route path="/IconPicker/:id" element={session ? <IconPicker /> : <Navigate to="/login" replace />} />
+            
+            <Route path="/browse" element={
+              session 
+                ? (session.user.user_metadata?.signup_completed ? <Home /> : <Navigate to="/signup" replace />) 
+                : <Navigate to="/login" replace />
+            } />
+            <Route path="/my-list" element={<MyList />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/genre/:genreId" element={<CategoryPage />} />
+            <Route path="/ang-huling-el-bimbo-play" element={<MovieDetail />} />
+            <Route path="/ang-huling-el-bimbo-play-xray" element={<MovieDetail />} />
+            <Route path="/minsan" element={<MovieDetail />} />
+            <Route path="/tindahan-ni-aling-nena" element={<MovieDetail />} />
+            <Route path="/alapaap-overdrive" element={<MovieDetail />} />
+            <Route path="/spoliarium-graduation" element={<MovieDetail />} />
+            <Route path="/pare-ko" element={<MovieDetail />} />
+            <Route path="/tama-ka-ligaya" element={<MovieDetail />} />
+            <Route path="/ang-huling-el-bimbo" element={<MovieDetail />} />
+            <Route path="/beyond-the-last-dance" element={<MovieDetail />} />
+            <Route path="/after-hours" element={<AfterHoursDetail />} />
+            <Route path="/bukang-liwayway-takipsilim" element={<MovieDetail />} />
+            <Route path="/a-day-in-my-life-stem" element={<MovieDetail />} />
+            <Route path="/11-stem-a" element={<StemADetail />} />
+            <Route path="/collections/el-bimbo" element={<ElBimboCollection />} />
+            <Route path="/watch/:id" element={session ? <VideoPlayer /> : <Navigate to="/login" replace />} />
+            <Route path="/xray/:id" element={session ? <XRayVideoPlayer /> : <Navigate to="/login" replace />} />
+            <Route path="/trailer/:id" element={session ? <TrailerPlayer /> : <Navigate to="/login" replace />} />
+            <Route path="/clips" element={session ? <Clips /> : <Navigate to="/login" replace />} />
+            <Route path="/games" element={session ? <Games /> : <Navigate to="/login" replace />} />
+            <Route path="/:movieSlug/clip/:clipId" element={<ClipPlayer />} />
+            <Route path="/music/:id" element={<MusicPlayer />} />
+            <Route path="/music" element={<MusicPlayer />} />
+            <Route path="/live" element={session ? <LivePlayer /> : <Navigate to="/login" replace />} />
+
+            <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
+            <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
+            <Route path="/change-plan" element={session ? <ChangePlan /> : <Navigate to="/login" replace />} />
+            <Route path="/signup" element={
+              session 
+                ? (session.user.user_metadata?.signup_completed ? <Navigate to="/" replace /> : <SignUp />) 
+                : <Navigate to="/login" replace />
+            } />
+            <Route path="/LanguageSettings/:id" element={session ? <LanguageSettings /> : <Navigate to="/login" replace />} />
+            <Route path="/admin/import" element={session ? <AdminImport /> : <Navigate to="/login" replace />} />
+            <Route path="/xp" element={session ? <WindowsXP /> : <Navigate to="/login" replace />} />
+            <Route path="/:id" element={<MovieDetail />} />
+          </Routes>
+
+          {showNavAndFooter && (
+            <>
+              {!isMyNetflix && (
+                <footer className="app__footer">
+                  <div className="app__footer-logo">
+                    <img src="https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/logo.gif" alt="LSFPlus" style={{ height: '32px' }} />
+                  </div>
+                  <p className="app__footer-text">
+                    © 2025 LSFPlus, Inc. {t('footer.rights')}
+                  </p>
+                </footer>
+              )}
+              <MobileNav />
+            </>
           )}
-          <MobileNav />
         </>
       )}
     </div>
