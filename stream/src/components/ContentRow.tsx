@@ -45,7 +45,39 @@ export const MovieCard = memo(({
   const [isMuted, setIsMuted] = useState(false); // Default to audio on as requested
   const [inMyList, setInMyList] = useState(false);
   const [isTop10, setIsTop10] = useState(false);
+  const [reminded, setReminded] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const stored = localStorage.getItem('activeProfile');
+    if (stored) {
+      const profile = JSON.parse(stored);
+      import('../services/reminderService').then(({ isReminded }) => {
+        isReminded(profile.id, movie.id).then((val) => {
+          if (active) setReminded(val);
+        });
+      });
+    }
+
+    const handleUpdate = () => {
+      const stored = localStorage.getItem('activeProfile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        import('../services/reminderService').then(({ isReminded }) => {
+          isReminded(profile.id, movie.id).then((val) => {
+            if (active) setReminded(val);
+          });
+        });
+      }
+    };
+    window.addEventListener('reminders_updated', handleUpdate);
+
+    return () => {
+      active = false;
+      window.removeEventListener('reminders_updated', handleUpdate);
+    };
+  }, [movie.id]);
   const videoElemRef = useRef<HTMLVideoElement>(null);
   const ytIframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -136,8 +168,17 @@ export const MovieCard = memo(({
     };
   }, []);
 
-  const handlePlayClick = (e: React.MouseEvent) => {
+  const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) {
+      const stored = localStorage.getItem('activeProfile');
+      if (!stored) return;
+      const profile = JSON.parse(stored);
+      const { toggleReminder } = await import('../services/reminderService');
+      const nextReminded = await toggleReminder(profile.id, movie.id);
+      setReminded(nextReminded);
+      return;
+    }
     const base = movie.xRay ? '/xray' : '/watch';
     navigate(`${base}/${movie.id}`, { state: { startTime: videoElemRef.current?.currentTime } });
   };
@@ -355,11 +396,10 @@ export const MovieCard = memo(({
                 ) : (
                   <>
                     <button 
-                      className={`card__btn card__btn--play card__btn--white ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'card__btn--disabled' : ''}`} 
-                      onClick={(e) => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlayClick(e)}
-                      disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
+                      className={`card__btn card__btn--play card__btn--white`} 
+                      onClick={handlePlayClick}
                     >
-                      {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={14} color="white" fill="white" /> : <Play size={12} fill="black" color="black" />}
+                      {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={14} color="black" fill={reminded ? "black" : "none"} /> : <Play size={12} fill="black" color="black" />}
                     </button>
                     {!movie.comingSoon && (
                       <button 
@@ -418,12 +458,16 @@ export const MovieCard = memo(({
               <>
                 <div className="card__metadata-row">
                   {movie.comingSoon && (
-                    <span className="card__coming-soon">COMING SOON</span>
+                    <span className="card__coming-soon">
+                      {movie.releaseDate ? `RELEASING ${movie.releaseDate.toUpperCase()}${movie.releaseTime ? ` @ ${movie.releaseTime}` : ''}` : 'COMING SOON'}
+                    </span>
                   )}
                   <span className="card__age">{movie.ageRating || '13+'}</span>
-                  <span className="card__duration">
-                    {movie.comingSoon ? 'TBA' : (movie.duration.includes('s') ? `${parseDurationToMin(movie.duration)}m` : movie.duration)}
-                  </span>
+                  {!movie.comingSoon && (
+                    <span className="card__duration">
+                      {movie.duration.includes('s') ? `${parseDurationToMin(movie.duration)}m` : movie.duration}
+                    </span>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <HDBadge isSmall={true} />
                     {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (

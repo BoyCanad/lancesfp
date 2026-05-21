@@ -49,13 +49,26 @@ function App() {
   const { pathname } = location;
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  // ── State ────────────────────────────────────────────────────────────────
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash the first time the tab is opened (sessionStorage clears on tab close)
     return !sessionStorage.getItem('splashShown');
   });
+  const [prevPath, setPrevPath] = useState(pathname);
+  const [transitionProfile, setTransitionProfile] = useState<string | null>(null);
 
+  // Always remove the pre-React black cover on mount.
+  // When splash is skipped (on refresh), SplashScreen never mounts so we must do it here.
+  useEffect(() => {
+    const preSplash = document.getElementById('pre-splash');
+    if (preSplash) preSplash.remove();
+  }, []);
+
+  // ── Route flags ──────────────────────────────────────────────────────────
   const isVideoPlayer = pathname.startsWith('/watch') || pathname.startsWith('/xray') || pathname.startsWith('/trailer') || /\/clip\//.test(pathname) || pathname.startsWith('/music') || pathname === '/live' || pathname === '/clips';
   const isProfilePicker = pathname === '/';
   const isXP = pathname === '/xp';
@@ -92,12 +105,10 @@ function App() {
   ].includes(pathname) || isDynamicDetailPage;
 
   const isGenrePage = pathname.startsWith('/genre');
-
   const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isXP && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage || isDownloads;
 
+  // ── Auth effect ──────────────────────────────────────────────────────────
   useEffect(() => {
-    // Helper: check if Supabase already persisted a valid session in localStorage
-    // Supabase v2 stores tokens under keys like 'sb-<ref>-auth-token'
     const getPersistedSession = (): Session | null => {
       try {
         for (let i = 0; i < localStorage.length; i++) {
@@ -106,9 +117,8 @@ function App() {
             const raw = localStorage.getItem(key);
             if (raw) {
               const parsed = JSON.parse(raw);
-              // Check if access_token exists and not expired
               if (parsed?.access_token && parsed?.expires_at) {
-                const expiresAt = parsed.expires_at * 1000; // convert to ms
+                const expiresAt = parsed.expires_at * 1000;
                 if (Date.now() < expiresAt) {
                   return parsed as Session;
                 }
@@ -122,7 +132,6 @@ function App() {
       return null;
     };
 
-    // If offline, use persisted session immediately
     if (!navigator.onLine) {
       const persisted = getPersistedSession();
       setSession(persisted);
@@ -134,7 +143,6 @@ function App() {
       setSession(session);
       
       if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction'].includes(window.location.pathname)) {
-        // Repair metadata: If they have profiles, they are definitely complete
         try {
           const profiles = await getProfiles();
           if (profiles && profiles.length > 0) {
@@ -143,7 +151,6 @@ function App() {
             navigate('/signup', { replace: true });
           }
         } catch (e) {
-          // If profile fetch fails, assume they might need signup
           navigate('/signup', { replace: true });
         }
       }
@@ -161,14 +168,12 @@ function App() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       
-      // Enforce signup completion on auth change, but check for profiles first as a repair
       if (session && !session.user.user_metadata?.signup_completed && !['/signup', '/login', '/introduction', '/browse'].includes(window.location.pathname)) {
         try {
           const profiles = await getProfiles();
           if (profiles && profiles.length > 0) {
             await supabase.auth.updateUser({ data: { signup_completed: true } });
           } else if (event === 'SIGNED_IN') {
-             // Only redirect to signup on explicit sign in if no profiles found
              navigate('/signup', { replace: true });
           }
         } catch (e) {
@@ -184,19 +189,16 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const [prevPath, setPrevPath] = useState(pathname);
-  const [transitionProfile, setTransitionProfile] = useState<string | null>(null);
-
+  // ── Clear transition profile on mount ────────────────────────────────────
   useEffect(() => {
-    // Clean transition profile on mount to ensure fresh starts are generic
     setTransitionProfile(null);
   }, []);
 
+  // ── Route transition: track path changes ─────────────────────────────────
   if (pathname !== prevPath) {
     setPrevPath(pathname);
     
     const locState = (location as any).state;
-    // Only show profile icon if specifically transitioning FROM a profile selection TO a browse/content page
     const isProfileSwap = (prevPath === '/' || locState?.fromProfileSwap) && pathname === '/browse';
     
     if (isProfileSwap) {
@@ -217,10 +219,10 @@ function App() {
     }
   }
 
+  // ── Auto-dismiss loading spinner ─────────────────────────────────────────
   useEffect(() => {
     window.scrollTo(0, 0);
     
-    // Auto-dismiss loading spinner
     const locState = (location as any).state;
     const isProfileTransition = transitionProfile !== null || locState?.fromProfileSwap;
     const isInit = prevPath === pathname;
@@ -235,6 +237,7 @@ function App() {
     return () => clearTimeout(timer);
   }, [pathname, transitionProfile, location]);
 
+  // ── Page title ───────────────────────────────────────────────────────────
   useEffect(() => {
     const pageTitles: { [key: string]: string } = {
       '/': session ? 'Who\'s Watching?' : 'Welcome',
@@ -288,19 +291,19 @@ function App() {
     document.title = pathname === '/browse' ? 'Home | LSFPlus' : `${title} | LSFPlus`;
   }, [pathname, session, location.search]);
 
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="app">
-      {/* Splash Screen is always rendered as a fixed overlay if active */}
+      {/* Splash Screen — only shown once per tab (sessionStorage clears on tab close) */}
       {showSplash && (
-        <SplashScreen 
+        <SplashScreen
           onComplete={() => {
             setShowSplash(false);
-            // sessionStorage.setItem('splashShown', 'true');
-          }} 
+            sessionStorage.setItem('splashShown', 'true');
+          }}
         />
       )}
 
-      {/* Render the background content (auth check OR full app) */}
       {checkingAuth ? (
         <LoadingSpinner visible={true} />
       ) : (

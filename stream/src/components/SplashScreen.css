@@ -41,16 +41,3 @@
   z-index: 2;
 }
 
-/* Optional: Fade in animation for the video itself */
-.splash-video {
-  animation: splashFadeIn 0.5s ease-in-out;
-}
-
-@keyframes splashFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}

@@ -34,6 +34,131 @@ export default function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const closeTimeout = useRef<any>(null);
   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!activeProfile) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    const loadNotifications = async () => {
+      try {
+        const { fetchAllMovies } = await import('../services/movieService');
+        const { getReminders } = await import('../services/reminderService');
+        
+        const allMovies = await fetchAllMovies();
+        const remindedIds = await getReminders(activeProfile.id);
+
+        if (!active) return;
+
+        // Filter movies that are in reminders and are released
+        const releasedReminders = allMovies.filter(movie => {
+          if (!remindedIds.includes(movie.id)) return false;
+          
+          // Check if released
+          if (!movie.comingSoon) return true;
+          if (!movie.releaseDate) return false;
+          
+          try {
+            const timeStr = movie.releaseTime || '00:00';
+            const releaseDateTime = new Date(`${movie.releaseDate}T${timeStr}`);
+            return Date.now() >= releaseDateTime.getTime();
+          } catch (e) {
+            return false;
+          }
+        });
+
+        // Get read notifications
+        const readStorageKey = `lsfplus_read_notif_${activeProfile.id}`;
+        const readIds: string[] = JSON.parse(localStorage.getItem(readStorageKey) || '[]');
+
+        const notifs = releasedReminders.map(movie => ({
+          id: movie.id,
+          title: movie.title,
+          thumbnail: movie.thumbnail,
+          mobileThumbnail: movie.mobileThumbnail,
+          banner: movie.banner,
+          releaseDate: movie.releaseDate,
+          releaseTime: movie.releaseTime,
+          isNew: !readIds.includes(movie.id)
+        }));
+
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => n.isNew).length);
+      } catch (err) {
+        console.warn('Failed to load notifications:', err);
+      }
+    };
+
+    loadNotifications();
+
+    const handleUpdate = () => {
+      loadNotifications();
+    };
+    window.addEventListener('reminders_updated', handleUpdate);
+    const interval = setInterval(loadNotifications, 60000);
+
+    return () => {
+      active = false;
+      window.removeEventListener('reminders_updated', handleUpdate);
+      clearInterval(interval);
+    };
+  }, [activeProfile]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const handleBellClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsNotifOpen(!isNotifOpen);
+    
+    // Mark all as read when opening
+    if (!isNotifOpen && activeProfile && notifications.length > 0) {
+      const readStorageKey = `lsfplus_read_notif_${activeProfile.id}`;
+      const readIds = notifications.map(n => n.id);
+      localStorage.setItem(readStorageKey, JSON.stringify(readIds));
+      
+      // Update local state
+      setNotifications(prev => prev.map(n => ({ ...n, isNew: false })));
+      setUnreadCount(0);
+    }
+  };
+
+  const handleNotifItemClick = (movieId: string) => {
+    setIsNotifOpen(false);
+    
+    const pathMap: Record<string, string> = {
+      'ang-huling-el-bimbo-play': '/ang-huling-el-bimbo-play',
+      'ang-huling-el-bimbo-play-xray': '/ang-huling-el-bimbo-play-xray',
+      'minsan': '/minsan',
+      'tindahan-ni-aling-nena': '/tindahan-ni-aling-nena',
+      'alapaap-overdrive': '/alapaap-overdrive',
+      'spoliarium-graduation': '/spoliarium-graduation',
+      'pare-ko': '/pare-ko',
+      'tama-ka-ligaya': '/tama-ka-ligaya',
+      'ang-huling-el-bimbo': '/ang-huling-el-bimbo',
+      'beyond-the-last-dance': '/beyond-the-last-dance'
+    };
+
+    if (pathMap[movieId]) {
+      navigate(pathMap[movieId]);
+    } else {
+      navigate(`/watch/${movieId}`);
+    }
+  };
 
   const fetchProfiles = () => {
     getProfiles().then((data) => {
@@ -202,8 +327,49 @@ export default function Navbar() {
             <Download size={22} color="white" />
           </div>
           
-          <div className="navbar__icon-wrapper">
-            <Bell size={24} color="white" />
+          <div className="navbar__notif-container" ref={notifDropdownRef}>
+            <div className="navbar__icon-wrapper" onClick={handleBellClick}>
+              <Bell size={24} color="white" />
+              {unreadCount > 0 && (
+                <div className="navbar__notif-badge">{unreadCount}</div>
+              )}
+            </div>
+
+            {isNotifOpen && (
+              <div className="navbar__notif-dropdown">
+                <div className="navbar__notif-caret" />
+                <div className="navbar__notif-content">
+                  <div className="navbar__notif-header">
+                    <span>Notifications</span>
+                  </div>
+                  <div className="navbar__notif-list">
+                    {notifications.length > 0 ? (
+                      notifications.map(n => (
+                        <div key={n.id} className="navbar__notif-item" onClick={() => handleNotifItemClick(n.id)}>
+                          <div className="navbar__notif-img-wrapper">
+                            <img src={n.thumbnail || n.mobileThumbnail || n.banner} alt={n.title} className="navbar__notif-img" />
+                          </div>
+                          <div className="navbar__notif-info">
+                            <div className="navbar__notif-title-row">
+                              <span className="navbar__notif-action">New Release: </span>{n.title} is now available to watch.
+                            </div>
+                            <div className="navbar__notif-date">
+                              Released on {n.releaseDate}
+                            </div>
+                          </div>
+                          {n.isNew && <div className="navbar__notif-dot" />}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="navbar__notif-empty">
+                        <Bell size={32} color="#555" />
+                        <span>No new notifications. Set reminders on Coming Soon titles to get notified here!</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           {session ? (

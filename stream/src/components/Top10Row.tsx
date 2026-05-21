@@ -147,11 +147,53 @@ function Top10Card({
     else addToMyList(movie.id);
   };
 
-  const handlePlay = (e: React.MouseEvent) => {
+  const handlePlay = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) {
+      const stored = localStorage.getItem('activeProfile');
+      if (!stored) return;
+      const profile = JSON.parse(stored);
+      const { toggleReminder } = await import('../services/reminderService');
+      const nextReminded = await toggleReminder(profile.id, movie.id);
+      setReminded(nextReminded);
+      return;
+    }
     const base = movie.xRay ? '/xray' : '/watch';
     navigate(`${base}/${movie.id}`);
   };
+
+  const [reminded, setReminded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const stored = localStorage.getItem('activeProfile');
+    if (stored) {
+      const profile = JSON.parse(stored);
+      import('../services/reminderService').then(({ isReminded }) => {
+        isReminded(profile.id, movie.id).then((val) => {
+          if (active) setReminded(val);
+        });
+      });
+    }
+
+    const handleUpdate = () => {
+      const stored = localStorage.getItem('activeProfile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        import('../services/reminderService').then(({ isReminded }) => {
+          isReminded(profile.id, movie.id).then((val) => {
+            if (active) setReminded(val);
+          });
+        });
+      }
+    };
+    window.addEventListener('reminders_updated', handleUpdate);
+
+    return () => {
+      active = false;
+      window.removeEventListener('reminders_updated', handleUpdate);
+    };
+  }, [movie.id]);
 
   const posClass =
     position === 'right' ? 'top10-card--pos-right'
@@ -255,12 +297,11 @@ function Top10Card({
               <div className="top10-card__controls">
                 <div className="top10-card__controls-left">
                   <button
-                    className={`top10-card__btn top10-card__btn--play ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'top10-card__btn--disabled' : ''}`}
-                    onClick={(e) => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlay(e)}
-                    disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
+                    className={`top10-card__btn top10-card__btn--play`}
+                    onClick={handlePlay}
                   >
                     {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))
-                      ? <Bell size={14} color="white" fill="white" />
+                      ? <Bell size={14} color="black" fill={reminded ? "black" : "none"} />
                       : <Play size={12} fill="black" color="black" />}
                   </button>
                   <button
@@ -291,11 +332,17 @@ function Top10Card({
 
               {/* Match / age / duration */}
               <div className="top10-card__meta-row">
-                {movie.comingSoon && <span className="top10-card__coming-soon">COMING SOON</span>}
+                {movie.comingSoon ? (
+                  <span className="top10-card__coming-soon">
+                    {movie.releaseDate ? `RELEASING ${movie.releaseDate.toUpperCase()}${movie.releaseTime ? ` @ ${movie.releaseTime}` : ''}` : 'COMING SOON'}
+                  </span>
+                ) : null}
                 <span className="top10-card__age">{movie.ageRating || '13+'}</span>
-                <span className="top10-card__duration">
-                  {movie.comingSoon ? 'TBA' : movie.duration}
-                </span>
+                {!movie.comingSoon && (
+                  <span className="top10-card__duration">
+                    {movie.duration}
+                  </span>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <HDBadge isSmall={true} />
                   {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (

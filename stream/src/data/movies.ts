@@ -92,6 +92,8 @@ export interface Movie {
   mediaType?: 'movie' | 'show';
   xRay?: XRayData;
   comingSoon?: boolean;
+  releaseDate?: string;
+  releaseTime?: string;
   recentlyAdded?: boolean;
   skipIntroStart?: number;
   skipIntroEnd?: number;
@@ -121,7 +123,6 @@ export const makingOfLegacy: Movie = {
   squareThumbnail: "/images/clips/square/BTLD.webp",
   trailerVttUrl: "https://boycanad.github.io/stream-storage-2/BTLD-trailer.vtt",
   mediaType: 'show',
-  comingSoon: true,
 };
 
 export const afterHours: Movie = {

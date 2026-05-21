@@ -33,6 +33,122 @@ function HeroListButton({ movie }: { movie: Movie }) {
   );
 }
 
+function HeroPlayRemindButton({ movie, onPlay }: { movie: Movie; onPlay: (movie: Movie) => void }) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [reminded, setReminded] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const stored = localStorage.getItem('activeProfile');
+    if (stored) {
+      const profile = JSON.parse(stored);
+      import('../services/reminderService').then(({ isReminded }) => {
+        isReminded(profile.id, movie.id).then((val) => {
+          if (active) setReminded(val);
+        });
+      });
+    }
+
+    const handleUpdate = () => {
+      const stored = localStorage.getItem('activeProfile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        import('../services/reminderService').then(({ isReminded }) => {
+          isReminded(profile.id, movie.id).then((val) => {
+            if (active) setReminded(val);
+          });
+        });
+      }
+    };
+    window.addEventListener('reminders_updated', handleUpdate);
+
+    return () => {
+      active = false;
+      window.removeEventListener('reminders_updated', handleUpdate);
+    };
+  }, [movie.id]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/login');
+      return;
+    }
+
+    if (movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) {
+      const stored = localStorage.getItem('activeProfile');
+      if (!stored) return;
+      const profile = JSON.parse(stored);
+      const { toggleReminder } = await import('../services/reminderService');
+      const nextReminded = await toggleReminder(profile.id, movie.id);
+      setReminded(nextReminded);
+      showToast(nextReminded 
+        ? `🔔 Reminder set! We will notify you when "${movie.title}" is available.`
+        : `🔕 Reminder removed for "${movie.title}".`
+      );
+      return;
+    }
+
+    onPlay(movie);
+  };
+
+  const isComingSoon = movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0));
+
+  return (
+    <>
+      <button 
+        className={`hero__btn hero__btn--play ${isComingSoon && reminded ? 'hero__btn--reminded' : ''}`} 
+        onClick={handleClick}
+        style={isComingSoon ? {
+          backgroundColor: reminded ? 'rgba(255,255,255,0.1)' : 'white',
+          color: reminded ? 'white' : 'black',
+          border: reminded ? '1px solid rgba(255,255,255,0.4)' : 'none'
+        } : {}}
+      >
+        {isComingSoon ? (
+          <Bell size={15} fill={reminded ? "white" : "none"} color={reminded ? "white" : "black"} />
+        ) : (
+          <Play size={15} fill="white" />
+        )}
+        {' '}
+        {isComingSoon ? (reminded ? 'Reminded' : t('hero.remind_me')) : t('hero.play')}
+      </button>
+
+      {toastMessage && (
+        <div className="netflix-toast" style={{
+          position: 'fixed',
+          bottom: '50px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '4px',
+          zIndex: 10000,
+          boxShadow: '0 5px 20px rgba(0,0,0,0.5)',
+          fontSize: '14px',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          borderLeft: '4px solid #e50914',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          {toastMessage}
+        </div>
+      )}
+    </>
+  );
+}
+
 interface HeroCarouselProps {
   movies: Movie[];
 }
@@ -192,13 +308,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
           </div>
           <p className="hero__desc">{movie.description}</p>
           <div className="hero__actions">
-            <button 
-              className={`hero__btn hero__btn--play ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'hero__btn--disabled' : ''}`} 
-              onClick={() => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlay(movie)}
-              disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
-            >
-              {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? t('hero.remind_me') : t('hero.play')}
-            </button>
+            <HeroPlayRemindButton movie={movie} onPlay={handlePlay} />
             <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> {t('hero.more_info')}</button>
             <HeroListButton movie={movie} />
           </div>
@@ -256,13 +366,7 @@ export default function HeroCarousel({ movies: allMovies }: HeroCarouselProps) {
                     </div>
                     <p className="hero__desc">{movie.description}</p>
                     <div className="hero__actions">
-                      <button 
-                        className={`hero__btn hero__btn--play ${movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? 'hero__btn--disabled' : ''}`} 
-                        onClick={() => !(movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) && handlePlay(movie)}
-                        disabled={movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))}
-                      >
-                        {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? <Bell size={15} fill="white" /> : <Play size={15} fill="white" />} {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0)) ? t('hero.remind_me') : t('hero.play')}
-                      </button>
+                      <HeroPlayRemindButton movie={movie} onPlay={handlePlay} />
                       <button className="hero__btn hero__btn--secondary" onClick={() => handleMoreInfo(movie)}><Info size={15} /> {t('hero.more_info')}</button>
                       <HeroListButton movie={movie} />
                     </div>

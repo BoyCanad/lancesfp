@@ -43,6 +43,9 @@ ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "xRay" JSONB;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS skip_intro_start NUMERIC;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS skip_intro_end NUMERIC;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS end_credits_time NUMERIC;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "comingSoon" BOOLEAN DEFAULT false;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS release_date TEXT;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS release_time TEXT;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 
@@ -53,7 +56,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'ang-huling-el-bimbo-play',
   'Ang Huling El Bimbo Play',
@@ -93,6 +97,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -132,7 +139,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -142,12 +152,13 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'ang-huling-el-bimbo-play-xray',
   'Ang Huling El Bimbo Play - Bonus X-Ray Edition',
   '/images/el-bimbo-x-ray.webp',
-  '/images/el-bimbo-x-ray.webp',
+  '/images/el-bimbo-banner.jpg',
   'The same nostalgic journey through the 90s, now with the X-Ray bonus experience — explore behind-the-scenes cast info and songs as you watch.',
   '9.8',
   2026,
@@ -182,6 +193,9 @@ INSERT INTO movies (
   '{"scenes":[{"start":11,"end":349,"songs":[{"title":"Ang Huling El Bimbo Orchestral Arrangement","artist":"Eraserheads","start":11,"end":52},{"title":"Minsan","artist":"Eraserheads","start":52,"end":349}],"actors":[{"name":"Dancers","character":"Ensemble","image":"/images/xray/dancers.jpg","timeRanges":[{"start":52,"end":349}]},{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":64,"end":349}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":79,"end":349}]},{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":97,"end":349}]},{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":97,"end":349}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":165,"end":349}]}],"trivia":[{"text":"Fun Fact: Every sound you hear is a digital playback. The entire theater audio is actually pre-recorded for a flawless, studio-quality performance.","start":140,"end":160}]},{"start":358,"end":709,"songs":[{"title":"Tindahan ni Aling Nena","artist":"Eraserheads","start":359,"end":553}],"actors":[{"name":"Aisha Dela Cruz","character":"Marco''s Mother","image":"/images/xray/aisha-xray.webp","timeRanges":[{"start":358,"end":557}]},{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":358,"end":709}]},{"name":"Dancers","character":"Ensemble","image":"/images/xray/dancers.jpg","timeRanges":[{"start":358,"end":557}]},{"name":"Mark Jerzel Tria","character":"Jazzy","image":"/images/xray/jazzy-xray.webp","timeRanges":[{"start":358,"end":709}]},{"name":"Juliana Faith Cordovez","character":"Aling Nena","image":"/images/xray/nena-xray.webp","timeRanges":[{"start":369,"end":709}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":384,"end":709}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":447,"end":709}]},{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":447,"end":709}]},{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":447,"end":709}]}],"trivia":[{"text":"Fun Fact: The moment where the three friends grab and destroy Aling Nena''s store was completely unplanned and unscripted.","start":644,"end":664}]},{"start":726,"end":1072,"songs":[{"title":"Overdrive Acapella","artist":"Eraserheads","start":789,"end":831},{"title":"Alapaap/Overdrive","artist":"Eraserheads","start":836,"end":1041}],"actors":[{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":726,"end":1072}]},{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":726,"end":1072}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":726,"end":1072}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":733,"end":1072}]},{"name":"Mark Jerzel Tria","character":"Jazzy","image":"/images/xray/jazzy-xray.webp","timeRanges":[{"start":733,"end":1072}]},{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":759,"end":1072}]}],"trivia":[{"text":"Trivia: Did you know? Some character voices are actually provided by other actors who filled in when the original performers were absent during the recording session.","start":730,"end":750},{"text":"Trivia: Did you know? The music production and recording sessions were completed in just 4 to 5 days.","start":974,"end":994}],"polls":[{"question":"Who in the Barkada is your most favorite?","options":["Marco","Joy","Pok","Xian","Edrian"],"start":920,"end":940}]},{"start":1079,"end":1249,"songs":[{"title":"Spoliarium","artist":"Eraserheads","start":1120,"end":1249}],"actors":[{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":1079,"end":1099}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":1079,"end":1228}]},{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":1079,"end":1170}]},{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":1079,"end":1099}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":1079,"end":1099}]}],"trivia":[{"text":"Trivia: Did you know? This entire theater performance was filmed by only three people and edited by just one person.","start":1169,"end":1189}]},{"start":1252,"end":1407,"songs":[{"title":"Minsan Instrumental","artist":"Eraserheads","start":1252,"end":1314}],"actors":[{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":1252,"end":1321}]},{"name":"Mark Jerzel Tria","character":"Jazzy","image":"/images/xray/jazzy-xray.webp","timeRanges":[{"start":1260,"end":1321},{"start":1362,"end":1407}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":1260,"end":1321}]},{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":1280,"end":1321}]},{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":1284,"end":1360}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":1284,"end":1407}]}]},{"start":1413,"end":1809,"songs":[{"title":"Pare Ko/Yoko","artist":"Eraserheads","start":1420,"end":1759}],"actors":[{"name":"Dancers","character":"Ensemble","image":"/images/xray/dancers.jpg","timeRanges":[{"start":1413,"end":1762}]},{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":1489,"end":1809}]},{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":1523,"end":1556},{"start":1673,"end":1687},{"start":1763,"end":1809}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":1673,"end":1687},{"start":1763,"end":1809}]}],"trivia":[{"text":"Trivia: Did you know? Some of the songs Marco sings were actually recorded by Edrian because Marco was dealing with vocal injuries during the session.","start":1493,"end":1513}]},{"start":1815,"end":1841,"songs":[{"title":"Burnout (Slowed)","artist":"Eraserheads","start":1821,"end":1841}],"actors":[{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":1815,"end":1841}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":1821,"end":1841}]}]},{"start":1853,"end":2043,"songs":[{"title":"Tama Ka/Ligaya","artist":"Eraserheads","start":1853,"end":2043}],"actors":[{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":1857,"end":2005}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":1860,"end":2043}]},{"name":"Juliana Faith Cordovez","character":"Aling Nena","image":"/images/xray/nena-xray.webp","timeRanges":[{"start":1868,"end":2005}]},{"name":"Dancers","character":"Ensemble","image":"/images/xray/dancers.jpg","timeRanges":[{"start":2005,"end":2043}]}],"trivia":[{"text":"Fun Fact: Ang Huling El Bimbo Play was the very first production to perform at Teatro Bonifacio.","start":1941,"end":1961}]},{"start":2044,"end":2244,"songs":[{"title":"Ang Huling El Bimbo (Violin & Piano)","artist":"Eraserheads","start":2184,"end":2214}],"actors":[{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":2044,"end":2109},{"start":2171,"end":2204}]},{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":2045,"end":2091},{"start":2132,"end":2186}]},{"name":"Aisha Dela Cruz","character":"Marco''s Mother","image":"/images/xray/aisha-xray.webp","timeRanges":[{"start":2052,"end":2109},{"start":2214,"end":2244}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":2117,"end":2204}]},{"name":"Ahlysson Dela Cruz","character":"Doctor","image":"/images/xray/ahlysson-delacruz.jpg","timeRanges":[{"start":2214,"end":2233}]}]},{"start":2245,"end":2795,"songs":[{"title":"Ang Huling El Bimbo","artist":"Eraserheads","start":2255,"end":2786}],"actors":[{"name":"Merv Pring","character":"Marco","image":"/images/xray/marco-xray.webp","timeRanges":[{"start":2245,"end":2795}]},{"name":"Dancers","character":"Ensemble","image":"/images/xray/dancers.jpg","timeRanges":[{"start":2255,"end":2389},{"start":2469,"end":2706},{"start":2730,"end":2795}]},{"name":"Lance Dominguez","character":"Pok","image":"/images/xray/pok-xray.webp","timeRanges":[{"start":2255,"end":2389},{"start":2756,"end":2795}]},{"name":"Edrian Lee Catalan","character":"Edrian","image":"/images/xray/edrian-xray.webp","timeRanges":[{"start":2255,"end":2389},{"start":2756,"end":2795}]},{"name":"Aisha Dela Cruz","character":"Marco''s Mother","image":"/images/xray/aisha-xray.webp","timeRanges":[{"start":2255,"end":2389}]},{"name":"Rich Ann Capuli","character":"Joy","image":"/images/xray/joy-xray.webp","timeRanges":[{"start":2440,"end":2795}]},{"name":"Jan Xian Castro","character":"Xian","image":"/images/xray/xian-xray.webp","timeRanges":[{"start":2756,"end":2795}]},{"name":"Juliana Faith Cordovez","character":"Aling Nena","image":"/images/xray/nena-xray.webp","timeRanges":[{"start":2756,"end":2795}]}],"trivia":[{"text":"Fun Fact: The entire choreography was finalized just days before the actual performance.","start":2477,"end":2497},{"text":"Fun Fact: The girls with white strings were originally supposed to appear in this scene, but they were left out by mistake and the production ultimately chose not to include them.","start":2679,"end":2699},{"text":"Trivia: Did you know? Merv Pring is the one who choreographed the entire performance.","start":2735,"end":2755}],"polls":[{"question":"Which song is your favorite throughout the entire theater performance?","options":["Minsan","Tindahan ni Aling Nena","Alapaap/Overdrive","Spoliarium","Pare Ko","Tama Ka/Ligaya","Ang Huling El Bimbo"],"start":2782,"end":2802}]},{"start":2799,"end":2980,"songs":[{"title":"Ang Huling El Bimbo Orchestral Arrangement","artist":"Eraserheads","start":2799,"end":2980}],"actors":[],"polls":[{"question":"Which song is your favorite throughout the entire theater performance?","options":["Minsan","Tindahan ni Aling Nena","Alapaap/Overdrive","Spoliarium","Pare Ko","Tama Ka/Ligaya","Ang Huling El Bimbo"],"start":2782,"end":2802}]}]}',
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -221,7 +235,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -231,7 +248,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'minsan',
   'Minsan',
@@ -271,6 +289,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -310,7 +331,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -320,7 +344,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'tindahan-ni-aling-nena',
   'Tindahan ni Aling Nena',
@@ -360,6 +385,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -399,7 +427,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -409,7 +440,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'alapaap-overdrive',
   'Alapaap/Overdrive',
@@ -449,6 +481,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -488,7 +523,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -498,7 +536,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'spoliarium-graduation',
   'Spoliarium/Graduation',
@@ -538,6 +577,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -577,7 +619,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -587,7 +632,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'pare-ko',
   'Pare Ko',
@@ -627,6 +673,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -666,7 +715,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -676,7 +728,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'tama-ka-ligaya',
   'Tama Ka/Ligaya',
@@ -716,6 +769,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -755,7 +811,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -765,7 +824,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'ang-huling-el-bimbo',
   'Ang Huling El Bimbo',
@@ -805,6 +865,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -844,7 +907,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -854,7 +920,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'bukang-liwayway-takipsilim',
   'Bukang-Liwayway Hanggang Takipsilim',
@@ -894,6 +961,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -933,7 +1003,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -943,7 +1016,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'a-day-in-my-life-stem',
   'A Day In My Life as a STEM Student',
@@ -983,6 +1057,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -1022,7 +1099,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -1032,7 +1112,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   't1',
   '11 STEM A SY 2025-2026',
@@ -1072,6 +1153,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -1111,7 +1195,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -1121,7 +1208,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'beyond-the-last-dance',
   'Beyond The Last Dance',
@@ -1161,7 +1249,10 @@ INSERT INTO movies (
   null,
   null,
   null,
-  null
+  null,
+  true,
+  'June 12, 2026',
+  '8:00 PM'
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
   thumbnail = EXCLUDED.thumbnail,
@@ -1200,7 +1291,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 
 
 INSERT INTO movies (
@@ -1210,7 +1304,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   'after-hours',
   'After Hours',
@@ -1250,6 +1345,9 @@ INSERT INTO movies (
   null,
   null,
   null,
+  null,
+  false,
+  null,
   null
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
@@ -1289,4 +1387,7 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;

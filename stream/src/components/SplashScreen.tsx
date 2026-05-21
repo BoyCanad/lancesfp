@@ -20,6 +20,12 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent.toLowerCase());
 
   useEffect(() => {
+    // Remove the pre-React black cover now that SplashScreen has taken over
+    const preSplash = document.getElementById('pre-splash');
+    if (preSplash) preSplash.remove();
+  }, []);
+
+  useEffect(() => {
     let active = true;
     let timer: NodeJS.Timeout;
     if (isSafari) {

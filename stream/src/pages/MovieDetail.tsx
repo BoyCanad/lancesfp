@@ -103,6 +103,26 @@ export default function MovieDetail() {
   const [progress, setProgress] = useState<WatchProgress | null>(null);
   const [pageReady, setPageReady] = useState(false);
   const [top10Rank, setTop10Rank] = useState<number | null>(null);
+  const [reminded, setReminded] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (movie) {
+      const stored = localStorage.getItem('activeProfile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        import('../services/reminderService').then(({ isReminded }) => {
+          if (active) {
+            isReminded(profile.id, movie.id).then(setReminded);
+          }
+        });
+      }
+    }
+    return () => {
+      active = false;
+    };
+  }, [movie?.id]);
 
   useEffect(() => {
     let active = true;
@@ -241,11 +261,32 @@ export default function MovieDetail() {
   const handleTrailerEnd = () => setTrailerActive(false);
   const toggleMute = () => setIsMuted(m => !m);
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  };
+
   const handlePlayClick = async () => {
     if (!movie) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate('/login');
+      return;
+    }
+
+    if (movie.comingSoon) {
+      const stored = localStorage.getItem('activeProfile');
+      if (!stored) return;
+      const profile = JSON.parse(stored);
+      const { toggleReminder } = await import('../services/reminderService');
+      const nextReminded = await toggleReminder(profile.id, movie.id);
+      setReminded(nextReminded);
+      showToast(nextReminded 
+        ? `🔔 Reminder set! We will notify you when "${movie.title}" is available.`
+        : `🔕 Reminder removed for "${movie.title}".`
+      );
       return;
     }
 
@@ -292,7 +333,7 @@ export default function MovieDetail() {
   // Progress Calculation
   const progressPercent = progress ? (progress.progress_ms / progress.duration_ms) * 100 : 0;
   const isTMDB = movie.id.startsWith('tmdb-');
-  const isPlayDisabled = movie.comingSoon || (!isTMDB && !movie.videoUrl && (!movie.seasons || movie.seasons.length === 0));
+  const isPlayDisabled = !movie.comingSoon && (!isTMDB && !movie.videoUrl && (!movie.seasons || movie.seasons.length === 0));
   const remainingMs = progress ? progress.duration_ms - progress.progress_ms : 0;
   
   const formatRemaining = (ms: number) => {
@@ -366,9 +407,13 @@ export default function MovieDetail() {
           )}
 
           <div className="mdetail-meta-row">
-            <span className="mdetail-meta-text">{movie.year}</span>
+            {movie.comingSoon ? (
+              <span className="mdetail-badge mdetail-badge-cam" style={{ borderColor: '#e50914', color: '#e50914', background: 'rgba(229, 9, 20, 0.1)' }}>COMING SOON</span>
+            ) : (
+              <span className="mdetail-meta-text">{movie.year}</span>
+            )}
             <span className="mdetail-badge">{movie.ageRating}</span>
-            <span className="mdetail-meta-text">{movie.duration}</span>
+            {!movie.comingSoon && <span className="mdetail-meta-text">{movie.duration}</span>}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <HDBadge />
               {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (
@@ -397,13 +442,32 @@ export default function MovieDetail() {
 
           <p className="mdetail-description">{movie.description}</p>
 
+          {movie.comingSoon && (movie.releaseDate || movie.releaseTime) && (
+            <div className="mdetail-release-date" style={{ color: '#e50914', fontSize: '16px', fontWeight: 600, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bell size={18} fill="#e50914" />
+              <span>Releasing on {movie.releaseDate}{movie.releaseTime ? ` at ${movie.releaseTime}` : ''}</span>
+            </div>
+          )}
+
           <div className="mdetail-actions">
             <button
                onClick={handlePlayClick}
-               className={`mdetail-btn ${progress ? 'mdetail-btn-resume' : 'mdetail-btn-play'} ${isPlayDisabled ? 'mdetail-btn-disabled' : ''}`}
+               className={`mdetail-btn ${movie.comingSoon ? 'mdetail-btn-remind' : (progress ? 'mdetail-btn-resume' : 'mdetail-btn-play')} ${isPlayDisabled ? 'mdetail-btn-disabled' : ''}`}
                disabled={isPlayDisabled}
+               style={movie.comingSoon ? {
+                 backgroundColor: reminded ? 'rgba(255,255,255,0.1)' : 'white',
+                 color: reminded ? 'white' : 'black',
+                 border: reminded ? '1px solid rgba(255,255,255,0.4)' : 'none'
+               } : {}}
             >
-              {isPlayDisabled ? <Bell size={18} fill="white" /> : <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} />} {isPlayDisabled ? 'Remind Me' : (progress ? 'Resume' : 'Play')}
+              {movie.comingSoon ? (
+                <Bell size={18} fill={reminded ? "white" : "none"} color={reminded ? "white" : "black"} />
+              ) : (
+                progress ? <Play size={18} fill="white" strokeWidth={0} /> : <Play size={18} fill={progress ? "white" : "black"} strokeWidth={0} />
+              )}
+              <span style={{ marginLeft: '8px' }}>
+                {movie.comingSoon ? (reminded ? 'Reminded' : 'Remind Me') : (progress ? 'Resume' : 'Play')}
+              </span>
             </button>
 
             {movie.videoUrl && (
@@ -525,6 +589,30 @@ export default function MovieDetail() {
           movies={(isElBimbo ? elBimboCollections : archiveMovies).filter(m => m.id !== movie?.id)}
         />
       </div>
+
+      {toastMessage && (
+        <div className="netflix-toast" style={{
+          position: 'fixed',
+          bottom: '50px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '4px',
+          zIndex: 10000,
+          boxShadow: '0 5px 20px rgba(0,0,0,0.5)',
+          fontSize: '14px',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          borderLeft: '4px solid #e50914',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

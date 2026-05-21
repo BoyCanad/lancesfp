@@ -64,6 +64,23 @@ function buildRows(movies: Movie[]) {
 function mapRow(row: any): Movie {
   const staticEquivalent = staticAllMovies.find((m) => m.id === row.id) || ({} as Partial<Movie>);
 
+  const releaseDate = row.release_date || row.releaseDate || staticEquivalent.releaseDate;
+  const releaseTime = row.release_time || row.releaseTime || staticEquivalent.releaseTime;
+
+  // Determine comingSoon: auto-flip if release date/time has already passed
+  let isComingSoon = row.comingSoon ?? staticEquivalent.comingSoon ?? false;
+  if (isComingSoon && releaseDate) {
+    try {
+      const timeStr = releaseTime || '00:00';
+      const releaseDateTime = new Date(`${releaseDate}T${timeStr}`);
+      if (!isNaN(releaseDateTime.getTime()) && Date.now() >= releaseDateTime.getTime()) {
+        isComingSoon = false;
+      }
+    } catch (_) {
+      // Keep comingSoon as-is if date parse fails
+    }
+  }
+
   return {
     id: row.id || staticEquivalent.id || '',
     title: row.title || staticEquivalent.title || '',
@@ -101,7 +118,9 @@ function mapRow(row: any): Movie {
     tallTrailerUrl: row.tallTrailerUrl || staticEquivalent.tallTrailerUrl,
     mediaType: row.mediaType || staticEquivalent.mediaType || 'movie',
     xRay: row.xRay ?? staticEquivalent.xRay,
-    comingSoon: row.comingSoon ?? staticEquivalent.comingSoon ?? (!row.videoUrl && !staticEquivalent.videoUrl),
+    comingSoon: isComingSoon,
+    releaseDate,
+    releaseTime,
     skipIntroStart: row.skip_intro_start ?? staticEquivalent.skipIntroStart,
     skipIntroEnd: row.skip_intro_end ?? staticEquivalent.skipIntroEnd,
     endCreditsTime: row.end_credits_time ?? staticEquivalent.endCreditsTime,
@@ -361,6 +380,8 @@ export async function upsertMovie(movie: Movie) {
         videoUrl: movie.videoUrl ?? null,
         logo: movie.logo ?? null,
         comingSoon: movie.comingSoon ?? false,
+        release_date: movie.releaseDate ?? null,
+        release_time: movie.releaseTime ?? null,
         seasons: movie.seasons ?? null,
         skip_intro_start: movie.skipIntroStart ?? null,
         skip_intro_end: movie.skipIntroEnd ?? null,

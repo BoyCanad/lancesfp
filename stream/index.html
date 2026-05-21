@@ -15,8 +15,16 @@
     <!-- Primary Meta Tags -->
     <style>
       body {
-        background-color: #0d0d14;
+        background-color: #000;
         margin: 0;
+      }
+      /* Pre-React-mount black cover — hides the page until JS takes over */
+      #pre-splash {
+        position: fixed;
+        inset: 0;
+        background: #000;
+        z-index: 99999;
+        pointer-events: none;
       }
     </style>
     <title>LSFPlus</title>
@@ -38,6 +46,7 @@
     <meta name="twitter:image" content="https://raw.githubusercontent.com/BoyCanad/lancesfp/main/stream/public/images/collection.png" />
   </head>
   <body>
+    <div id="pre-splash"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 

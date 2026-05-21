@@ -124,7 +124,11 @@ export default function Search() {
                 </div>
                 <div className="search-page__item-info">
                   <span className="search-page__item-title">{movie.title}</span>
-                  {movie.comingSoon && <span className="search-page__item-coming-soon">Remind Me</span>}
+                  {movie.comingSoon && (
+                    <span className="search-page__item-coming-soon">
+                      {movie.releaseDate ? `Releasing ${movie.releaseDate}` : 'Remind Me'}
+                    </span>
+                  )}
                 </div>
                 <div className="search-page__item-action">
                   {movie.comingSoon ? <Bell size={24} color="white" /> : <PlayCircle size={28} color="white" strokeWidth={1.5} />}

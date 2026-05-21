@@ -73,6 +73,9 @@ ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "xRay" JSONB;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS skip_intro_start NUMERIC;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS skip_intro_end NUMERIC;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS end_credits_time NUMERIC;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS "comingSoon" BOOLEAN DEFAULT false;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS release_date TEXT;
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS release_time TEXT;
 ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 `;
 
@@ -84,7 +87,8 @@ INSERT INTO movies (
   "mobileCardBanner", logo, "videoUrl", "detailMobileBanner", "detailBanner", 
   "mobileCarouselBanner", subtitles, "trailerUrl", "trailerVttUrl", "spriteUrl", 
   "spriteConfig", "downloadUrl", seasons, "squareThumbnail", "tallTrailerUrl", 
-  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time
+  "mediaType", "xRay", skip_intro_start, skip_intro_end, end_credits_time,
+  "comingSoon", release_date, release_time
 ) VALUES (
   ${escapeSql(m.id)},
   ${escapeSql(m.title)},
@@ -124,7 +128,10 @@ INSERT INTO movies (
   ${escapeJson(m.xRay || null)},
   ${m.skipIntroStart ?? 'null'},
   ${m.skipIntroEnd ?? 'null'},
-  ${m.endCreditsTime ?? 'null'}
+  ${m.endCreditsTime ?? 'null'},
+  ${toSqlBoolean(m.comingSoon)},
+  ${escapeSql(m.releaseDate)},
+  ${escapeSql(m.releaseTime)}
 ) ON CONFLICT (id) DO UPDATE SET 
   title = EXCLUDED.title,
   thumbnail = EXCLUDED.thumbnail,
@@ -163,7 +170,10 @@ INSERT INTO movies (
   "xRay" = EXCLUDED."xRay",
   skip_intro_start = EXCLUDED.skip_intro_start,
   skip_intro_end = EXCLUDED.skip_intro_end,
-  end_credits_time = EXCLUDED.end_credits_time;
+  end_credits_time = EXCLUDED.end_credits_time,
+  "comingSoon" = EXCLUDED."comingSoon",
+  release_date = EXCLUDED.release_date,
+  release_time = EXCLUDED.release_time;
 `).join('\n');
 
 fs.writeFileSync('seed.sql', schemaSql + '\n' + sql);
