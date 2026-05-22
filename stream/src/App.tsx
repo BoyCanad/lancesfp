@@ -42,6 +42,7 @@ import ChangePlan from './pages/ChangePlan';
 import SignUp from './pages/SignUp';
 import AdminImport from './pages/AdminImport';
 import WindowsXP from './pages/WindowsXP';
+import Activate from './pages/Activate';
 import './App.css';
 
 function App() {
@@ -78,10 +79,11 @@ function App() {
   const isAccount = pathname === '/account' || pathname === '/change-plan';
   const isMyNetflix = pathname === '/my-lsfplus';
   const isDownloads = pathname === '/downloads';
+  const isActivate = pathname === '/activate';
   const reservedRoots = [
     '/login', '/introduction', '/browse', '/my-list', '/search', '/clips', '/music', '/live',
     '/account', '/my-lsfplus', '/downloads', '/forgot-password', '/change-plan', '/signup', '/games',
-    '/CreateProfile'
+    '/CreateProfile', '/activate'
   ];
   
   const isDynamicDetailPage = pathname.split('/').length === 2 && !reservedRoots.includes(pathname);
@@ -105,7 +107,7 @@ function App() {
   ].includes(pathname) || isDynamicDetailPage;
 
   const isGenrePage = pathname.startsWith('/genre');
-  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isXP && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage) || isMyNetflix || isGenrePage || isDownloads;
+  const showNavAndFooter = (!isVideoPlayer && !isProfilePicker && !isXP && !isManageProfile && !isAuth && !isForgotPassword && !isAccount && !isDetailPage && !isActivate) || isMyNetflix || isGenrePage || isDownloads;
 
   // ── Auth effect ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -255,6 +257,7 @@ function App() {
       '/forgot-password': 'Reset Password',
       '/change-plan': 'Change Plan',
       '/CreateProfile': 'Create Profile',
+      '/activate': 'Activate Device',
       '/xp': 'Windows XP Professional',
       '/collections/el-bimbo': 'El Bimbo Collection',
       '/ang-huling-el-bimbo-play': 'Ang Huling El Bimbo',
@@ -361,6 +364,11 @@ function App() {
 
             <Route path="/account" element={session ? <Account /> : <Navigate to="/login" replace />} />
             <Route path="/my-lsfplus" element={session ? <MyNetflix /> : <Navigate to="/login" replace />} />
+            <Route path="/activate" element={
+              session 
+                ? (session.user.user_metadata?.signup_completed ? <Activate /> : <Navigate to="/signup" replace />) 
+                : <Navigate to={`/login?redirect=${encodeURIComponent('/activate')}`} replace />
+            } />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/downloads" element={session ? <Downloads /> : <Navigate to="/login" replace />} />
             <Route path="/change-plan" element={session ? <ChangePlan /> : <Navigate to="/login" replace />} />

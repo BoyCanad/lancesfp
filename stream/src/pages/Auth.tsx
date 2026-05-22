@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import NotificationModal from '../components/NotificationModal';
 import './Auth.css';
 
@@ -31,6 +31,8 @@ export default function Auth() {
   }, [resendCooldown]);
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/browse';
 
   // Handle the initial Email submission
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -107,8 +109,8 @@ export default function Auth() {
         });
       }
 
-      // Login successful! Redirect to browse
-      navigate('/browse');
+      // Login successful! Redirect
+      navigate(redirectPath);
     } catch (error: any) {
       setModal({
         isOpen: true,
@@ -137,7 +139,7 @@ export default function Auth() {
       if (error) throw error;
       
       // Successfully verified!
-      navigate('/browse'); 
+      navigate(redirectPath); 
       
     } catch (error: any) {
       setModal({ 
