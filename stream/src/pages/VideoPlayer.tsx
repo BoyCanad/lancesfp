@@ -604,6 +604,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLInputElement>(null);
+  const togglePiPRef = useRef<() => Promise<void>>(async () => {});
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -1258,6 +1259,21 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           videoRef.current.currentTime += 10;
         }
       });
+
+      try {
+        navigator.mediaSession.setActionHandler('enterpictureinpicture' as any, async () => {
+          // Fire your custom PiP logic anytime the browser requests it
+          try {
+            if (!isPiP) {
+              await togglePiPRef.current(); 
+            }
+          } catch (err) {
+            console.error('Browser-initiated Auto Document PiP failed:', err);
+          }
+        });
+      } catch (e) {
+        console.warn('enterpictureinpicture handler registration failed:', e);
+      }
     }
 
     return () => {
@@ -1267,9 +1283,66 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         navigator.mediaSession.setActionHandler('pause', null);
         navigator.mediaSession.setActionHandler('seekbackward', null);
         navigator.mediaSession.setActionHandler('seekforward', null);
+        try {
+          navigator.mediaSession.setActionHandler('enterpictureinpicture' as any, null);
+        } catch (e) {}
       }
     };
   }, [movie, title]);
+
+  // Listen for native enter/leave picture-in-picture events
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleEnterPiP = () => setIsPiP(true);
+    const handleLeavePiP = () => setIsPiP(false);
+
+    video.addEventListener('enterpictureinpicture', handleEnterPiP);
+    video.addEventListener('leavepictureinpicture', handleLeavePiP);
+
+    return () => {
+      video.removeEventListener('enterpictureinpicture', handleEnterPiP);
+      video.removeEventListener('leavepictureinpicture', handleLeavePiP);
+    };
+  }, []);
+
+  // Auto PiP on visibilitychange (moving to other tab or clicking home on mobile)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden') {
+        // When tab hides, attempt to auto-enter custom Document PiP.
+        // This acts as a reliable fallback if the mediaSession handler is silently ignored.
+        if (!isPiP && isPlaying) {
+          try {
+            await togglePiPRef.current();
+          } catch (err) {
+            // This will log a NotAllowedError if Chrome blocks it due to permissions,
+            // which finally gives us visibility into the silent failure!
+            console.warn('Auto Document PiP blocked by browser permission:', err);
+          }
+        }
+      } else if (document.visibilityState === 'visible') {
+        // When returning to the tab, close PiP automatically
+        if (isPiP) {
+          try {
+            if (pipWindowRef.current) {
+              pipWindowRef.current.close();
+            } else if (document.pictureInPictureElement) {
+              await document.exitPictureInPicture();
+            }
+          } catch (err) {
+            console.warn('Exit PiP via visibilitychange failed:', err);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPiP, isPlaying]); // Added isPlaying dependency so it only fires when video is active
 
   useEffect(() => {
     const handleActivity = () => {
@@ -1901,8 +1974,12 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     if (!videoRef.current || !movie) return;
 
     // If already in PiP, close it
-    if (isPiP && pipWindowRef.current) {
-      pipWindowRef.current.close();
+    if (isPiP) {
+      if (pipWindowRef.current) {
+        pipWindowRef.current.close();
+      } else if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      }
       return;
     }
 
@@ -1998,18 +2075,21 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           }
 
           /* Progress bar */
-          .pip-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-            background: rgba(255,255,255,0.15); z-index: 10; cursor: pointer; transition: height 0.2s ease; }
-          .pip-root:hover .pip-progress, .pip-root.paused .pip-progress { height: 5px; }
-          .pip-fill { height: 100%; background: linear-gradient(90deg, #4c1d95, #6b21a8); position: relative;
-            border-radius: 0 2px 2px 0; transition: width 0.15s linear; }
-          .pip-fill::after { content: ''; position: absolute; right: -1px; top: 50%;
+          .pip-progress { position: absolute; bottom: 6px; left: 12px; right: 12px; height: 16px;
+            background: transparent; z-index: 10; cursor: pointer; }
+          .pip-progress::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 3px; 
+            transform: translateY(-50%); background: rgba(255,255,255,0.15); transition: height 0.2s ease; pointer-events: none; border-radius: 2px; }
+          .pip-root:hover .pip-progress::before, .pip-root.paused .pip-progress::before { height: 5px; }
+          .pip-fill { height: 3px; background: linear-gradient(90deg, #4c1d95, #6b21a8); position: absolute; top: 50%; left: 0;
+            transform: translateY(-50%); border-radius: 2px; transition: width 0.15s linear, height 0.2s ease; pointer-events: none; }
+          .pip-root:hover .pip-fill, .pip-root.paused .pip-fill { height: 5px; }
+          .pip-fill::after { content: ''; position: absolute; right: -5px; top: 50%;
             transform: translateY(-50%) scale(0); width: 10px; height: 10px; background: #fff;
             border-radius: 50%; box-shadow: 0 0 6px rgba(76,29,149,0.8); transition: transform 0.2s ease; }
           .pip-root:hover .pip-fill::after, .pip-root.paused .pip-fill::after { transform: translateY(-50%) scale(1); }
 
           /* Time display */
-          .pip-time { position: absolute; bottom: 8px; right: 12px; color: rgba(255,255,255,0.7);
+          .pip-time { position: absolute; bottom: 26px; right: 12px; color: rgba(255,255,255,0.7);
             font-size: 11px; font-weight: 600; z-index: 11; opacity: 0; transition: opacity 0.25s ease;
             text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
           .pip-root:hover .pip-time, .pip-root.paused .pip-time { opacity: 1; }
@@ -2108,13 +2188,39 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         progressBar.appendChild(progressFill);
         root.appendChild(progressBar);
 
-        // Click-to-seek on progress bar
-        progressBar.addEventListener('click', (e: MouseEvent) => {
-          e.stopPropagation();
+        // Click and Drag to seek on progress bar
+        let isScrubbingPiP = false;
+
+        const updateSeek = (e: MouseEvent) => {
           if (!videoRef.current) return;
           const rect = progressBar.getBoundingClientRect();
           const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
           videoRef.current.currentTime = pct * videoRef.current.duration;
+        };
+
+        progressBar.addEventListener('mousedown', (e: MouseEvent) => {
+          e.stopPropagation();
+          e.preventDefault(); // Prevents text selection while dragging
+          isScrubbingPiP = true;
+          updateSeek(e);
+        });
+
+        pipWin.addEventListener('mousemove', (e: MouseEvent) => {
+          if (isScrubbingPiP) {
+            e.stopPropagation();
+            updateSeek(e);
+          }
+        });
+
+        pipWin.addEventListener('mouseup', (e: MouseEvent) => {
+          if (isScrubbingPiP) {
+            e.stopPropagation();
+            isScrubbingPiP = false;
+          }
+        });
+
+        progressBar.addEventListener('click', (e: MouseEvent) => {
+          e.stopPropagation(); // keep this to prevent pause/play toggle on click
         });
 
         // Time display
@@ -2200,7 +2306,16 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         });
 
       } catch (err) {
-        console.error('Document PiP failed:', err);
+        console.warn('Document PiP failed, falling back to native PiP:', err);
+        try {
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          } else {
+            await videoRef.current.requestPictureInPicture();
+          }
+        } catch (nativeErr) {
+          console.error('Native PiP fallback after Document PiP failure failed:', nativeErr);
+        }
       }
     } else {
       // Fallback: native PiP (no custom styling possible)
@@ -2216,11 +2331,19 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
   };
 
+  useEffect(() => {
+    togglePiPRef.current = togglePiP;
+  }, [togglePiP]);
+
   // Clean up PiP on unmount
   useEffect(() => {
     return () => {
       if (pipSyncRef.current) cancelAnimationFrame(pipSyncRef.current);
-      if (pipWindowRef.current) pipWindowRef.current.close();
+      if (pipWindowRef.current) {
+        pipWindowRef.current.close();
+      } else if (document.pictureInPictureElement) {
+        document.exitPictureInPicture().catch(() => {});
+      }
     };
   }, []);
 
