@@ -114,8 +114,8 @@ export default function Account() {
           return;
         }
       } else {
-        // Insert new row
-        const dummyCode = 'WEB-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Date.now().toString().slice(-4);
+        // Insert new row (code must be exactly 6 characters to satisfy character varying(6) database limit)
+        const dummyCode = Math.random().toString(36).substring(2, 8).toUpperCase().padEnd(6, 'X').slice(0, 6);
         
         const { data, error } = await supabase
           .from('device_codes')
@@ -128,6 +128,9 @@ export default function Account() {
           })
           .select();
 
+        if (error) {
+          console.error('Database insert error for devices:', error);
+        }
         if (!error && data && data[0]) {
           localStorage.setItem('lsf_device_row_id', data[0].id);
         }
