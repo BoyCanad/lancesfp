@@ -78,6 +78,65 @@ export default function Account() {
     return "Mobile Device";
   }
 
+  const registerOrUpdateCurrentDevice = async (userId: string, currentProfile: any) => {
+    try {
+      const platform = getPlatformName();
+      const isMobile = platform.includes("Phone") || platform.includes("iPhone") || platform.includes("iPad") || platform.includes("Android") || platform.includes("Mobile");
+      
+      const meta = {
+        device_name: `${platform} • ${getBrowserName()}`,
+        device_type: isMobile ? 'phone' : 'desktop',
+        location: 'Manila, Philippines',
+        recent_profile: currentProfile?.name || 'Main Profile',
+        recent_profile_image: currentProfile?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+        last_used: new Date().toISOString(),
+      };
+
+      const deviceRowId = localStorage.getItem('lsf_device_row_id');
+
+      if (deviceRowId) {
+        // Update existing row
+        const { data, error } = await supabase
+          .from('device_codes')
+          .update({
+            access_token: JSON.stringify(meta),
+            expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .eq('id', deviceRowId)
+          .select();
+
+        if (error || !data || data.length === 0) {
+          console.log('This device has been signed out remotely or row deleted.');
+          localStorage.removeItem('lsf_device_row_id');
+          await supabase.auth.signOut();
+          localStorage.removeItem('activeProfile');
+          navigate('/login');
+          return;
+        }
+      } else {
+        // Insert new row
+        const dummyCode = 'WEB-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Date.now().toString().slice(-4);
+        
+        const { data, error } = await supabase
+          .from('device_codes')
+          .insert({
+            code: dummyCode,
+            status: 'approved',
+            user_id: userId,
+            access_token: JSON.stringify(meta),
+            expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .select();
+
+        if (!error && data && data[0]) {
+          localStorage.setItem('lsf_device_row_id', data[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Error registering current device:', err);
+    }
+  };
+
   const fetchDevices = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -88,41 +147,63 @@ export default function Account() {
 
       if (error) throw error;
 
+      const deviceRowId = localStorage.getItem('lsf_device_row_id');
+
       const dbDevices = (data || []).map((row: any) => {
-        const devType = (row.device_type || 'tv').toLowerCase();
-        let iconType = 'tv';
-        if (devType.includes('phone') || devType.includes('mobile') || devType.includes('android') || devType.includes('ios')) {
-          iconType = 'phone';
-        } else if (devType.includes('desktop') || devType.includes('pc') || devType.includes('computer') || devType.includes('chrome') || devType.includes('firefox')) {
-          iconType = 'desktop';
+        let meta: any = null;
+        try {
+          if (row.access_token && row.access_token.startsWith('{')) {
+            meta = JSON.parse(row.access_token);
+          }
+        } catch (e) {
+          // not JSON
         }
 
-        return {
-          id: row.id,
-          deviceType: iconType,
-          name: row.device_name || row.device_type || 'Smart TV Device',
-          location: row.location || 'Manila, Philippines',
-          recentProfile: row.recent_profile || activeProfile?.name || profiles[0]?.name || 'Main Profile',
-          recentProfileImage: row.recent_profile_image || activeProfile?.image || profiles[0]?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
-          recentTime: row.updated_at ? new Date(row.updated_at).toLocaleString() : (row.created_at ? new Date(row.created_at).toLocaleString() : 'Recent activity'),
-          isCurrent: false,
-        };
+        if (meta) {
+          return {
+            id: row.id,
+            deviceType: meta.device_type || 'desktop',
+            name: meta.device_name || 'Device',
+            location: meta.location || 'Manila, Philippines',
+            recentProfile: meta.recent_profile || activeProfile?.name || 'Main Profile',
+            recentProfileImage: meta.recent_profile_image || activeProfile?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+            recentTime: meta.last_used ? new Date(meta.last_used).toLocaleString() : 'Recent activity',
+            isCurrent: row.id === deviceRowId,
+          };
+        } else {
+          return {
+            id: row.id,
+            deviceType: 'tv',
+            name: 'Smart TV Device',
+            location: 'Manila, Philippines',
+            recentProfile: activeProfile?.name || 'Main Profile',
+            recentProfileImage: activeProfile?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+            recentTime: row.created_at ? new Date(row.created_at).toLocaleString() : 'Recent activity',
+            isCurrent: false,
+          };
+        }
       });
 
-      const platform = getPlatformName();
-      const isMobile = platform.includes("Phone") || platform.includes("iPhone") || platform.includes("iPad") || platform.includes("Android") || platform.includes("Mobile");
-      const currentDev = {
-        id: 'current-session',
-        deviceType: isMobile ? 'phone' : 'desktop',
-        name: `${platform} • ${getBrowserName()}`,
-        location: 'Manila, Philippines',
-        recentProfile: activeProfile?.name || profiles[0]?.name || 'Main Profile',
-        recentProfileImage: activeProfile?.image || profiles[0]?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
-        recentTime: 'Active now',
-        isCurrent: true,
-      };
+      const hasSelf = dbDevices.some(d => d.isCurrent);
 
-      setSignedInDevices([currentDev, ...dbDevices]);
+      if (!hasSelf) {
+        const platform = getPlatformName();
+        const isMobile = platform.includes("Phone") || platform.includes("iPhone") || platform.includes("iPad") || platform.includes("Android") || platform.includes("Mobile");
+        const currentDev = {
+          id: 'current-session',
+          deviceType: isMobile ? 'phone' : 'desktop',
+          name: `${platform} • ${getBrowserName()}`,
+          location: 'Manila, Philippines',
+          recentProfile: activeProfile?.name || profiles[0]?.name || 'Main Profile',
+          recentProfileImage: activeProfile?.image || profiles[0]?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+          recentTime: 'Active now',
+          isCurrent: true,
+        };
+        setSignedInDevices([currentDev, ...dbDevices]);
+      } else {
+        const sorted = [...dbDevices].sort((a, b) => (a.isCurrent ? -1 : b.isCurrent ? 1 : 0));
+        setSignedInDevices(sorted);
+      }
     } catch (err) {
       console.error('Error fetching real devices:', err);
       const platform = getPlatformName();
@@ -146,9 +227,13 @@ export default function Account() {
   }, [activeTab]);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchDevices(currentUser.id);
-    }
+    const runDeviceRegistrationAndFetch = async () => {
+      if (currentUser) {
+        await registerOrUpdateCurrentDevice(currentUser.id, activeProfile || profiles[0]);
+        await fetchDevices(currentUser.id);
+      }
+    };
+    runDeviceRegistrationAndFetch();
   }, [currentUser, profiles, activeProfile]);
 
   const handleDeviceSignOut = async (deviceId: string, deviceName: string) => {
