@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -15,6 +15,10 @@ import {
   MonitorSmartphone,
   ShieldAlert,
   Settings,
+  Download,
+  Monitor,
+  Tv,
+  MapPin,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { getProfiles, type Profile } from '../services/profileService';
@@ -30,6 +34,144 @@ export default function Account() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'membership' | 'security' | 'devices' | 'profiles'>('overview');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
+  // Devices detail view state
+  const [viewingDevicesList, setViewingDevicesList] = useState(false);
+  const [deviceToast, setDeviceToast] = useState<string | null>(null);
+  const [signedInDevices, setSignedInDevices] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  function getBrowserName() {
+    const userAgent = navigator.userAgent;
+    if (/FxiOS/i.test(userAgent) || userAgent.includes("Firefox")) return "Firefox Mobile";
+    if (/CriOS/i.test(userAgent)) return "Chrome Mobile";
+    if (/Edg/i.test(userAgent)) return "Edge Mobile";
+    if (/OPR/i.test(userAgent) || /Opera/i.test(userAgent)) return "Opera Mobile";
+    if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) return "Chrome";
+    if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) return "Safari Mobile";
+    if (userAgent.includes("Edg")) return "Edge";
+    return "Browser";
+  }
+
+  function getPlatformName() {
+    const userAgent = navigator.userAgent;
+    if (/android/i.test(userAgent)) {
+      // Try to parse model name
+      const parts = userAgent.split(';');
+      for (let part of parts) {
+        part = part.trim();
+        if (part.includes('Android')) continue;
+        if (/Build/i.test(part)) {
+          part = part.split('Build')[0].trim();
+        }
+        if (/SM-|Galaxy|Pixel|Nexus|Huawei|Redmi|Mi\s|Oppo|Vivo|OnePlus/i.test(part)) {
+          return part;
+        }
+      }
+      return "Android Phone";
+    }
+    if (/iPhone/i.test(userAgent)) return "iPhone";
+    if (/iPad/i.test(userAgent)) return "iPad";
+    if (userAgent.includes("Windows")) return "Windows PC";
+    if (userAgent.includes("Macintosh")) return "Mac";
+    if (userAgent.includes("Linux")) return "Linux";
+    return "Mobile Device";
+  }
+
+  const fetchDevices = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('device_codes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'approved');
+
+      if (error) throw error;
+
+      const dbDevices = (data || []).map((row: any) => {
+        const devType = (row.device_type || 'tv').toLowerCase();
+        let iconType = 'tv';
+        if (devType.includes('phone') || devType.includes('mobile') || devType.includes('android') || devType.includes('ios')) {
+          iconType = 'phone';
+        } else if (devType.includes('desktop') || devType.includes('pc') || devType.includes('computer') || devType.includes('chrome') || devType.includes('firefox')) {
+          iconType = 'desktop';
+        }
+
+        return {
+          id: row.id,
+          deviceType: iconType,
+          name: row.device_name || row.device_type || 'Smart TV Device',
+          location: row.location || 'Manila, Philippines',
+          recentProfile: row.recent_profile || activeProfile?.name || profiles[0]?.name || 'Main Profile',
+          recentProfileImage: row.recent_profile_image || activeProfile?.image || profiles[0]?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+          recentTime: row.updated_at ? new Date(row.updated_at).toLocaleString() : (row.created_at ? new Date(row.created_at).toLocaleString() : 'Recent activity'),
+          isCurrent: false,
+        };
+      });
+
+      const platform = getPlatformName();
+      const isMobile = platform.includes("Phone") || platform.includes("iPhone") || platform.includes("iPad") || platform.includes("Android") || platform.includes("Mobile");
+      const currentDev = {
+        id: 'current-session',
+        deviceType: isMobile ? 'phone' : 'desktop',
+        name: `${platform} • ${getBrowserName()}`,
+        location: 'Manila, Philippines',
+        recentProfile: activeProfile?.name || profiles[0]?.name || 'Main Profile',
+        recentProfileImage: activeProfile?.image || profiles[0]?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+        recentTime: 'Active now',
+        isCurrent: true,
+      };
+
+      setSignedInDevices([currentDev, ...dbDevices]);
+    } catch (err) {
+      console.error('Error fetching real devices:', err);
+      const platform = getPlatformName();
+      const isMobile = platform.includes("Phone") || platform.includes("iPhone") || platform.includes("iPad") || platform.includes("Android") || platform.includes("Mobile");
+      const currentDev = {
+        id: 'current-session',
+        deviceType: isMobile ? 'phone' : 'desktop',
+        name: `${platform} • ${getBrowserName()}`,
+        location: 'Manila, Philippines',
+        recentProfile: activeProfile?.name || profiles[0]?.name || 'Main Profile',
+        recentProfileImage: activeProfile?.image || profiles[0]?.image || 'https://figlafktafkwzmgeyslw.supabase.co/storage/v1/object/public/Offline/avatar-1.png',
+        recentTime: 'Active now',
+        isCurrent: true,
+      };
+      setSignedInDevices([currentDev]);
+    }
+  };
+
+  useEffect(() => {
+    setViewingDevicesList(false);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchDevices(currentUser.id);
+    }
+  }, [currentUser, profiles, activeProfile]);
+
+  const handleDeviceSignOut = async (deviceId: string, deviceName: string) => {
+    if (window.confirm(`Are you sure you want to sign out of ${deviceName}?`)) {
+      try {
+        if (deviceId !== 'current-session') {
+          const { error } = await supabase
+            .from('device_codes')
+            .delete()
+            .eq('id', deviceId);
+
+          if (error) throw error;
+        }
+
+        setSignedInDevices(prev => prev.filter(d => d.id !== deviceId));
+        setDeviceToast(`Signed out of ${deviceName} successfully.`);
+        setTimeout(() => setDeviceToast(null), 4000);
+      } catch (err: any) {
+        console.error('Error signing out device:', err);
+        alert('Failed to sign out device: ' + err.message);
+      }
+    }
+  };
   
   // Password Change State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -58,6 +200,7 @@ export default function Account() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
+        setCurrentUser(user);
         setUserEmail(user.email ?? null);
         setIsVerified(user.user_metadata?.signup_completed === true);
         if (user.user_metadata?.plan) {
@@ -377,26 +520,107 @@ export default function Account() {
 
               {activeTab === 'devices' && (
                 <>
-                  <div className="mobile-account-headings">
-                    <h1 className="mobile-account-title-large">Devices</h1>
-                    <p className="mobile-account-subtitle-medium">Manage signed-in devices</p>
-                  </div>
+                  {!viewingDevicesList ? (
+                    <>
+                      <div className="mobile-account-headings">
+                        <h1 className="mobile-account-title-large">Devices</h1>
+                        <p className="mobile-account-subtitle-medium">Manage signed-in devices</p>
+                      </div>
 
-                  <div className="mobile-replicated-card">
-                    <div className="mobile-card-body-padding">
-                      <h2 className="mobile-card-plan-title">Access and devices</h2>
-                      <p className="mobile-card-next-payment" style={{ marginBottom: 0 }}>
-                        Review devices that have recently streamed on this account and sign out of individual sessions.
-                      </p>
+                      <p className="mobile-card-section-header">Account Access</p>
+                      <div className="mobile-quick-links-card">
+                        <button className="mobile-link-row-item" onClick={() => setViewingDevicesList(true)}>
+                          <div className="mobile-link-row-left">
+                            <MonitorSmartphone size={22} />
+                            <div className="mobile-link-text-stack">
+                              <span>Access and devices</span>
+                              <p>Manage signed-in devices</p>
+                            </div>
+                          </div>
+                          <ChevronRight size={20} color="#000" />
+                        </button>
+                      </div>
+
+                      <p className="mobile-card-section-header">Mobile Downloads</p>
+                      <div className="mobile-quick-links-card">
+                        <button className="mobile-link-row-item">
+                          <div className="mobile-link-row-left">
+                            <Download size={22} />
+                            <div className="mobile-link-text-stack">
+                              <span>Mobile download devices</span>
+                              <p>Using 0 of 6 download devices</p>
+                            </div>
+                          </div>
+                          <ChevronRight size={20} color="#000" />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="devices-detail-container">
+                      <div className="devices-detail-header">
+                        <button className="devices-back-btn" onClick={() => setViewingDevicesList(false)} title="Back to Devices">
+                          <ArrowLeft size={24} />
+                        </button>
+                        <div className="devices-detail-title-group">
+                          <h2 className="devices-detail-title" style={{ fontSize: '20px' }}>Access and devices</h2>
+                          <p className="devices-detail-desc" style={{ fontSize: '13px' }}>Review devices that have recently streamed on this account and sign out of individual sessions.</p>
+                        </div>
+                      </div>
+
+                      {deviceToast && (
+                        <div className="device-toast-banner">
+                          <Check size={16} />
+                          <span>{deviceToast}</span>
+                        </div>
+                      )}
+
+                      <div className="devices-list">
+                        {signedInDevices.map((device) => (
+                          <div key={device.id} className="device-item-card">
+                            <div className="device-item-left">
+                              <div className="device-icon-wrapper">
+                                {device.deviceType === 'desktop' && <Monitor size={24} />}
+                                {device.deviceType === 'phone' && <Smartphone size={24} />}
+                                {device.deviceType === 'tv' && <Tv size={24} />}
+                              </div>
+                              <div className="device-info-content">
+                                <div className="device-name-row">
+                                  <h3 className="device-name-text">{device.name}</h3>
+                                  {device.isCurrent && <span className="device-current-badge">This Device</span>}
+                                </div>
+                                <div className="device-loc-row">
+                                  <MapPin size={14} />
+                                  <span>{device.location}</span>
+                                </div>
+                                <div className="device-activity-stack">
+                                  <div className="device-activity-row">
+                                    <span style={{ color: '#666' }}>Recent profile:</span>
+                                    <img src={device.recentProfileImage} alt="" className="device-profile-mini-avatar" />
+                                    <span className="device-profile-name">{device.recentProfile}</span>
+                                  </div>
+                                  <div className="device-activity-row">
+                                    <span style={{ color: '#666' }}>Last watch:</span>
+                                    <span>{device.recentTime}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {!device.isCurrent && (
+                              <button 
+                                className="device-signout-btn"
+                                onClick={() => handleDeviceSignOut(device.id, device.name)}
+                              >
+                                Sign Out
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="mobile-card-divider"></div>
-                    <button className="mobile-card-row-btn">
-                      <span>Manage active devices</span>
-                      <ChevronRight size={20} color="#000" />
-                    </button>
-                  </div>
+                  )}
                 </>
               )}
+
 
               {activeTab === 'profiles' && (
                 <>
@@ -857,6 +1081,110 @@ export default function Account() {
               </section>
             </>
           )}
+
+              {activeTab === 'devices' && (
+                <>
+                  {!viewingDevicesList ? (
+                    <>
+                      <h1 className="account-title">Devices</h1>
+                      
+                      <p className="account-section-label" style={{ marginTop: '24px' }}>Account Access</p>
+                      <section className="account-section">
+                        <div className="account-quick-links-card">
+                          <button className="account-link-item" onClick={() => setViewingDevicesList(true)}>
+                            <div className="account-link-item__left">
+                              <MonitorSmartphone size={22} className="account-link-icon" />
+                              <div className="account-link-text-stack">
+                                <span>Access and devices</span>
+                                <p className="account-link-desc">Manage signed-in devices</p>
+                              </div>
+                            </div>
+                            <ChevronRight size={20} color="#666" />
+                          </button>
+                        </div>
+                      </section>
+
+                      <p className="account-section-label">Mobile Downloads</p>
+                      <section className="account-section">
+                        <div className="account-quick-links-card">
+                          <button className="account-link-item">
+                            <div className="account-link-item__left">
+                              <Download size={22} className="account-link-icon" />
+                              <div className="account-link-text-stack">
+                                <span>Mobile download devices</span>
+                                <p className="account-link-desc">Using 0 of 6 download devices</p>
+                              </div>
+                            </div>
+                            <ChevronRight size={20} color="#666" />
+                          </button>
+                        </div>
+                      </section>
+                    </>
+                  ) : (
+                    <div className="devices-detail-container">
+                      <div className="devices-detail-header">
+                        <button className="devices-back-btn" onClick={() => setViewingDevicesList(false)} title="Back to Devices">
+                          <ArrowLeft size={24} />
+                        </button>
+                        <div className="devices-detail-title-group">
+                          <h1 className="devices-detail-title">Access and devices</h1>
+                          <p className="devices-detail-desc">Review devices that have recently streamed on this account and sign out of individual sessions.</p>
+                        </div>
+                      </div>
+
+                      {deviceToast && (
+                        <div className="device-toast-banner">
+                          <Check size={16} />
+                          <span>{deviceToast}</span>
+                        </div>
+                      )}
+
+                      <div className="devices-list">
+                        {signedInDevices.map((device) => (
+                          <div key={device.id} className="device-item-card">
+                            <div className="device-item-left">
+                              <div className="device-icon-wrapper">
+                                {device.deviceType === 'desktop' && <Monitor size={24} />}
+                                {device.deviceType === 'phone' && <Smartphone size={24} />}
+                                {device.deviceType === 'tv' && <Tv size={24} />}
+                              </div>
+                              <div className="device-info-content">
+                                <div className="device-name-row">
+                                  <h3 className="device-name-text">{device.name}</h3>
+                                  {device.isCurrent && <span className="device-current-badge">This Device</span>}
+                                </div>
+                                <div className="device-loc-row">
+                                  <MapPin size={14} />
+                                  <span>{device.location}</span>
+                                </div>
+                                <div className="device-activity-stack">
+                                  <div className="device-activity-row">
+                                    <span style={{ color: '#666' }}>Recent profile:</span>
+                                    <img src={device.recentProfileImage} alt="" className="device-profile-mini-avatar" />
+                                    <span className="device-profile-name">{device.recentProfile}</span>
+                                  </div>
+                                  <div className="device-activity-row">
+                                    <span style={{ color: '#666' }}>Last watch:</span>
+                                    <span>{device.recentTime}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {!device.isCurrent && (
+                              <button 
+                                className="device-signout-btn"
+                                onClick={() => handleDeviceSignOut(device.id, device.name)}
+                              >
+                                Sign Out
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               {activeTab === 'profiles' && (
                 <>
