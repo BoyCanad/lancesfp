@@ -147,6 +147,7 @@ export default function Activate() {
         .single();
 
       if (fetchError || !deviceRow) {
+        console.error('Fetch Error:', fetchError, 'Device Row:', deviceRow);
         throw new Error('Invalid, inactive, or expired code. Please generate a new code on your TV.');
       }
 
