@@ -139,17 +139,19 @@ export default function Activate() {
       }
 
       // 3. Find the pending device code row
-      const { data: deviceRow, error: fetchError } = await supabase
+      const { data: rows, error: fetchError } = await supabase
         .from('device_codes')
         .select('*')
         .eq('code', fullCode)
         .eq('status', 'pending')
-        .single();
+        .limit(1);
 
-      if (fetchError || !deviceRow) {
-        console.error('Fetch Error:', fetchError, 'Device Row:', deviceRow);
+      if (fetchError || !rows || rows.length === 0) {
+        console.error('Fetch Error:', fetchError, 'Rows:', rows);
         throw new Error('Invalid, inactive, or expired code. Please generate a new code on your TV.');
       }
+      
+      const deviceRow = rows[0];
 
       // Check if code has expired
       if (new Date(deviceRow.expires_at) < new Date()) {
