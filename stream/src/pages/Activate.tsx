@@ -138,12 +138,10 @@ export default function Activate() {
         throw new Error('Your session expired. Please sign in again.');
       }
 
-      // 3. Find the pending device code row
       const { data: rows, error: fetchError } = await supabase
         .from('device_codes')
         .select('*')
         .eq('code', fullCode)
-        .eq('status', 'pending')
         .limit(1);
 
       if (fetchError || !rows || rows.length === 0) {
@@ -152,6 +150,11 @@ export default function Activate() {
       }
       
       const deviceRow = rows[0];
+      
+      // Handle missing or incorrect status gracefully
+      if (deviceRow.status !== 'pending' && deviceRow.status !== null && deviceRow.status !== undefined) {
+          throw new Error('This code has already been used or is inactive.');
+      }
 
       // Check if code has expired
       if (new Date(deviceRow.expires_at) < new Date()) {
