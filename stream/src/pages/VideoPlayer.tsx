@@ -2459,9 +2459,7 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
         'bukang-liwayway-takipsilim': 760 // 12:40
       };
 
-      if (movie?.id && movieTriggers[movie.id]) {
-        shouldShowRecommendation = time >= movieTriggers[movie.id];
-      } else if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
+      if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
         const floorTime = Math.floor(time);
 
         // Age Rating Timestamps trigger
@@ -2469,8 +2467,14 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           lastTriggeredRatingRef.current = floorTime;
           triggerRating();
         }
+      }
 
-        // Specific request: trigger at 48:30 (2910 seconds) for Ang Huling El Bimbo Play
+      if (movie?.endCreditsTime !== undefined && movie.endCreditsTime !== null && movie.endCreditsTime > 0) {
+        shouldShowRecommendation = time >= movie.endCreditsTime;
+      } else if (movie?.id && movieTriggers[movie.id]) {
+        shouldShowRecommendation = time >= movieTriggers[movie.id];
+      } else if (movie?.id === 'ang-huling-el-bimbo-play' || movie?.id === 'ang-huling-el-bimbo-play-xray' || movie?.id === 'f1' || movie?.id === 'eb1') {
+        // Fallback to static 48:30 if endCreditsTime is not defined in DB
         shouldShowRecommendation = time >= 2910;
       } else if (duration > 0 && (duration - time) <= 15) {
         // Default case: 15 seconds before the end
