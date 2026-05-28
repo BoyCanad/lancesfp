@@ -54,8 +54,6 @@ function Top10Card({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const isRecentlyAdded = movie.recentlyAdded || movie.id === 'bukang-liwayway-takipsilim' || movie.id === 'a-day-in-my-life-stem';
-
   useEffect(() => {
     setInMyList(isInMyList(movie.id));
     const handleUpdate = () => setInMyList(isInMyList(movie.id));
@@ -147,53 +145,11 @@ function Top10Card({
     else addToMyList(movie.id);
   };
 
-  const handlePlay = async (e: React.MouseEvent) => {
+  const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))) {
-      const stored = localStorage.getItem('activeProfile');
-      if (!stored) return;
-      const profile = JSON.parse(stored);
-      const { toggleReminder } = await import('../services/reminderService');
-      const nextReminded = await toggleReminder(profile.id, movie.id);
-      setReminded(nextReminded);
-      return;
-    }
     const base = movie.xRay ? '/xray' : '/watch';
     navigate(`${base}/${movie.id}`);
   };
-
-  const [reminded, setReminded] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    const stored = localStorage.getItem('activeProfile');
-    if (stored) {
-      const profile = JSON.parse(stored);
-      import('../services/reminderService').then(({ isReminded }) => {
-        isReminded(profile.id, movie.id).then((val) => {
-          if (active) setReminded(val);
-        });
-      });
-    }
-
-    const handleUpdate = () => {
-      const stored = localStorage.getItem('activeProfile');
-      if (stored) {
-        const profile = JSON.parse(stored);
-        import('../services/reminderService').then(({ isReminded }) => {
-          isReminded(profile.id, movie.id).then((val) => {
-            if (active) setReminded(val);
-          });
-        });
-      }
-    };
-    window.addEventListener('reminders_updated', handleUpdate);
-
-    return () => {
-      active = false;
-      window.removeEventListener('reminders_updated', handleUpdate);
-    };
-  }, [movie.id]);
 
   const posClass =
     position === 'right' ? 'top10-card--pos-right'
@@ -227,8 +183,8 @@ function Top10Card({
             className="top10-card__img"
             loading="lazy"
           />
-          {isRecentlyAdded && (
-            <div className="card__recently-added-badge" aria-label="Recently Added Title">
+          {(movie.recentlyAdded || movie.id === 'bukang-liwayway-takipsilim' || movie.id === 'a-day-in-my-life-stem') && (
+            <div className="top10-card__recently-added-badge" aria-label="Recently Added Title">
               Recently Added
             </div>
           )}
@@ -277,8 +233,12 @@ function Top10Card({
                 </>
               )}
 
-              {isRecentlyAdded && (
-                <div className="card__recently-added-badge card__recently-added-badge--expanded" aria-label="Recently Added Title">
+              {(movie.recentlyAdded || movie.id === 'bukang-liwayway-takipsilim' || movie.id === 'a-day-in-my-life-stem') && (
+                <div 
+                  className="top10-card__recently-added-badge top10-card__recently-added-badge--expanded" 
+                  aria-label="Recently Added Title"
+                  style={{ opacity: isPlayingTrailer ? 0 : 1, transition: 'opacity 0.3s ease' }}
+                >
                   Recently Added
                 </div>
               )}
@@ -297,11 +257,12 @@ function Top10Card({
               <div className="top10-card__controls">
                 <div className="top10-card__controls-left">
                   <button
-                    className={`top10-card__btn top10-card__btn--play`}
+                    className={`top10-card__btn top10-card__btn--play ${movie.comingSoon ? 'top10-card__btn--disabled' : ''}`}
                     onClick={handlePlay}
+                    disabled={movie.comingSoon}
                   >
-                    {movie.comingSoon || (!movie.videoUrl && (!movie.seasons || movie.seasons.length === 0))
-                      ? <Bell size={14} color="black" fill={reminded ? "black" : "none"} />
+                    {movie.comingSoon
+                      ? <Bell size={13} color="black" fill="black" />
                       : <Play size={12} fill="black" color="black" />}
                   </button>
                   <button
@@ -332,17 +293,11 @@ function Top10Card({
 
               {/* Match / age / duration */}
               <div className="top10-card__meta-row">
-                {movie.comingSoon ? (
-                  <span className="top10-card__coming-soon">
-                    {movie.releaseDate ? `RELEASING ${movie.releaseDate.toUpperCase()}${movie.releaseTime ? ` @ ${movie.releaseTime}` : ''}` : 'COMING SOON'}
-                  </span>
-                ) : null}
+                {movie.comingSoon && <span className="top10-card__coming-soon">COMING SOON</span>}
                 <span className="top10-card__age">{movie.ageRating || '13+'}</span>
-                {!movie.comingSoon && (
-                  <span className="top10-card__duration">
-                    {movie.duration}
-                  </span>
-                )}
+                <span className="top10-card__duration">
+                  {movie.comingSoon ? 'TBA' : movie.duration}
+                </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <HDBadge isSmall={true} />
                   {(movie.id === 'ang-huling-el-bimbo-play' || movie.id === 'ang-huling-el-bimbo-play-xray') && (

@@ -156,7 +156,7 @@ export default function Home() {
         {homeRows.map((row) => {
           if (row.row_type === 'live') return null;
 
-          if (row.row_type === 'top10') {
+          if (row.row_type === 'top10' || row.row_type === 'top_10') {
             return (
               <Top10Row
                 key={row.id}

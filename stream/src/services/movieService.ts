@@ -202,7 +202,7 @@ export function invalidateMovieCache() {
 }
 
 // ─── Dynamic Home Rows ───────────────────────────────────────────────────────
-export type HomeRowType = 'standard' | 'top10' | 'collection' | 'live';
+export type HomeRowType = 'standard' | 'top10' | 'top_10' | 'collection' | 'live';
 
 export interface HomeRowConfig {
   id: string;
