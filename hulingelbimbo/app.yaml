@@ -1,0 +1,7 @@
+kind: wasmer.io/App.v0
+name: hulingelbimbo
+owner: lancesfp
+package: lancesfp/hulingelbimbo@=0.1.0
+domains:
+- hulingelbimbo.lancesfp.fun
+app_id: da_KGzIxtmU4PeZ

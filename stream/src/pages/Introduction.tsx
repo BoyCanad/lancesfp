@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { ChevronRight, ShieldCheck, Sparkles, Globe, Monitor, Smartphone, Plus } from 'lucide-react';
@@ -96,20 +96,103 @@ export default function Introduction() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Refs for scroll sections
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const devicesRef = useRef<HTMLDivElement>(null);
 
   // Global scroll tracking for Parallax
-  const { scrollYProgress } = useScroll({
+  const { scrollY, scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
 
-  // Background slow parallax (moves down slightly as you scroll down)
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  // Mouse coordinate parallax
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
   
-  // Hero section fade and scale
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
-  const heroY = useTransform(scrollYProgress, [0, 0.15], [0, 100]);
+  const mouseXSpring = useSpring(mouseX, { stiffness: 100, damping: 25 });
+  const mouseYSpring = useSpring(mouseY, { stiffness: 100, damping: 25 });
+
+  // Use mouse positions to transform ambient glow positions
+  const orb1MouseX = useTransform(mouseXSpring, [-0.5, 0.5], [-40, 40]);
+  const orb1MouseY = useTransform(mouseYSpring, [-0.5, 0.5], [-40, 40]);
+  
+  const orb2MouseX = useTransform(mouseXSpring, [-0.5, 0.5], [60, -60]);
+  const orb2MouseY = useTransform(mouseYSpring, [-0.5, 0.5], [60, -60]);
+
+  const orb3MouseX = useTransform(mouseXSpring, [-0.5, 0.5], [-50, 50]);
+  const orb3MouseY = useTransform(mouseYSpring, [-0.5, 0.5], [-50, 50]);
+
+  // Mousemove listener
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { innerWidth, innerHeight } = window;
+      const xPct = (e.clientX / innerWidth) - 0.5;
+      const yPct = (e.clientY / innerHeight) - 0.5;
+      mouseX.set(xPct);
+      mouseY.set(yPct);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
+  // Ambient orbs scroll tracking
+  const orb1ScrollY = useTransform(scrollY, [0, 3000], [0, 400]);
+  const orb2ScrollY = useTransform(scrollY, [0, 3000], [0, -300]);
+  const orb3ScrollY = useTransform(scrollY, [0, 3000], [0, 200]);
+
+  // Combine scroll vertical parallax and mouse vertical parallax
+  const orb1Y = useTransform([orb1ScrollY, orb1MouseY], ([sY, mY]) => Number(sY) + Number(mY));
+  const orb2Y = useTransform([orb2ScrollY, orb2MouseY], ([sY, mY]) => Number(sY) + Number(mY));
+  const orb3Y = useTransform([orb3ScrollY, orb3MouseY], ([sY, mY]) => Number(sY) + Number(mY));
+
+  // Background slow parallax (moves down slightly as you scroll down)
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  
+  // Hero section fade and scale (based on scrollY to trigger within hero viewport)
+  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+  const heroScale = useTransform(scrollY, [0, 600], [1, 0.92]);
+  const heroY = useTransform(scrollY, [0, 600], [0, 150]);
+
+  // Hero individual elements vertical parallax
+  const heroTitleY = useTransform(scrollY, [0, 600], [0, 50]);
+  const heroSubY = useTransform(scrollY, [0, 600], [0, 90]);
+  const heroBtnY = useTransform(scrollY, [0, 600], [0, 130]);
+
+  // Floating posters scroll translations
+  const poster1Y = useTransform(scrollY, [0, 1000], [0, -180]);
+  const poster2Y = useTransform(scrollY, [0, 1000], [0, -280]);
+  const poster3Y = useTransform(scrollY, [0, 1000], [0, -120]);
+  const poster4Y = useTransform(scrollY, [0, 1000], [0, -220]);
+
+  // Marquee scroll-linked horizontal translations
+  const { scrollYProgress: marqueeScrollProgress } = useScroll({
+    target: marqueeRef,
+    offset: ["start end", "end start"]
+  });
+  const marqueeX1 = useTransform(marqueeScrollProgress, [0, 1], [-250, 100]);
+  const marqueeX2 = useTransform(marqueeScrollProgress, [0, 1], [100, -250]);
+
+  // Features scroll-linked translations
+  const { scrollYProgress: featuresScrollProgress } = useScroll({
+    target: featuresRef,
+    offset: ["start end", "end start"]
+  });
+  const featureCardY1 = useTransform(featuresScrollProgress, [0, 1], [50, -50]);
+  const featureCardY2 = useTransform(featuresScrollProgress, [0, 1], [0, 0]);
+  const featureCardY3 = useTransform(featuresScrollProgress, [0, 1], [-50, 50]);
+
+  // Devices scroll-linked translations
+  const { scrollYProgress: devicesScrollProgress } = useScroll({
+    target: devicesRef,
+    offset: ["start end", "end start"]
+  });
+  const tvY = useTransform(devicesScrollProgress, [0, 1], [40, -40]);
+  const laptopY = useTransform(devicesScrollProgress, [0, 1], [-60, 60]);
+  const mobileY = useTransform(devicesScrollProgress, [0, 1], [80, -80]);
 
   return (
     <div className="fm-intro-page" ref={containerRef}>
@@ -120,6 +203,20 @@ export default function Introduction() {
         style={{ y: bgY }}
       />
       <div className="fm-bg-overlay" />
+
+      {/* AMBIENT GLOW ORBS (MOUSE & SCROLL PARALLAX) */}
+      <motion.div 
+        className="fm-ambient-orb orb-1"
+        style={{ x: orb1MouseX, y: orb1Y }}
+      />
+      <motion.div 
+        className="fm-ambient-orb orb-2"
+        style={{ x: orb2MouseX, y: orb2Y }}
+      />
+      <motion.div 
+        className="fm-ambient-orb orb-3"
+        style={{ x: orb3MouseX, y: orb3Y }}
+      />
       
       <header className="fm-header">
         <div className="fm-logo" onClick={() => navigate('/')}>
@@ -130,35 +227,119 @@ export default function Introduction() {
 
       {/* HERO SECTION */}
       <section className="fm-hero-section">
+        {/* Floating 3D Parallax Posters */}
+        <motion.div 
+          className="fm-floating-poster pos-left-top"
+          style={{ y: poster1Y, rotate: -12 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.35, scale: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+        >
+          <img src="/images/el-bimbo.webp" alt="" />
+        </motion.div>
+        <motion.div 
+          className="fm-floating-poster pos-right-top"
+          style={{ y: poster2Y, rotate: 15 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.4, scale: 1 }}
+          transition={{ duration: 1, delay: 0.6 }}
+        >
+          <img src="/images/spoliarium.webp" alt="" />
+        </motion.div>
+        <motion.div 
+          className="fm-floating-poster pos-left-bottom"
+          style={{ y: poster3Y, rotate: 8 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.3, scale: 1 }}
+          transition={{ duration: 1, delay: 0.8 }}
+        >
+          <img src="/images/tindahan.webp" alt="" />
+        </motion.div>
+        <motion.div 
+          className="fm-floating-poster pos-right-bottom"
+          style={{ y: poster4Y, rotate: -10 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.35, scale: 1 }}
+          transition={{ duration: 1, delay: 1.0 }}
+        >
+          <img src="/images/alapaap.webp" alt="" />
+        </motion.div>
+
         <motion.div 
           className="fm-hero-content"
           style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
         >
-          <motion.h1 
+          <motion.div
             initial={{ opacity: 0, y: 30 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="fm-hero-title"
           >
-            Unlimited movies, TV <br /> shows, and more
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+            <motion.h1 
+              className="fm-hero-title"
+              style={{ y: heroTitleY }}
+            >
+              Unlimited movies, TV <br /> shows, and more
+            </motion.h1>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="fm-hero-subtitle"
           >
-            Watch anywhere. Cancel anytime. Ready to dive in?
-          </motion.p>
+            <motion.p 
+              className="fm-hero-subtitle"
+              style={{ y: heroSubY }}
+            >
+              Watch anywhere. Cancel anytime. Ready to dive in?
+            </motion.p>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <button className="fm-hero-btn" onClick={() => navigate('/login')}>
-              Get Started <ChevronRight size={24} />
-            </button>
+            <motion.div style={{ y: heroBtnY }}>
+              <button className="fm-hero-btn" onClick={() => navigate('/login')}>
+                Get Started <ChevronRight size={24} />
+              </button>
+            </motion.div>
           </motion.div>
+        </motion.div>
+      </section>
+
+      {/* SCROLL PARALLAX MARQUEE */}
+      <section className="fm-parallax-marquee-section" ref={marqueeRef}>
+        <motion.div className="fm-marquee-row row-1" style={{ x: marqueeX1 }}>
+          <div className="fm-marquee-content">
+            <span>LSFPLUS ORIGINALS</span>
+            <span className="bullet">•</span>
+            <span>PRESTIGE ENTERTAINMENT</span>
+            <span className="bullet">•</span>
+            <span>DYNAMIC EXPERIENCE</span>
+            <span className="bullet">•</span>
+            <span>LSFPLUS ORIGINALS</span>
+            <span className="bullet">•</span>
+            <span>PRESTIGE ENTERTAINMENT</span>
+            <span className="bullet">•</span>
+            <span>DYNAMIC EXPERIENCE</span>
+          </div>
+        </motion.div>
+        <motion.div className="fm-marquee-row row-2" style={{ x: marqueeX2 }}>
+          <div className="fm-marquee-content">
+            <span>UNLIMITED STREAMING</span>
+            <span className="bullet">•</span>
+            <span>CINEMATIC VISUALS</span>
+            <span className="bullet">•</span>
+            <span>WATCH ANYWHERE</span>
+            <span className="bullet">•</span>
+            <span>UNLIMITED STREAMING</span>
+            <span className="bullet">•</span>
+            <span>CINEMATIC VISUALS</span>
+            <span className="bullet">•</span>
+            <span>WATCH ANYWHERE</span>
+          </div>
         </motion.div>
       </section>
 
@@ -195,7 +376,7 @@ export default function Introduction() {
       </section>
 
       {/* FEATURES */}
-      <section className="fm-section fm-features">
+      <section className="fm-section fm-features" ref={featuresRef}>
         <motion.h2 
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -206,28 +387,33 @@ export default function Introduction() {
         </motion.h2>
         
         <div className="fm-features-grid">
-          {features.map((feature, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ delay: i * 0.15, duration: 0.6 }}
-            >
-              <TiltCard className="fm-feature-card" maxTilt={10} zDepth={20}>
-                <div className="fm-feature-icon">
-                  {feature.icon}
-                </div>
-                <h3>{feature.title}</h3>
-                <p>{feature.desc}</p>
-              </TiltCard>
-            </motion.div>
-          ))}
+          {features.map((feature, i) => {
+            const cardY = i === 0 ? featureCardY1 : i === 1 ? featureCardY2 : featureCardY3;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: i * 0.15, duration: 0.6 }}
+              >
+                <motion.div style={{ y: cardY, height: '100%' }}>
+                  <TiltCard className="fm-feature-card" maxTilt={10} zDepth={20}>
+                    <div className="fm-feature-icon">
+                      {feature.icon}
+                    </div>
+                    <h3>{feature.title}</h3>
+                    <p>{feature.desc}</p>
+                  </TiltCard>
+                </motion.div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
       {/* DEVICES PARALLAX */}
-      <section className="fm-section fm-devices">
+      <section className="fm-section fm-devices" ref={devicesRef}>
         <div className="fm-devices-text">
           <motion.h2 
             initial={{ opacity: 0, x: -50 }}
@@ -250,18 +436,18 @@ export default function Introduction() {
         
         <div className="fm-devices-visual">
           <TiltCard className="fm-device-cluster" maxTilt={15} zDepth={60}>
-            <div className="fm-device tv">
+            <motion.div className="fm-device tv" style={{ y: tvY }}>
               <Monitor size={64} color="#e50914" />
               <span>Smart TV</span>
-            </div>
-            <div className="fm-device laptop">
+            </motion.div>
+            <motion.div className="fm-device laptop" style={{ y: laptopY }}>
               <Monitor size={48} color="#e50914" />
               <span>Laptop</span>
-            </div>
-            <div className="fm-device mobile">
+            </motion.div>
+            <motion.div className="fm-device mobile" style={{ y: mobileY }}>
               <Smartphone size={32} color="#e50914" />
               <span>Mobile</span>
-            </div>
+            </motion.div>
           </TiltCard>
         </div>
       </section>

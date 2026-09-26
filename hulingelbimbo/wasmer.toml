@@ -1,0 +1,18 @@
+[package]
+name = "lancesfp/hulingelbimbo"
+version = "0.1.0"
+description = "Huling El Bimbo Movie Page"
+
+[dependencies]
+"wasmer/static-web-server" = "^1"
+
+[fs]
+public = "dist"
+
+[[command]]
+name = "script"
+module = "wasmer/static-web-server:webserver"
+runner = "https://webc.org/runner/wasi"
+
+[command.annotations.wasi]
+main-args = ["-d", "/public"]

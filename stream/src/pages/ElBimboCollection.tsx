@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { elBimboCollections, type Movie } from '../data/movies';
 import { MovieCard } from '../components/ContentRow';
 import BarkadaSection from '../components/BarkadaSection';
@@ -10,6 +11,14 @@ import './ElBimboCollection.css';
 export default function ElBimboCollection() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+
+  // Scroll parallax configurations
+  const bgScale = useTransform(scrollY, [0, 600], [1, 1.15]);
+  const bgY = useTransform(scrollY, [0, 600], [0, 80]);
+  const contentY = useTransform(scrollY, [0, 600], [0, 50]);
+  const contentOpacity = useTransform(scrollY, [0, 450], [1, 0]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -26,7 +35,7 @@ export default function ElBimboCollection() {
   };
 
   return (
-    <div className="collection-page">
+    <div className="collection-page" ref={containerRef}>
       {/* Dynamic Header Overlay */}
       <div className={`collection-header ${isScrolled ? 'collection-header--scrolled' : ''}`}>
         <button className="collection-back-btn" onClick={() => navigate(-1)}>
@@ -37,13 +46,21 @@ export default function ElBimboCollection() {
 
       {/* Hero Section */}
       <section className="collection-hero">
-        <picture className="collection-hero__bg">
-          <source media="(max-width: 768px)" srcSet="/images/collection-m.webp" />
-          <img src="/images/bg.webp" alt="Ang Huling El Bimbo Collection" />
-        </picture>
+        <motion.div 
+          className="collection-hero__bg-wrapper"
+          style={{ scale: bgScale, y: bgY }}
+        >
+          <picture className="collection-hero__bg">
+            <source media="(max-width: 768px)" srcSet="/images/collection-m.webp" />
+            <img src="/images/bg.webp" alt="Ang Huling El Bimbo Collection" />
+          </picture>
+        </motion.div>
         
         <div className="collection-hero__overlay">
-          <div className="collection-hero__content">
+          <motion.div 
+            className="collection-hero__content"
+            style={{ y: contentY, opacity: contentOpacity }}
+          >
             <img 
               src="/images/collection-logo.png" 
               alt="Ang Huling El Bimbo" 
@@ -64,9 +81,7 @@ export default function ElBimboCollection() {
             <p className="collection-hero__description">
               Relive the multi-awarded Philippine musical masterpiece. A nostalgic journey through friendship, love, and the bittersweet passage of time, set to the timeless songs of the Eraserheads.
             </p>
-            
-
-          </div>
+          </motion.div>
         </div>
       </section>
 

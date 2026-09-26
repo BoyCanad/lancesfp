@@ -1,9 +1,31 @@
-import React, { useState, useRef, useEffect, useMemo, memo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronDown, Mic } from 'lucide-react';
 import { minsanLyrics } from '../data/minsanLyrics';
 import { tindahanLyrics } from '../data/tindahanLyrics';
+import { convertElrcToTTML } from '../utils/elrcToTtml';
+import '@uimaxbai/am-lyrics/am-lyrics.js';
+import { setupEnhancedAmLyrics, injectShadowRootLiftStyles } from '../utils/enhanceAmLyrics';
 import './MusicPlayer.css';
+
+// Initialize Apple Music word & character lift enhancement
+setupEnhancedAmLyrics();
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'am-lyrics': any;
+    }
+  }
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'am-lyrics': any;
+    }
+  }
+}
 
 // Mock lyrics data for demonstration
 const mockLyrics = [
@@ -80,168 +102,7 @@ export interface Word {
   end: number;
 }
 
-export type ComputedLyric = {
-  id?: string;
-  time: number;
-  endTime?: number;
-  text: string;
-  isInstrumental?: boolean;
-  words?: Word[];
-};
 
-const MemoizedLyricLine = memo(({ lyric, isActive, isPast, currentTime, onSeek }: any) => {
-  return (
-    <div
-      className={`lyric-line ${isActive ? 'active' : ''} ${isPast ? 'past' : ''} ${lyric.isInstrumental ? 'instrumental-line' : ''} ${lyric.isInstrumental && !isActive ? 'hidden-instrumental' : ''}`}
-      onClick={() => onSeek(lyric.time)}
-    >
-      {lyric.words ? (
-        (() => {
-          const { mainParts, subParts } = useMemo(() => {
-            const words = lyric.words || [];
-            const mainP: any[] = [];
-            const subP: any[] = [];
-            let inParens = false;
-            words.forEach((w: Word) => {
-              const trimmed = w.text.trim();
-              if (trimmed.startsWith('(')) inParens = true;
-              
-              const parsed = {
-                ...w,
-                cleanText: w.text.replace(/[()]/g, ''),
-                chars: w.text.replace(/[()]/g, '').split('')
-              };
-              
-              if (inParens) subP.push(parsed);
-              else mainP.push(parsed);
-              if (trimmed.endsWith(')')) inParens = false;
-            });
-            return { mainParts: mainP, subParts: subP };
-          }, [lyric.words]);
-
-          const renderWord = (word: any, wIdx: number) => {
-            let isCurrentlySung = false;
-            let isFinished = false;
-            let fillPercentage = 0;
-
-            if (isActive) {
-              isCurrentlySung = currentTime >= word.start && currentTime < word.end;
-              isFinished = currentTime >= word.end;
-              if (isCurrentlySung) {
-                const duration = word.end - word.start;
-                fillPercentage = duration > 0 ? ((currentTime - word.start) / duration) * 100 : 100;
-              } else if (isFinished) {
-                fillPercentage = 100;
-              }
-            }
-            
-            // Fast-path for non-active lines (prevents CPU spiking)
-            // No gradients or letter calculations needed
-            if (!isActive) {
-              return (
-                <span key={wIdx} className="lyric-word" style={{
-                  position: 'relative',
-                  display: 'inline-block',
-                  zIndex: 1,
-                  color: isPast ? '#fff' : 'inherit'
-                }}>
-                  {word.chars.map((char: string, i: number) => (
-                    <span key={i} className="lyric-letter" style={{ color: isPast ? '#fff' : 'inherit' }}>{char}</span>
-                  ))}
-                </span>
-              );
-            }
-
-            // High-performance React rendering for active characters without string allocations
-            return (
-              <span key={wIdx} className="lyric-word" style={{
-                position: 'relative',
-                display: 'inline-block',
-                zIndex: isCurrentlySung ? 10 : 1
-              }}>
-                {word.chars.map((char: string, i: number) => {
-                  const len = word.chars.length;
-                  const charStartPercent = (i / len) * 100;
-                  const charEndPercent = ((i + 1) / len) * 100;
-                  const isCharLifted = !isPast && (isFinished || (isCurrentlySung && fillPercentage >= charStartPercent));
-                  const letterClass = `lyric-letter${isCharLifted ? ' lifted' : ''}`;
-
-                  const localFill = ((fillPercentage - charStartPercent) / (charEndPercent - charStartPercent)) * 100;
-                  const clampedFill = Math.max(0, Math.min(100, localFill));
-                  const isLocalGlowActive = isCurrentlySung && localFill > -20 && localFill < 120;
-
-                  if (isPast) {
-                    return <span key={i} className="lyric-letter" style={{ color: '#fff' }}>{char}</span>;
-                  }
-
-                  return (
-                    <span key={i} className={letterClass} style={{
-                      backgroundImage: `
-                        linear-gradient(90deg, #fff 0%, #fff ${Math.max(0, clampedFill - 5)}%, transparent ${Math.min(100, clampedFill + 5)}%),
-                        linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.3) 100%)
-                      `,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      color: 'transparent',
-                      filter: isLocalGlowActive ? 'drop-shadow(0px 0px 8px rgba(255,255,255,0.8))' : 'none'
-                    }}>{char}</span>
-                  );
-                })}
-              </span>
-            );
-          };
-
-          return (
-            <div className="lyric-line-content">
-              <div className="main-row">
-                {mainParts.map((w: any, i: number) => renderWord(w, i))}
-              </div>
-              {subParts.length > 0 && (
-                <div className="sub-row">
-                  {subParts.map((w: any, i: number) => renderWord(w, i))}
-                </div>
-              )}
-            </div>
-          );
-        })()
-      ) : lyric.isInstrumental ? (
-        <div className="instrumental-line">
-          {(() => {
-            const start = lyric.time;
-            const end = lyric.endTime || (start + 5);
-            const progress = Math.max(0, Math.min(1, (currentTime - start) / (end - start)));
-            const isBreakActive = currentTime >= start && currentTime < end;
-
-            return (
-              <div className={`instrumental-dots ${isBreakActive ? 'active-group' : ''}`}>
-                {[0, 1, 2].map((i) => {
-                  const dotStart = i / 3;
-                  const dotEnd = (i + 1) / 3;
-                  const dotProgress = Math.max(0, Math.min(1, (progress - dotStart) / (dotEnd - dotStart)));
-                  const isFinished = dotProgress === 1;
-
-                  return (
-                    <span
-                      key={i}
-                      className={`dot ${isFinished ? 'finished' : ''}`}
-                      style={{
-                        backgroundImage: `
-                          linear-gradient(90deg, #fff 0%, #fff ${dotProgress * 100}%, rgba(255,255,255,0.2) ${dotProgress * 100}%)
-                        `
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
-      ) : (
-        lyric.text.replace(/[()]/g, '')
-      )}
-    </div>
-  );
-});
 
 const MarqueeText = ({ children, className }: { children: React.ReactNode, className?: string }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -281,8 +142,6 @@ export default function MusicPlayer() {
   const [isMuted, setIsMuted] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
   const [isKaraokeMode, setIsKaraokeMode] = useState(false);
-  const [isUserScrolling, setIsUserScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<number | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -291,16 +150,7 @@ export default function MusicPlayer() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleLyricsScroll = () => {
-    setIsUserScrolling(true);
-    if (scrollTimeoutRef.current) window.clearTimeout(scrollTimeoutRef.current);
-    scrollTimeoutRef.current = window.setTimeout(() => {
-      setIsUserScrolling(false);
-    }, 2500);
-  };
-
   const audioRef = useRef<HTMLAudioElement>(null);
-  const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Per-song ambient palette fallbacks (sampled from artwork)
@@ -321,40 +171,11 @@ export default function MusicPlayer() {
       : 'https://boycanad.github.io/music-storage-1/minsan-tall.mp4';
   }
 
-  const computedLyrics = useMemo<ComputedLyric[]>(() => {
-    const extended: ComputedLyric[] = [];
-    const minGap = 5; // min 5 seconds gap to count as instrumental
+  const songTtml = useMemo(() => {
+    return convertElrcToTTML(song.lyrics, song.title, song.artist);
+  }, [song.lyrics, song.title, song.artist]);
 
-    if (song.lyrics.length > 0 && song.lyrics[0].time > minGap) {
-      extended.push({
-        id: 'intro',
-        time: 0,
-        endTime: song.lyrics[0].time,
-        text: '•••',
-        isInstrumental: true
-      });
-    }
-
-    song.lyrics.forEach((lyric, idx) => {
-      extended.push({ ...lyric, id: `lyric-${idx}`, isInstrumental: false });
-
-      const nextLyric = song.lyrics[idx + 1];
-      const lastWord = lyric.words && lyric.words.length > 0 ? lyric.words[lyric.words.length - 1] : null;
-      const lineEndTime = lastWord ? lastWord.end : lyric.time + 3;
-
-      if (nextLyric && (nextLyric.time - lineEndTime) > minGap + 1) {
-        extended.push({
-          id: `inst-${idx}`,
-          time: lineEndTime + 1,
-          endTime: nextLyric.time,
-          text: '•••',
-          isInstrumental: true
-        });
-      }
-    });
-
-    return extended;
-  }, [song]);
+  const amLyricsRef = useRef<any>(null);
 
   // Extract dominant colors from artwork for ambient background
   useEffect(() => {
@@ -458,7 +279,11 @@ export default function MusicPlayer() {
     let animationFrameId: number;
     const updateProgress = () => {
       if (audioRef.current && isPlaying) {
-        setCurrentTime(audioRef.current.currentTime);
+        const time = audioRef.current.currentTime;
+        setCurrentTime(time);
+        if (amLyricsRef.current) {
+          amLyricsRef.current.currentTime = time * 1000;
+        }
       }
       animationFrameId = requestAnimationFrame(updateProgress);
     };
@@ -477,85 +302,56 @@ export default function MusicPlayer() {
     }
   }, [volume, isMuted]);
 
+  // Sync TTML to am-lyrics when song or lyrics change
   useEffect(() => {
-    // Scroll to center the first lyric when lyrics panel first appears
-    if (!showLyrics || !lyricsContainerRef.current) return;
-    const container = lyricsContainerRef.current;
-    const firstLyric = container.querySelector('.lyric-line') as HTMLElement;
-    if (!firstLyric) return;
-    const scrollTarget = firstLyric.offsetTop - (container.clientHeight / 2) + (firstLyric.clientHeight / 2);
-    container.scrollTo({ top: scrollTarget, behavior: 'instant' });
-  }, [showLyrics]);
-
-  const [activeLyricId, setActiveLyricId] = useState<string | null>(null);
-  const prevActiveLyricIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    // Auto-scroll to keep active lyric centered during playback
-    // Find the primary active lyric (the first one that is active)
-    let currentActiveId: string | null = null;
-
-    for (let i = 0; i < computedLyrics.length; i++) {
-      const lyric = computedLyrics[i];
-      const isLastLyric = i === computedLyrics.length - 1;
-      const wordsEnd = lyric.words && lyric.words.length > 0
-        ? Math.max(...lyric.words.map((w_end: Word) => w_end.end))
-        : (lyric.endTime || computedLyrics[i + 1]?.time || lyric.time + 4);
-
-      const isActive = isLastLyric
-        ? currentTime >= lyric.time
-        : (currentTime >= lyric.time && currentTime < wordsEnd);
-
-      if (isActive) {
-        currentActiveId = lyric.id || `lyric-${i}`;
-        break;
+    setupEnhancedAmLyrics();
+    const el = amLyricsRef.current;
+    if (el) {
+      if (songTtml) {
+        el.ttml = songTtml;
       }
-    }
+      el.currentTime = 0;
+      injectShadowRootLiftStyles(el.shadowRoot);
 
-    if (currentActiveId !== activeLyricId) {
-      setActiveLyricId(currentActiveId);
-    }
-  }, [currentTime, computedLyrics, activeLyricId]);
+      const timer = setTimeout(() => {
+        injectShadowRootLiftStyles(el.shadowRoot);
+      }, 200);
 
-  useEffect(() => {
-    if (!showLyrics || isUserScrolling) return;
-    const container = lyricsContainerRef.current;
-    if (!container) return;
-
-    // A new lyric just became active (including after a null gap)
-    if (activeLyricId && activeLyricId !== prevActiveLyricIdRef.current) {
-      const wasInstrumental =
-        prevActiveLyricIdRef.current?.startsWith('inst-') ||
-        prevActiveLyricIdRef.current === 'intro';
-
-      prevActiveLyricIdRef.current = activeLyricId;
-
-      const scrollToActive = (behavior: ScrollBehavior = 'smooth') => {
-        const activeEl = container.querySelector('.lyric-line.active') as HTMLElement;
-        if (activeEl) {
-          const scrollTarget = activeEl.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
-          container.scrollTo({ top: scrollTarget, behavior });
-        }
-      };
-
-      let raf: number | undefined;
-      let correctionTimer: number | undefined;
-
-      if (wasInstrumental) {
-        // Skip the premature rAF scroll — the layout is still collapsing.
-        // After the 0.8s collapse animation settles, jump instantly to center.
-        correctionTimer = window.setTimeout(() => scrollToActive('instant'), 850);
-      } else {
-        // Normal lyric transition — defer one frame for React to paint .active
-        raf = requestAnimationFrame(() => scrollToActive('smooth'));
+      let observer: MutationObserver | null = null;
+      if (el.shadowRoot) {
+        observer = new MutationObserver(() => {
+          injectShadowRootLiftStyles(el.shadowRoot);
+        });
+        observer.observe(el.shadowRoot, { childList: true, subtree: false });
       }
 
       return () => {
-        if (raf !== undefined) cancelAnimationFrame(raf);
-        if (correctionTimer !== undefined) clearTimeout(correctionTimer);
+        clearTimeout(timer);
+        observer?.disconnect();
       };
     }
-  }, [activeLyricId, isUserScrolling, showLyrics]);
+  }, [songTtml, song.id]);
+
+  // Handle clicking on a lyric line in am-lyrics to seek audio
+  useEffect(() => {
+    const el = amLyricsRef.current;
+    if (!el) return;
+
+    const handleLineClick = (e: any) => {
+      const timestampMs = e.detail?.timestamp;
+      if (typeof timestampMs === 'number' && audioRef.current) {
+        const targetSeconds = timestampMs / 1000;
+        audioRef.current.currentTime = targetSeconds;
+        setCurrentTime(targetSeconds);
+        if (!isPlaying) {
+          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        }
+      }
+    };
+
+    el.addEventListener('line-click', handleLineClick);
+    return () => el.removeEventListener('line-click', handleLineClick);
+  }, [isPlaying]);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -589,8 +385,12 @@ export default function MusicPlayer() {
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+      const time = audioRef.current.currentTime;
+      setCurrentTime(time);
       setDuration(audioRef.current.duration || 0);
+      if (amLyricsRef.current) {
+        amLyricsRef.current.currentTime = time * 1000;
+      }
     }
   };
 
@@ -600,6 +400,9 @@ export default function MusicPlayer() {
       audioRef.current.currentTime = time;
     }
     setCurrentTime(time);
+    if (amLyricsRef.current) {
+      amLyricsRef.current.currentTime = time * 1000;
+    }
   };
 
   const formatTime = (time: number) => {
@@ -806,43 +609,20 @@ export default function MusicPlayer() {
         </div>
 
         {/* Lyrics Section */}
-        <div
-          className={`lyrics-section${isUserScrolling ? ' user-scrolling' : ''}`}
-          ref={lyricsContainerRef}
-          onWheel={handleLyricsScroll}
-          onTouchMove={handleLyricsScroll}
-        >
-          <div className="lyrics-padding-top" />
-          {computedLyrics.map((lyric, idx) => {
-              const isLastLyric = idx === computedLyrics.length - 1;
-              const wordsEnd = lyric.words && lyric.words.length > 0
-                ? Math.max(...lyric.words.map((w: Word) => w.end))
-                : (lyric.endTime || computedLyrics[idx + 1]?.time || lyric.time + 4);
-
-              // Last line never becomes "past" once played
-              const isActive = isLastLyric
-                ? currentTime >= lyric.time
-                : (currentTime >= lyric.time && currentTime < wordsEnd);
-
-              const isPast = !isLastLyric && currentTime >= wordsEnd;
-
-              return (
-                <MemoizedLyricLine 
-                  key={lyric.id || idx}
-                  lyric={lyric}
-                  isActive={isActive}
-                  isPast={isPast}
-                  currentTime={isActive ? currentTime : 0}
-                  onSeek={(t: number) => {
-                    if (audioRef.current) {
-                      audioRef.current.currentTime = t;
-                      setCurrentTime(t);
-                    }
-                  }} 
-                />
-              );
-            })}
-          </div>
+        <div className="lyrics-section">
+          <am-lyrics
+            ref={amLyricsRef}
+            class="am-lyrics-player"
+            song-title={song.title}
+            song-artist={song.artist}
+            song-album={song.album}
+            ttml={songTtml}
+            highlight-color="#ffffff"
+            line-motion="staggered"
+            autoscroll
+            interpolate
+          />
+        </div>
       </div>
       {/* Desktop Top right actions (Hidden on mobile) */}
       <div className="desktop-corner-btn">
