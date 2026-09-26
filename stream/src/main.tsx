@@ -22,6 +22,51 @@ if ('serviceWorker' in navigator) {
   }).catch(() => { /* silently ignore */ });
 }
 
+// ============================================================================
+// GLOBAL MOBILE VIDEO PROTECTION: Prevent "Download Video" popup everywhere
+// (Clips, Trailer Player, Live Player, Video Player, Music Player, etc.)
+// ============================================================================
+if (typeof window !== 'undefined') {
+  // 1. Intercept long-press / right-click menu globally in capture phase
+  document.addEventListener('contextmenu', (e) => {
+    const target = e.target as HTMLElement | null;
+    if (
+      target instanceof HTMLVideoElement ||
+      target instanceof HTMLImageElement ||
+      target?.closest('video') ||
+      target?.closest('.video-container') ||
+      target?.closest('.video-element') ||
+      target?.closest('.clip-player') ||
+      target?.closest('.trailer-player')
+    ) {
+      e.preventDefault();
+    }
+  }, { capture: true });
+
+  // 2. Automatically apply nodownload and disablePictureInPicture to any <video> in the DOM
+  const secureVideoElement = (video: HTMLVideoElement) => {
+    video.setAttribute('controlsList', 'nodownload noplaybackrate');
+    video.setAttribute('disablePictureInPicture', 'true');
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
+  };
+
+  const videoObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof HTMLVideoElement) {
+          secureVideoElement(node);
+        } else if (node instanceof HTMLElement) {
+          node.querySelectorAll('video').forEach(secureVideoElement);
+        }
+      }
+    }
+  });
+
+  videoObserver.observe(document.documentElement, { childList: true, subtree: true });
+  document.querySelectorAll('video').forEach(secureVideoElement);
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

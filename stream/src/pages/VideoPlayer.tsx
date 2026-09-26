@@ -3081,6 +3081,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           ref={videoRef}
           playsInline
           webkit-playsinline="true"
+          controlsList="nodownload nofullscreen noplaybackrate"
+          disablePictureInPicture
           {...(!isNativePlayer ? { crossOrigin: 'anonymous' } : {})}
           className="video-element"
           style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
@@ -3094,7 +3096,8 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           onClick={handleVideoClick}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          onContextMenu={(e) => isLongPressActiveRef.current && e.preventDefault()}
+          onTouchCancel={handleTouchEnd}
+          onContextMenu={(e) => e.preventDefault()}
           onError={handleVideoError}
           onEnded={handleVideoEnded}
         >

@@ -28,6 +28,12 @@
   outline: none;
 }
 
+video {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
 html {
   scroll-behavior: smooth;
 }

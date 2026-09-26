@@ -444,9 +444,12 @@ export default function MusicPlayer() {
                 loop
                 muted
                 playsInline
+                controlsList="nodownload nofullscreen noplaybackrate"
+                disablePictureInPicture
+                onContextMenu={(e) => e.preventDefault()}
               />
             ) : (
-              <img src={effectiveArtwork} alt={song.title} className="mobile-artwork-thumb" />
+              <img src={effectiveArtwork} alt={song.title} className="mobile-artwork-thumb" onContextMenu={(e) => e.preventDefault()} />
             )}
             <div className="mobile-song-text">
               <MarqueeText className="mobile-title">{song.title}</MarqueeText>
@@ -479,9 +482,12 @@ export default function MusicPlayer() {
                 loop
                 muted
                 playsInline
+                controlsList="nodownload nofullscreen noplaybackrate"
+                disablePictureInPicture
+                onContextMenu={(e) => e.preventDefault()}
               />
             ) : (
-              <img src={effectiveArtwork} alt={song.title} className="artwork-img" />
+              <img src={effectiveArtwork} alt={song.title} className="artwork-img" onContextMenu={(e) => e.preventDefault()} />
             )}
           </div>
 
