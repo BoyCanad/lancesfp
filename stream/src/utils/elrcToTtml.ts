@@ -8,6 +8,7 @@ export interface LyricLine {
   time: number;
   text: string;
   words?: LyricWord[];
+  singer?: string;
 }
 
 export function formatTimeTTML(seconds: number): string {
@@ -35,6 +36,25 @@ export function convertElrcToTTML(
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
 
+  // Collect unique singers for <ttm:agent> declarations
+  const singerSet = new Set<string>();
+  lyrics.forEach((line) => {
+    if (line.singer) singerSet.add(line.singer);
+  });
+
+  let agentsXml = '';
+  if (singerSet.size > 0) {
+    singerSet.forEach((s) => {
+      const type =
+        s.toLowerCase() === 'all' || s.toLowerCase() === 'group'
+          ? 'group'
+          : 'person';
+      agentsXml += `      <ttm:agent type="${type}" xml:id="${escapeXml(s)}">${escapeXml(s)}</ttm:agent>\n`;
+    });
+  } else {
+    agentsXml = `      <ttm:agent type="person" xml:id="artist">${escapeXml(artist)}</ttm:agent>\n`;
+  }
+
   let pNodes = '';
 
   lyrics.forEach((line, idx) => {
@@ -52,6 +72,7 @@ export function convertElrcToTTML(
 
     const pBegin = formatTimeTTML(line.time);
     const pEnd = formatTimeTTML(endSec);
+    const singerAttr = line.singer ? ` ttm:agent="${escapeXml(line.singer)}"` : '';
 
     if (line.words && line.words.length > 0) {
       let mainSpans = '';
@@ -89,10 +110,10 @@ export function convertElrcToTTML(
         content += `<span ttm:role="x-bg">${bgSpans}</span>`;
       }
 
-      pNodes += `      <p begin="${pBegin}" end="${pEnd}">\n        ${content}\n      </p>\n`;
+      pNodes += `      <p begin="${pBegin}" end="${pEnd}"${singerAttr}>\n        ${content}\n      </p>\n`;
     } else {
       const lineText = escapeXml(line.text.trim());
-      pNodes += `      <p begin="${pBegin}" end="${pEnd}">${lineText}</p>\n`;
+      pNodes += `      <p begin="${pBegin}" end="${pEnd}"${singerAttr}>${lineText}</p>\n`;
     }
   });
 
@@ -101,8 +122,7 @@ export function convertElrcToTTML(
   <head>
     <metadata>
       <ttm:title>${escapeXml(title)}</ttm:title>
-      <ttm:agent type="person" xml:id="artist">${escapeXml(artist)}</ttm:agent>
-    </metadata>
+${agentsXml}    </metadata>
   </head>
   <body>
     <div>

@@ -250,6 +250,7 @@
 .icon-btn {
   background: rgba(255, 255, 255, 0.1);
   border: none;
+  outline: none !important;
   border-radius: 50%;
   width: 44px;
   height: 44px;
@@ -260,6 +261,13 @@
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.icon-btn:focus,
+.icon-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none;
 }
 
 .icon-btn:hover {
@@ -290,13 +298,13 @@
   flex: 1;
   display: flex;
   width: 100%;
-  max-width: 1600px;
+  max-width: 1680px;
   margin: 0 auto;
   overflow: hidden;
   transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
-  padding: 4rem 12rem 140px 12rem;
+  padding: 3.5rem 6rem 140px 6rem;
   /* Leave room for bottom controls */
-  gap: 3rem;
+  gap: 3.5rem;
   justify-content: center; /* keep centered to allow smooth sliding */
 }
 
@@ -362,7 +370,7 @@
   justify-content: flex-start;
   transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
   opacity: 1;
-  max-width: 1000px;
+  max-width: 1150px;
   visibility: visible;
   transform: translateX(0) scale(1);
 }
@@ -376,7 +384,8 @@ am-lyrics.am-lyrics-player {
   --am-lyrics-highlight-color: #ffffff;
   --lyplus-lyrics-palette: #ffffff;
   --lyplus-text-primary: #ffffff;
-  --lyplus-text-secondary: rgba(255, 255, 255, 0.5);
+  --lyplus-text-secondary: rgba(255, 255, 255, 0.24);
+  --am-lyrics-text-secondary: rgba(255, 255, 255, 0.24);
 
   /* === LIFT & ALIGNMENT === */
   --am-lyrics-lift: 1.0;                  /* Calibrated gentle lift multiplier */
@@ -388,18 +397,18 @@ am-lyrics.am-lyrics-player {
   --lyplus-blur-amount-near: 0.04em;
   --am-lyrics-inactive-scale: 0.94;       /* 3D scale perspective */
 
-  --lyrics-scroll-padding-top: 30%;
+  --lyrics-scroll-padding-top: 28%;
 
-  /* Desktop & Wide Screens: larger text and wider line spacing */
-  --am-lyrics-wide-font-size: 3.5rem;
-  --am-lyrics-wide-line-spacing: 3.2rem;
+  /* Desktop & Wide Screens */
+  --am-lyrics-wide-font-size: 3.05rem;
+  --am-lyrics-wide-line-spacing: 2.4rem;
   --am-lyrics-wide-background-vocal-font-size: 0.72em;
-  --am-lyrics-wide-selected-position: 26%;
+  --am-lyrics-wide-selected-position: 28%;
 
   /* Medium / Tablet Screens */
-  --lyplus-font-size-base: 3.1rem;
-  --am-lyrics-line-spacing: 3rem;
-  --am-lyrics-line-height: 1.34;
+  --lyplus-font-size-base: 2.75rem;
+  --am-lyrics-line-spacing: 2.2rem;
+  --am-lyrics-line-height: 1.28;
 
   /* Mobile / Compact Screens */
   --am-lyrics-compact-font-size: 2.25rem;
@@ -793,35 +802,129 @@ input[type="range"]:hover::-webkit-slider-thumb {
   /* Center evenly */
 }
 
+/* Apple Music Focus & Outline Reset — Remove square browser focus bounding boxes */
+.music-player-container button,
+.music-player-container button:focus,
+.music-player-container button:focus-visible,
+.music-player-container button:active,
+.control-btn,
+.control-btn:focus,
+.control-btn:focus-visible,
+.control-btn:active,
+.icon-btn,
+.icon-btn:focus,
+.icon-btn:focus-visible,
+.icon-btn:active,
+.progress-bar:focus,
+.progress-bar:focus-visible,
+.volume-slider:focus,
+.volume-slider:focus-visible,
+input[type="range"]:focus,
+input[type="range"]:focus-visible {
+  outline: none !important;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.music-player-container button::-moz-focus-inner {
+  border: 0 !important;
+}
+
 .control-btn {
+  position: relative;
   background: none;
   border: none;
-  color: white;
+  outline: none !important;
+  color: rgba(255, 255, 255, 0.75);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  opacity: 0.8;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.2s ease, opacity 0.2s ease;
+  opacity: 0.85;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .control-btn:hover {
+  color: #ffffff;
   opacity: 1;
+  transform: scale(1.08);
 }
 
 .control-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
-.control-btn.primary {
-  width: 50px;
-  height: 50px;
+.control-btn.active-state {
+  color: #fa2d48;
   opacity: 1;
 }
 
-.play-icon {
-  margin-left: 5px;
-  /* Offset to center the triangle optically */
+.control-btn.active-state::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #fa2d48;
+  box-shadow: 0 0 6px rgba(250, 45, 72, 0.8);
+}
+
+.control-btn.secondary {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.control-btn.secondary:focus,
+.control-btn.secondary:focus-visible,
+.control-btn.secondary:active {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Apple Music Floating Play/Pause Button — Pure glyph, borderless & backgroundless */
+.control-btn.primary {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff;
+  opacity: 1;
+  box-shadow: none !important;
+  outline: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, filter 0.2s ease;
+}
+
+.control-btn.primary:hover {
+  background: transparent !important;
+  color: #ffffff;
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+}
+
+.control-btn.primary:active {
+  transform: scale(0.92);
+  filter: none;
+}
+
+.favorite-active {
+  color: #fa2d48 !important;
+  animation: favorite-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes favorite-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
 }
 
 .volume-container {
@@ -1083,7 +1186,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
     --char-rise-y: -1.8px;
     --am-lyrics-character-rise-peak: -1.2px;
     --lyplus-blur-amount: 0.10em;
-    --lyplus-text-secondary: rgba(255, 255, 255, 0.45);
+    --lyplus-text-secondary: rgba(255, 255, 255, 0.24);
+    --am-lyrics-text-secondary: rgba(255, 255, 255, 0.24);
   }
 
   .lyric-letter {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronDown, Mic } from 'lucide-react';
 import { minsanLyrics } from '../data/minsanLyrics';
@@ -143,6 +143,9 @@ export default function MusicPlayer() {
   const [showLyrics, setShowLyrics] = useState(true);
   const [isKaraokeMode, setIsKaraokeMode] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -322,7 +325,7 @@ export default function MusicPlayer() {
         observer = new MutationObserver(() => {
           injectShadowRootLiftStyles(el.shadowRoot);
         });
-        observer.observe(el.shadowRoot, { childList: true, subtree: false });
+        observer.observe(el.shadowRoot, { childList: true, subtree: true });
       }
 
       return () => {
@@ -331,6 +334,20 @@ export default function MusicPlayer() {
       };
     }
   }, [songTtml, song.id]);
+
+  // Forward scroll / wheel interactions on the lyrics section to am-lyrics
+  const handleLyricsScroll = useCallback(() => {
+    const el = amLyricsRef.current as any;
+    if (el) {
+      if (!el.isProgrammaticScroll && !el.isClickSeeking) {
+        if (typeof el.handleUserScroll === 'function') {
+          el.handleUserScroll();
+        } else if (typeof el.setUserScrolling === 'function') {
+          el.setUserScrolling(true);
+        }
+      }
+    }
+  }, []);
 
   // Handle clicking on a lyric line in am-lyrics to seek audio
   useEffect(() => {
@@ -380,6 +397,53 @@ export default function MusicPlayer() {
 
     if (wasPlaying) {
       audioRef.current.play().catch(e => console.error("Playback failed after source switch", e));
+    }
+  };
+
+  const songKeys = Object.keys(mockSongs);
+
+  const handleNext = () => {
+    const currentIndex = songKeys.indexOf(song.id);
+    let nextIndex: number;
+    if (isShuffle && songKeys.length > 1) {
+      const remaining = songKeys.filter(k => k !== song.id);
+      nextIndex = songKeys.indexOf(remaining[Math.floor(Math.random() * remaining.length)]);
+    } else {
+      nextIndex = (currentIndex + 1) % songKeys.length;
+    }
+    navigate(`/music/${songKeys[nextIndex]}`);
+  };
+
+  const handlePrevious = () => {
+    if (audioRef.current && audioRef.current.currentTime > 3) {
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      if (amLyricsRef.current) amLyricsRef.current.currentTime = 0;
+    } else {
+      const currentIndex = songKeys.indexOf(song.id);
+      const prevIndex = (currentIndex - 1 + songKeys.length) % songKeys.length;
+      navigate(`/music/${songKeys[prevIndex]}`);
+    }
+  };
+
+  const toggleRepeat = () => {
+    setRepeatMode(prev => (prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off'));
+  };
+
+  const toggleShuffle = () => {
+    setIsShuffle(prev => !prev);
+  };
+
+  const handleAudioEnded = () => {
+    if (repeatMode === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+    } else if (repeatMode === 'all' || isShuffle) {
+      handleNext();
+    } else {
+      setIsPlaying(false);
     }
   };
 
@@ -499,11 +563,21 @@ export default function MusicPlayer() {
                 <MarqueeText className="song-artist">{song.artist} — {song.album}</MarqueeText>
               </div>
               <div className="song-actions">
-                <button className="icon-btn small">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                <button
+                  className={`icon-btn small ${isFavorite ? 'favorite-active' : ''}`}
+                  onClick={() => setIsFavorite(!isFavorite)}
+                  title={isFavorite ? "Favorited" : "Favorite"}
+                >
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill={isFavorite ? "#fa2d48" : "none"} stroke={isFavorite ? "#fa2d48" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
                 </button>
-                <button className="icon-btn small">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
+                <button className="icon-btn small" title="More Options">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="5" cy="12" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="19" cy="12" r="2" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -536,46 +610,102 @@ export default function MusicPlayer() {
             {/* Playback Controls and Volume Row */}
             <div className="bottom-controls-row">
               <div className="playback-controls">
-                <button className="control-btn secondary">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" /></svg>
+                {/* Shuffle */}
+                <button
+                  className={`control-btn secondary ${isShuffle ? 'active-state' : ''}`}
+                  onClick={toggleShuffle}
+                  title={isShuffle ? "Shuffle On" : "Shuffle Off"}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 3h5v5" />
+                    <path d="M4 20L21 3" />
+                    <path d="M21 16v5h-5" />
+                    <path d="M15 15l6 6" />
+                    <path d="M4 4l5 5" />
+                  </svg>
                 </button>
 
-                <button className="control-btn secondary">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20" /><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" strokeWidth="2" /></svg>
+                {/* Previous (Apple Music backward.fill: double left triangles, no box/bar) */}
+                <button
+                  className="control-btn secondary"
+                  onClick={handlePrevious}
+                  title="Previous Track"
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.5 5.2a1.2 1.2 0 0 0-1.83-1.02l-7.7 5.24a1.4 1.4 0 0 0 0 2.36l7.7 5.24a1.2 1.2 0 0 0 1.83-1.02V5.2z" />
+                    <path d="M20.5 5.2a1.2 1.2 0 0 0-1.83-1.02l-7.7 5.24a1.4 1.4 0 0 0 0 2.36l7.7 5.24a1.2 1.2 0 0 0 1.83-1.02V5.2z" />
+                  </svg>
                 </button>
 
-                <button className="control-btn primary" onClick={togglePlay}>
+                {/* Play / Pause */}
+                <button
+                  className="control-btn primary"
+                  onClick={togglePlay}
+                  title={isPlaying ? "Pause" : "Play"}
+                >
                   {isPlaying ? (
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="5.5" y="3.5" width="4" height="17" rx="2" />
+                      <rect x="14.5" y="3.5" width="4" height="17" rx="2" />
+                    </svg>
                   ) : (
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" className="play-icon"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                    <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '3px' }}>
+                      <path d="M6.5 4.64c0-1.12 1.23-1.8 2.18-1.22l11.45 6.94a1.42 1.42 0 0 1 0 2.44L8.68 19.74c-.95.58-2.18-.1-2.18-1.22V4.64z" />
+                    </svg>
                   )}
                 </button>
 
-                <button className="control-btn secondary">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" strokeWidth="2" /></svg>
+                {/* Next (Apple Music forward.fill: double right triangles, no box/bar) */}
+                <button
+                  className="control-btn secondary"
+                  onClick={handleNext}
+                  title="Next Track"
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.5 5.2a1.2 1.2 0 0 1 1.83-1.02l7.7 5.24a1.4 1.4 0 0 1 0 2.36l-7.7 5.24a1.2 1.2 0 0 1-1.83-1.02V5.2z" />
+                    <path d="M12.5 5.2a1.2 1.2 0 0 1 1.83-1.02l7.7 5.24a1.4 1.4 0 0 1 0 2.36l-7.7 5.24a1.2 1.2 0 0 1-1.83-1.02V5.2z" />
+                  </svg>
                 </button>
 
-                <button className="control-btn secondary">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+                {/* Repeat */}
+                <button
+                  className={`control-btn secondary ${repeatMode !== 'off' ? 'active-state' : ''}`}
+                  onClick={toggleRepeat}
+                  title={`Repeat: ${repeatMode}`}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="17 1 21 5 17 9" />
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                    <polyline points="7 23 3 19 7 15" />
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    {repeatMode === 'one' && (
+                      <text x="12" y="15" fontSize="7.5" fontWeight="900" fill="currentColor" stroke="none" textAnchor="middle">1</text>
+                    )}
+                  </svg>
                 </button>
               </div>
 
+              {/* Volume Slider */}
               <div className="volume-container">
                 <div className="volume-time-match">
-                  <button className="icon-btn small no-bg" onClick={() => setIsMuted(!isMuted)}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <button className="icon-btn small no-bg volume-btn" onClick={() => setIsMuted(!isMuted)} title={isMuted ? "Unmute" : "Mute"}>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       {isMuted || volume === 0 ? (
                         <>
-                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                          <line x1="23" y1="9" x2="17" y2="15" />
-                          <line x1="17" y1="9" x2="23" y2="15" />
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none" />
+                          <line x1="22" y1="9" x2="16" y2="15" />
+                          <line x1="16" y1="9" x2="22" y2="15" />
+                        </>
+                      ) : volume < 0.5 ? (
+                        <>
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none" />
+                          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
                         </>
                       ) : (
                         <>
-                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none" />
+                          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                          <path d="M19 5a9.5 9.5 0 0 1 0 14" />
                         </>
                       )}
                     </svg>
@@ -597,8 +727,16 @@ export default function MusicPlayer() {
 
             {/* Mobile Bottom Bar Actions (Replaces volume and corner buttons on mobile) */}
             <div className="mobile-bottom-bar">
-              <button className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`} onClick={() => setShowLyrics(!showLyrics)}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="9" y1="10" x2="15" y2="10" /><line x1="12" y1="7" x2="12" y2="13" /></svg>
+              <button
+                className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`}
+                onClick={() => setShowLyrics(!showLyrics)}
+                title="Lyrics"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill={showLyrics ? "rgba(255,255,255,0.18)" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <line x1="8" y1="9" x2="13" y2="9" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                </svg>
               </button>
               <button
                 className={`icon-btn no-bg mic-toggle ${isKaraokeMode ? 'active-text' : ''}`}
@@ -607,15 +745,23 @@ export default function MusicPlayer() {
               >
                 <Mic size={24} color={isKaraokeMode ? "#fa2d48" : "currentColor"} fill={isKaraokeMode ? "#fa2d48" : "none"} />
               </button>
-              <button className="icon-btn no-bg">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              <button className="icon-btn no-bg" title="AirPlay / Audio Output">
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
+                  <polygon points="12 15 17 21 7 21 12 15" fill="currentColor" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
 
         {/* Lyrics Section */}
-        <div className="lyrics-section">
+        <div
+          className="lyrics-section"
+          onWheel={handleLyricsScroll}
+          onTouchMove={handleLyricsScroll}
+          onTouchStart={handleLyricsScroll}
+        >
           <am-lyrics
             ref={amLyricsRef}
             class="am-lyrics-player"
@@ -627,6 +773,7 @@ export default function MusicPlayer() {
             line-motion="staggered"
             autoscroll
             interpolate
+            hide-played-lines
           />
         </div>
       </div>
@@ -639,8 +786,16 @@ export default function MusicPlayer() {
         >
           <Mic size={24} color={isKaraokeMode ? "#fa2d48" : "currentColor"} fill={isKaraokeMode ? "#fa2d48" : "none"} />
         </button>
-        <button className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`} onClick={() => setShowLyrics(!showLyrics)}>
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="9" y1="10" x2="15" y2="10" /><line x1="12" y1="7" x2="12" y2="13" /></svg>
+        <button
+          className={`icon-btn no-bg toggle-lyrics ${showLyrics ? 'active-text' : ''}`}
+          onClick={() => setShowLyrics(!showLyrics)}
+          title="Lyrics"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill={showLyrics ? "rgba(255,255,255,0.18)" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <line x1="8" y1="9" x2="13" y2="9" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+          </svg>
         </button>
       </div>
 
@@ -648,7 +803,7 @@ export default function MusicPlayer() {
         ref={audioRef}
         src={song.audioUrl}
         onTimeUpdate={handleTimeUpdate}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={handleAudioEnded}
         onLoadedMetadata={handleTimeUpdate}
       />
     </div>

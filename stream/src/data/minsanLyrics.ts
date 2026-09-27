@@ -1,5 +1,6 @@
 export const minsanLyrics = [
   {
+    "singer": "Marco",
     "time": 14.67,
     "text": " Minsan  sa  may  Kalayaan,  tayo'y  nagkatagpuan  ",
     "words": [
@@ -41,6 +42,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Marco",
     "time": 21.379,
     "text": " May  mga  sariling  gimik  at  kanya-kanyang  hangad  sa  buhay  ",
     "words": [
@@ -97,6 +99,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Edrian",
     "time": 31.548,
     "text": " Sa  ilalim  ng  iisang  bubong,  mga  sikretong  ibinubulong  ",
     "words": [
@@ -148,6 +151,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Edrian",
     "time": 38.062,
     "text": " Kahit  na  ano'ng  mangyari,  kahit  na  saan  ka  man  patungo  ",
     "words": [
@@ -209,6 +213,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Xian",
     "time": 46.866,
     "text": " Ngunit  ngayon,  kay  bilis  maglaho  ng  kahapon  ",
     "words": [
@@ -255,6 +260,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Xian",
     "time": 57.629,
     "text": " Sana'y  huwag  kalimutan  ang  ating  mga  pinagsamahan  ",
     "words": [
@@ -301,6 +307,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 70.702,
     "text": " Kung  sakaling  gipitin  ay  laging  iisipin  ",
     "words": [
@@ -342,6 +349,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 77.17,
     "text": " Na  minsan  tayo  ay  naging  tunay  na  magkaibigan  ",
     "words": [
@@ -393,6 +401,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 110.452,
     "text": " Ah-ah,  ah-ah  ",
     "words": [
@@ -414,6 +423,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Marco",
     "time": 123.953,
     "text": " Minsan  ay  parang  wala  nang  bukas  sa  buhay  natin  ",
     "words": [
@@ -470,6 +480,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Marco",
     "time": 130.458,
     "text": " Inuman  hanggang  sa  magdamag  na  para  bang  tayo'y  mauubusan  ",
     "words": [
@@ -526,6 +537,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Edrian",
     "time": 137.497,
     "text": " Sa  ilalim  ng  bilog  na  buwan,  mga  tiyan  nati'y  walang  laman  ",
     "words": [
@@ -592,6 +604,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Edrian",
     "time": 143.54,
     "text": " Ngunit  kahit  na  walang  pera,  ang  bawat  gabi'y  anong  saya  ",
     "words": [
@@ -653,6 +666,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 152.91,
     "text": " Ngunit  ngayon,  kay  bilis  maglaho  ng  kahapon  ",
     "words": [
@@ -699,6 +713,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 163.598,
     "text": " Sana'y  huwag  kalimutan  ang  ating  mga  pinagsamahan  ",
     "words": [
@@ -745,6 +760,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 176.88,
     "text": " Kung  sakaling  gipitin  ay  laging  iisipin  ",
     "words": [
@@ -786,6 +802,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 182.963,
     "text": " Na  minsan  tayo  ay  naging  tunay  na  magkaibigan  ",
     "words": [
@@ -837,6 +854,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 201.712,
     "text": " Minsan  ay  hindi  mo  na  alam  ang  nangyayari  ",
     "words": [
@@ -888,6 +906,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 208.282,
     "text": " Kahit  na  ano'ng  gawin,  lahat  ng  bagay  ay  mayro'ng  hangganan  ",
     "words": [
@@ -949,6 +968,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 217.261,
     "text": " Dahil  ngayon,  tayo  ay  nilimot  ng  kahapon  ",
     "words": [
@@ -995,6 +1015,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 227.995,
     "text": " 'Di  na  mapipilitang  buhayin  ang  ating  pinagsamahan  ",
     "words": [
@@ -1041,6 +1062,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Pok",
     "time": 245.813,
     "text": " Ngunit  kung  sakaling  mapadaan,  baka  ikaw  ay  aking  tawagan  ",
     "words": [
@@ -1097,6 +1119,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Edrian",
     "time": 256.616,
     "text": " Minsan  sa  may  Kalayaan,  tayo'y  nagkatagpuan  ",
     "words": [
@@ -1138,6 +1161,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Edrian",
     "time": 263.51800000000003,
     "text": " Kahit  na  ano'ng  gawin,  lahat  ng  bagay  ay  mayro'ng  hangganan  ",
     "words": [
@@ -1199,6 +1223,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "Xian",
     "time": 275.936,
     "text": " Ngunit  kung  sakaling  mapadaan,  baka  ikaw  ay  aking  tawagan  ",
     "words": [
@@ -1255,6 +1280,7 @@ export const minsanLyrics = [
     ]
   },
   {
+    "singer": "ALL",
     "time": 284.845,
     "text": " Dahil  minsan  tayo  ay  naging  tunay  na  magkaibigan ",
     "words": [

@@ -4145,3 +4145,645 @@
     background: radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.75) 50%, transparent 80%);
   }
 }
+
+/* ==========================================================================
+   VIDEO PLAYER SYNCED LYRICS POPUP (ANG HULING EL BIMBO PLAY)
+   ========================================================================== */
+.vplayer-synced-lyrics-popup {
+  position: absolute;
+  z-index: 85; /* Above video stage, below controls */
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(16, 17, 25, 0.92) 0%, rgba(10, 11, 18, 0.98) 100%);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  pointer-events: auto;
+  user-select: none;
+  will-change: transform;
+  transform: translateZ(0);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease;
+}
+
+/* Corner Floating Popup Mode (Default) */
+.vplayer-synced-lyrics-popup.is-corner {
+  right: 28px;
+  bottom: 96px;
+  width: min(440px, calc(100vw - 56px));
+  height: min(520px, calc(100vh - 140px));
+  animation: lyricsPopupSpring 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.15) both;
+}
+
+@keyframes lyricsPopupSpring {
+  0% {
+    opacity: 0;
+    transform: scale(0.84) translateY(24px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Centered Popup Dialog Mode */
+.vplayer-synced-lyrics-popup.is-centered {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: min(540px, 92vw);
+  height: min(600px, 76vh);
+  animation: lyricsCenterPopIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.15) both;
+}
+
+@keyframes lyricsCenterPopIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  65% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* When dragged by user */
+.vplayer-synced-lyrics-popup.is-dragged {
+  transition: none !important;
+  animation: none !important;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.vplayer-lyrics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.3rem 0.9rem 1.3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  flex-shrink: 0;
+  gap: 0.8rem;
+  cursor: grab;
+}
+
+.vplayer-lyrics-header:active {
+  cursor: grabbing;
+}
+
+.vplayer-lyrics-song-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  overflow: hidden;
+  flex: 1;
+}
+
+.vplayer-lyrics-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
+.vplayer-lyrics-title-group {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.vplayer-lyrics-song-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.vplayer-lyrics-artist {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.vplayer-lyrics-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.vplayer-lyrics-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(250, 45, 72, 0.18);
+  color: #fa2d48;
+  border: 1px solid rgba(250, 45, 72, 0.35);
+  border-radius: 20px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.live-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #fa2d48;
+  box-shadow: 0 0 8px #fa2d48;
+  animation: lyricsPulseDot 1.8s infinite ease-in-out;
+}
+
+@keyframes lyricsPulseDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.65);
+    opacity: 0.4;
+  }
+}
+
+/* Idle Header Metadata */
+.vplayer-lyrics-song-meta.is-idle {
+  gap: 0.75rem;
+}
+
+.vplayer-lyrics-idle-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+}
+
+.vplayer-lyrics-standby-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.standby-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
+.vplayer-lyrics-mode-btn,
+.vplayer-lyrics-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none !important;
+  color: #ffffff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vplayer-lyrics-mode-btn:hover,
+.vplayer-lyrics-close-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.08);
+}
+
+.vplayer-lyrics-mode-btn:active,
+.vplayer-lyrics-close-btn:active {
+  transform: scale(0.92);
+}
+
+.vplayer-lyrics-content {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  padding: 0 0.5rem;
+  position: relative;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+  contain: content;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.video-am-lyrics-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  contain: strict;
+  /* Apple Music aesthetics and smooth character lift */
+  --am-lyrics-highlight-color: #ffffff;
+  --lyplus-lyrics-palette: #ffffff;
+  --lyplus-text-primary: #ffffff;
+  --lyplus-text-secondary: rgba(255, 255, 255, 0.24);
+  --am-lyrics-text-secondary: rgba(255, 255, 255, 0.24);
+
+  /* Lift & smooth alignment variables */
+  --am-lyrics-lift: 1.0;
+  --char-rise-y: -2px;
+  --am-lyrics-character-rise-peak: -1.5px;
+  --am-lyrics-inactive-scale: 0.95;
+  --lyplus-blur-amount: 0.08em;
+  --lyplus-blur-amount-near: 0.03em;
+
+  --am-lyrics-wide-font-size: 1.85rem;
+  --am-lyrics-wide-line-spacing: 1.55rem;
+  --lyplus-font-size-base: 1.85rem;
+  --am-lyrics-line-spacing: 1.55rem;
+  --am-lyrics-line-height: 1.32;
+  --lyrics-scroll-padding-top: 25%;
+  --am-lyrics-inline-padding: 0px;
+
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+
+/* Empty State ("No music is currently playing") */
+.vplayer-lyrics-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  padding: 2rem 1.5rem;
+  animation: lyricsEmptyFadeIn 0.35s ease-out both;
+  user-select: none;
+}
+
+@keyframes lyricsEmptyFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.vplayer-lyrics-empty-disc-wrap {
+  position: relative;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vplayer-lyrics-empty-disc-ring {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(250, 45, 72, 0.22) 0%, rgba(20, 22, 34, 0.85) 75%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(250, 45, 72, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.vplayer-lyrics-empty-disc-inner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(10, 11, 18, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fa2d48;
+}
+
+.vplayer-lyrics-soundwaves {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 14px;
+  height: 16px;
+}
+
+.vplayer-lyrics-soundwaves .wave-bar {
+  width: 3px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  animation: lyricsWaveIdle 2s infinite ease-in-out;
+}
+
+.vplayer-lyrics-soundwaves .bar-1 { animation-delay: 0.1s; }
+.vplayer-lyrics-soundwaves .bar-2 { animation-delay: 0.3s; }
+.vplayer-lyrics-soundwaves .bar-3 { animation-delay: 0.5s; }
+.vplayer-lyrics-soundwaves .bar-4 { animation-delay: 0.7s; }
+.vplayer-lyrics-soundwaves .bar-5 { animation-delay: 0.9s; }
+
+@keyframes lyricsWaveIdle {
+  0%, 100% {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    height: 14px;
+    background: rgba(250, 45, 72, 0.75);
+  }
+}
+
+.vplayer-lyrics-empty-title {
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.55rem 0;
+  letter-spacing: -0.015em;
+}
+
+.vplayer-lyrics-empty-desc {
+  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.48;
+  max-width: 290px;
+  margin: 0 0 1.25rem 0;
+}
+
+.vplayer-lyrics-empty-tracks-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.vplayer-lyrics-empty-tracks-pill .pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #fa2d48;
+}
+
+.lyrics-toggle-btn.active-control {
+  color: #fa2d48 !important;
+}
+
+.lyrics-active-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #fa2d48;
+  box-shadow: 0 0 6px rgba(250, 45, 72, 0.9);
+}
+
+/* Pull Indicator Pill on Mobile */
+.vplayer-lyrics-pull-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 2px 0;
+  width: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.pull-indicator-bar {
+  width: 38px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.2s ease;
+}
+
+.vplayer-synced-lyrics-popup.is-pulling .pull-indicator-bar {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+/* Mobile Portrait & Small Devices */
+@media (max-width: 768px) {
+  .vplayer-synced-lyrics-popup.is-corner,
+  .vplayer-synced-lyrics-popup.is-centered {
+    top: auto;
+    bottom: 76px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: 440px;
+    margin: 0 auto;
+    height: min(440px, 52vh);
+    max-height: 52vh;
+    border-radius: 20px;
+    transform: none !important;
+    animation: lyricsPopupSpringMobile 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15) both;
+  }
+
+  @keyframes lyricsPopupSpringMobile {
+    0% {
+      opacity: 0;
+      transform: scale(0.88) translateY(20px);
+    }
+    65% {
+      opacity: 1;
+      transform: scale(1.02) translateY(-3px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .vplayer-lyrics-header {
+    padding: 0.75rem 1rem 0.75rem 1rem;
+    cursor: default;
+  }
+
+  .vplayer-lyrics-song-title {
+    font-size: 0.92rem;
+    max-width: 180px;
+  }
+
+  .vplayer-lyrics-artist {
+    font-size: 0.74rem;
+    max-width: 180px;
+  }
+
+  .vplayer-lyrics-close-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .video-am-lyrics-player {
+    --am-lyrics-wide-font-size: 1.45rem !important;
+    --lyplus-font-size-base: 1.45rem !important;
+    --am-lyrics-line-spacing: 1.25rem !important;
+    --am-lyrics-wide-line-spacing: 1.25rem !important;
+    --lyrics-scroll-padding-top: 20% !important;
+  }
+
+  .vplayer-lyrics-empty-state {
+    padding: 1.2rem 1rem;
+  }
+
+  .vplayer-lyrics-empty-disc-ring {
+    width: 62px;
+    height: 62px;
+  }
+
+  .vplayer-lyrics-empty-disc-inner {
+    width: 36px;
+    height: 36px;
+  }
+
+  .vplayer-lyrics-empty-title {
+    font-size: 1.08rem;
+  }
+
+  .vplayer-lyrics-empty-desc {
+    font-size: 0.8rem;
+    max-width: 240px;
+  }
+}
+
+/* Mobile Landscape (Phone held horizontally during fullscreen movie) */
+@media (max-height: 520px) and (orientation: landscape),
+       (max-width: 930px) and (orientation: landscape) {
+  .vplayer-synced-lyrics-popup.is-corner,
+  .vplayer-synced-lyrics-popup.is-centered {
+    top: 10px !important;
+    bottom: 10px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: min(390px, 48vw) !important;
+    max-width: 48vw !important;
+    height: auto !important;
+    max-height: calc(100% - 20px) !important;
+    margin: 0 !important;
+    border-radius: 16px !important;
+    transform: none !important;
+  }
+
+  .vplayer-lyrics-pull-indicator {
+    display: none !important;
+  }
+
+  .vplayer-lyrics-header {
+    padding: 0.55rem 0.85rem !important;
+    cursor: default;
+  }
+
+  .vplayer-lyrics-thumb {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .vplayer-lyrics-song-title {
+    font-size: 0.86rem !important;
+    max-width: 150px !important;
+  }
+
+  .vplayer-lyrics-artist {
+    font-size: 0.7rem !important;
+    max-width: 150px !important;
+  }
+
+  .vplayer-lyrics-close-btn {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .video-am-lyrics-player {
+    --am-lyrics-wide-font-size: 1.22rem !important;
+    --lyplus-font-size-base: 1.22rem !important;
+    --am-lyrics-line-spacing: 1.1rem !important;
+    --am-lyrics-wide-line-spacing: 1.1rem !important;
+    --lyrics-scroll-padding-top: 16% !important;
+  }
+
+  .vplayer-lyrics-empty-state {
+    padding: 0.6rem 0.5rem;
+  }
+
+  .vplayer-lyrics-empty-disc-wrap {
+    margin-bottom: 0.5rem;
+  }
+
+  .vplayer-lyrics-empty-disc-ring {
+    width: 44px;
+    height: 44px;
+  }
+
+  .vplayer-lyrics-empty-disc-inner {
+    width: 26px;
+    height: 26px;
+  }
+
+  .vplayer-lyrics-soundwaves {
+    margin-top: 6px;
+    height: 12px;
+  }
+
+  .vplayer-lyrics-empty-title {
+    font-size: 0.92rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .vplayer-lyrics-empty-desc {
+    font-size: 0.72rem;
+    max-width: 220px;
+    margin-bottom: 0.5rem;
+  }
+
+  .vplayer-lyrics-empty-tracks-pill {
+    padding: 3px 8px;
+    font-size: 0.65rem;
+  }
+}

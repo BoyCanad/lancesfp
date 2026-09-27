@@ -24,7 +24,10 @@ import {
   Camera,
   MoreHorizontal,
   PictureInPicture2,
-  List
+  Maximize2,
+  Minimize2,
+  List,
+  Music
 } from 'lucide-react';
 import { featuredMovies, afterHours, makingOfLegacy } from '../data/movies';
 import Hls from 'hls.js';
@@ -34,7 +37,23 @@ import { fetchMovieById } from '../services/movieService';
 import type { Movie } from '../data/movies';
 import { isMovieOffline, getOfflinePlaybackUrl } from '../services/hlsDownloadService';
 import XRayPanel from '../components/XRayPanel';
+import { minsanLyrics } from '../data/minsanLyrics';
+import { tindahanLyrics } from '../data/tindahanLyrics';
+import { convertElrcToTTML } from '../utils/elrcToTtml';
+import '@uimaxbai/am-lyrics/am-lyrics.js';
+import { setupEnhancedAmLyrics, injectShadowRootLiftStyles } from '../utils/enhanceAmLyrics';
 import './VideoPlayer.css';
+
+// Initialize Apple Music word & character lift enhancement
+setupEnhancedAmLyrics();
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'am-lyrics': any;
+    }
+  }
+}
 
 interface ParsedCue {
   start: number;
@@ -643,6 +662,222 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
   const [is2xPressing, setIs2xPressing] = useState(false);
   const [previewTime, setPreviewTime] = useState(0);
   const [previewPos, setPreviewPos] = useState(0);
+
+  // Synced Lyrics state for Ang Huling El Bimbo Play (Minsan & Tindahan ni Aling Nena)
+  const [showSyncedLyrics, setShowSyncedLyrics] = useState(false);
+  const [lyricsPopupMode, setLyricsPopupMode] = useState<'corner' | 'center'>('corner');
+  const [lyricsDragPos, setLyricsDragPos] = useState<{ x: number; y: number } | null>(null);
+  const isLyricsDraggingRef = useRef(false);
+  const lyricsDragStartRef = useRef({ mouseX: 0, mouseY: 0, elemX: 0, elemY: 0, popupW: 440, popupH: 520, lastX: 0, lastY: 0 });
+  const lyricsPopupRef = useRef<HTMLDivElement>(null);
+  const videoAmLyricsRef = useRef<any>(null);
+  const currentSongIdRef = useRef<'minsan' | 'tindahan'>('minsan');
+  const poppedSongsRef = useRef<Set<string>>(new Set());
+  const dismissedSongsRef = useRef<Set<string>>(new Set());
+  const minsanTTML = useMemo(() => convertElrcToTTML(minsanLyrics), []);
+  const tindahanTTML = useMemo(() => convertElrcToTTML(tindahanLyrics), []);
+
+  interface LyricSongTrack {
+    id: 'minsan' | 'tindahan';
+    title: string;
+    artist: string;
+    thumb: string;
+    fallbackThumb: string;
+    offset: number;
+    startTime: number;
+    endTime: number;
+    ttml: string;
+  }
+
+  const getActiveSongTrack = (time: number, isMinsanClip = false, isTindahanClip = false): LyricSongTrack | null => {
+    if (isMinsanClip) {
+      if (time >= 0 && time <= 298.0) {
+        return {
+          id: 'minsan',
+          title: 'Minsan',
+          artist: 'Eraserheads • Ang Huling El Bimbo',
+          thumb: '/images/clips/square/Minsan.webp',
+          fallbackThumb: '/images/el-bimbo.webp',
+          offset: 0,
+          startTime: 0,
+          endTime: 298.0,
+          ttml: minsanTTML,
+        };
+      }
+      return null;
+    }
+    if (isTindahanClip) {
+      if (time >= 0 && time <= 190.0) {
+        return {
+          id: 'tindahan',
+          title: 'Tindahan ni Aling Nena',
+          artist: 'Eraserheads • Ang Huling El Bimbo',
+          thumb: '/images/clips/square/Tindahan.webp',
+          fallbackThumb: '/images/tindahan.webp',
+          offset: 0,
+          startTime: 0,
+          endTime: 190.0,
+          ttml: tindahanTTML,
+        };
+      }
+      return null;
+    }
+
+    // Full theatrical musical "Ang Huling El Bimbo Play":
+    // Song 1: Minsan (starts at 50.0s, finishes at 350.0s, offset 51.03s)
+    if (time >= 50.0 && time <= 350.0) {
+      return {
+        id: 'minsan',
+        title: 'Minsan',
+        artist: 'Eraserheads • Ang Huling El Bimbo',
+        thumb: '/images/clips/square/Minsan.webp',
+        fallbackThumb: '/images/el-bimbo.webp',
+        offset: 51.03,
+        startTime: 50.0,
+        endTime: 350.0,
+        ttml: minsanTTML,
+      };
+    }
+
+    // Song 2: Tindahan ni Aling Nena (starts at 356.0s, finishes at 548.0s, offset 356.52s)
+    if (time >= 356.0 && time <= 548.0) {
+      return {
+        id: 'tindahan',
+        title: 'Tindahan ni Aling Nena',
+        artist: 'Eraserheads • Ang Huling El Bimbo',
+        thumb: '/images/clips/square/Tindahan.webp',
+        fallbackThumb: '/images/tindahan.webp',
+        offset: 356.52,
+        startTime: 356.0,
+        endTime: 548.0,
+        ttml: tindahanTTML,
+      };
+    }
+
+    // No music is currently playing
+    return null;
+  };
+
+  const toggleSyncedLyrics = () => {
+    setShowSyncedLyrics(prev => {
+      const next = !prev;
+      const vTime = videoRef.current?.currentTime ?? currentTime;
+      const activeTrack = getActiveSongTrack(vTime, id === 'minsan', id === 'tindahan-ni-aling-nena');
+      if (!next && activeTrack) {
+        dismissedSongsRef.current.add(activeTrack.id);
+      } else if (activeTrack) {
+        dismissedSongsRef.current.delete(activeTrack.id);
+      }
+      return next;
+    });
+  };
+
+  // Mobile pull-down-to-dismiss gesture state (direct DOM manipulation for butter-smooth 60fps/120fps)
+  const touchStartYRef = useRef(0);
+  const mobilePullYRef = useRef(0);
+  const [mobilePullY, setMobilePullY] = useState(0);
+
+  const handleHeaderTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+    mobilePullYRef.current = 0;
+  };
+
+  const handleHeaderTouchMove = (e: React.TouchEvent) => {
+    const deltaY = e.touches[0].clientY - touchStartYRef.current;
+    if (deltaY > 0) {
+      mobilePullYRef.current = deltaY;
+      if (lyricsPopupRef.current) {
+        lyricsPopupRef.current.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+        lyricsPopupRef.current.style.opacity = `${Math.max(0.3, 1 - deltaY / 250)}`;
+        lyricsPopupRef.current.style.transition = 'none';
+      }
+    }
+  };
+
+  const handleHeaderTouchEnd = () => {
+    const finalDeltaY = mobilePullYRef.current;
+    if (finalDeltaY > 75) {
+      setShowSyncedLyrics(false);
+      const vTime = videoRef.current?.currentTime ?? currentTime;
+      const activeTrack = getActiveSongTrack(vTime, id === 'minsan', id === 'tindahan-ni-aling-nena');
+      if (activeTrack) {
+        dismissedSongsRef.current.add(activeTrack.id);
+      }
+    } else if (lyricsPopupRef.current) {
+      lyricsPopupRef.current.style.transform = '';
+      lyricsPopupRef.current.style.opacity = '';
+      lyricsPopupRef.current.style.transition = '';
+    }
+    mobilePullYRef.current = 0;
+    setMobilePullY(0);
+  };
+
+  const handleLyricsHeaderMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    if (window.innerWidth <= 768) return; // Disable drag on mobile
+    e.preventDefault();
+    isLyricsDraggingRef.current = true;
+    const rect = lyricsPopupRef.current?.getBoundingClientRect();
+    if (rect) {
+      const pW = rect.width || 440;
+      const pH = rect.height || 520;
+      lyricsDragStartRef.current = {
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+        elemX: rect.left,
+        elemY: rect.top,
+        popupW: pW,
+        popupH: pH,
+        lastX: rect.left,
+        lastY: rect.top
+      };
+      if (lyricsPopupRef.current) {
+        lyricsPopupRef.current.classList.add('is-dragged');
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isLyricsDraggingRef.current) return;
+      const { mouseX, mouseY, elemX, elemY, popupW, popupH } = lyricsDragStartRef.current;
+      const deltaX = e.clientX - mouseX;
+      const deltaY = e.clientY - mouseY;
+      const newX = Math.max(12, Math.min(window.innerWidth - popupW - 12, elemX + deltaX));
+      const newY = Math.max(12, Math.min(window.innerHeight - popupH - 12, elemY + deltaY));
+      lyricsDragStartRef.current.lastX = newX;
+      lyricsDragStartRef.current.lastY = newY;
+
+      // Update position directly on GPU layer without re-rendering the whole VideoPlayer tree
+      if (lyricsPopupRef.current) {
+        lyricsPopupRef.current.style.left = `${newX}px`;
+        lyricsPopupRef.current.style.top = `${newY}px`;
+        lyricsPopupRef.current.style.right = 'auto';
+        lyricsPopupRef.current.style.bottom = 'auto';
+        lyricsPopupRef.current.style.transform = 'none';
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isLyricsDraggingRef.current) {
+        isLyricsDraggingRef.current = false;
+        if (lyricsPopupRef.current) {
+          lyricsPopupRef.current.classList.remove('is-dragged');
+        }
+        setLyricsDragPos({
+          x: lyricsDragStartRef.current.lastX,
+          y: lyricsDragStartRef.current.lastY
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
   const [showPreview, setShowPreview] = useState(false);
   const [hoverLinePos, setHoverLinePos] = useState(0);
   const [isMobileWindow, setIsMobileWindow] = useState(window.innerWidth <= 896);
@@ -882,6 +1117,29 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
     }
     return baseMovie;
   }, [baseMovie, location.state?.subtitlesUrl]);
+
+  const isElBimboPlay = Boolean(
+    movie?.id === 'ang-huling-el-bimbo-play' ||
+    movie?.id === 'ang-huling-el-bimbo-play-xray' ||
+    movie?.id === 'f1' ||
+    movie?.id === 'eb1' ||
+    movie?.title?.toLowerCase().includes('ang huling el bimbo')
+  );
+
+  const isStandaloneMinsan = movie?.id === 'minsan' || id === 'minsan';
+  const isStandaloneTindahan = movie?.id === 'tindahan-ni-aling-nena' || id === 'tindahan-ni-aling-nena';
+  const hasLyricsSupport = isElBimboPlay || isStandaloneMinsan || isStandaloneTindahan;
+
+  const activeLyricsSongId = useMemo(() => {
+    return getActiveSongTrack(currentTime, isStandaloneMinsan, isStandaloneTindahan)?.id ?? null;
+  }, [currentTime, isStandaloneMinsan, isStandaloneTindahan]);
+
+  // Current active song if one is playing; null if no song is playing yet or whole song is finished
+  const currentSong = useMemo(() => {
+    if (!hasLyricsSupport || !activeLyricsSongId) return null;
+    return getActiveSongTrack(currentTime, isStandaloneMinsan, isStandaloneTindahan);
+  }, [hasLyricsSupport, activeLyricsSongId, isStandaloneMinsan, isStandaloneTindahan]);
+
   const title = location.state?.episodeTitle || movie?.title || "";
 
   useEffect(() => {
@@ -1343,6 +1601,114 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isPiP, isPlaying]); // Added isPlaying dependency so it only fires when video is active
+
+  // Set up and synchronize <am-lyrics> when Synced Lyrics is open in VideoPlayer
+  useEffect(() => {
+    if (showSyncedLyrics && isElBimboPlay && videoAmLyricsRef.current && currentSong) {
+      setupEnhancedAmLyrics();
+      const el = videoAmLyricsRef.current;
+      el.ttml = currentSong.ttml;
+      el.setAttribute('song-title', currentSong.title);
+      el.setAttribute('song-artist', currentSong.artist);
+      currentSongIdRef.current = currentSong.id;
+
+      const vTime = videoRef.current?.currentTime ?? currentTime;
+      const songTimeSeconds = Math.max(0, vTime - currentSong.offset);
+      el.currentTime = Math.round(songTimeSeconds * 1000);
+      injectShadowRootLiftStyles(el.shadowRoot);
+
+      // Lightweight observer: only listen for initial shadowRoot container creation and disconnect immediately
+      let observer: MutationObserver | null = null;
+      if (el.shadowRoot) {
+        if (!el.shadowRoot.querySelector('#enhanced-am-lyrics-styles') || !el.shadowRoot.querySelector('.lyrics-container')) {
+          observer = new MutationObserver(() => {
+            if (el.shadowRoot) {
+              injectShadowRootLiftStyles(el.shadowRoot);
+              if (el.shadowRoot.querySelector('#enhanced-am-lyrics-styles') && el.shadowRoot.querySelector('.lyrics-container')) {
+                observer?.disconnect();
+                observer = null;
+              }
+            }
+          });
+          observer.observe(el.shadowRoot, { childList: true });
+        }
+      }
+
+      const timer = setTimeout(() => {
+        if (el.shadowRoot) {
+          injectShadowRootLiftStyles(el.shadowRoot);
+          observer?.disconnect();
+          observer = null;
+        }
+      }, 250);
+
+      const handleLineClick = (e: any) => {
+        const timestampMs = e.detail?.timestamp;
+        if (typeof timestampMs === 'number' && videoRef.current && currentSong) {
+          const targetSeconds = (timestampMs / 1000) + currentSong.offset;
+          videoRef.current.currentTime = targetSeconds;
+          setCurrentTime(targetSeconds);
+          if (videoRef.current.paused) {
+            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+          }
+        }
+      };
+
+      el.addEventListener('line-click', handleLineClick);
+
+      return () => {
+        clearTimeout(timer);
+        observer?.disconnect();
+        el.removeEventListener('line-click', handleLineClick);
+      };
+    }
+  }, [showSyncedLyrics, hasLyricsSupport, currentSong?.id]);
+
+  // Dedicated 60fps/120fps/144fps requestAnimationFrame loop for synced lyrics
+  // Directly updates Web Component currentTime at monitor refresh rate with zero React re-render overhead
+  useEffect(() => {
+    if (!showSyncedLyrics || !hasLyricsSupport) return;
+
+    let rafId: number;
+    let lastTimeMs = -1;
+
+    const syncLyricsLoop = () => {
+      const video = videoRef.current;
+      const el = videoAmLyricsRef.current;
+
+      if (video && el) {
+        if (!video.paused && !video.seeking) {
+          const vTime = video.currentTime;
+          const activeTrack = getActiveSongTrack(vTime, isStandaloneMinsan, isStandaloneTindahan);
+
+          if (activeTrack) {
+            // Seamless dynamic song transition if playback crosses between songs
+            if (currentSongIdRef.current !== activeTrack.id) {
+              currentSongIdRef.current = activeTrack.id;
+              el.ttml = activeTrack.ttml;
+              el.setAttribute('song-title', activeTrack.title);
+              el.setAttribute('song-artist', 'Eraserheads');
+              injectShadowRootLiftStyles(el.shadowRoot);
+            }
+
+            const songTimeMs = Math.round(Math.max(0, vTime - activeTrack.offset) * 1000);
+            if (songTimeMs !== lastTimeMs) {
+              lastTimeMs = songTimeMs;
+              el.currentTime = songTimeMs;
+            }
+          }
+        }
+      }
+
+      rafId = requestAnimationFrame(syncLyricsLoop);
+    };
+
+    rafId = requestAnimationFrame(syncLyricsLoop);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [showSyncedLyrics, hasLyricsSupport, isStandaloneMinsan, isStandaloneTindahan]);
 
   useEffect(() => {
     const handleActivity = () => {
@@ -2467,6 +2833,50 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           lastTriggeredRatingRef.current = floorTime;
           triggerRating();
         }
+
+        // Synced lyrics auto-popup triggers for Ang Huling El Bimbo
+        const remaining = duration > 0 ? Math.floor(duration - time) : null;
+
+        // 1. Minsan: at -48:58 (remaining ~2938s, or elapsed ~60s - 65s)
+        const isRemainingTime4858 = remaining !== null && remaining <= 2940 && remaining >= 2936;
+        const isElapsedMinsanStart = floorTime >= 60 && floorTime <= 65;
+        if ((isRemainingTime4858 || isElapsedMinsanStart) && !poppedSongsRef.current.has('minsan') && !dismissedSongsRef.current.has('minsan')) {
+          poppedSongsRef.current.add('minsan');
+          setShowSyncedLyrics(true);
+        } else if (time < 45) {
+          poppedSongsRef.current.delete('minsan');
+          dismissedSongsRef.current.delete('minsan');
+        }
+
+        // 2. Tindahan ni Aling Nena: at -43:51 (remaining ~2631s, or elapsed ~367s - 372s)
+        const isRemainingTime4351 = remaining !== null && remaining <= 2633 && remaining >= 2629;
+        const isElapsedTindahanStart = floorTime >= 367 && floorTime <= 372;
+        if ((isRemainingTime4351 || isElapsedTindahanStart) && !poppedSongsRef.current.has('tindahan') && !dismissedSongsRef.current.has('tindahan')) {
+          poppedSongsRef.current.add('tindahan');
+          setShowSyncedLyrics(true);
+        } else if (time >= 45 && time < 340) {
+          poppedSongsRef.current.delete('tindahan');
+          dismissedSongsRef.current.delete('tindahan');
+        }
+
+        // Active song parameters based on playback timestamp
+        const activeTrack = getActiveSongTrack(time, isStandaloneMinsan, isStandaloneTindahan);
+
+        if (activeTrack) {
+          if (currentSongIdRef.current !== activeTrack.id && videoAmLyricsRef.current) {
+            currentSongIdRef.current = activeTrack.id;
+            videoAmLyricsRef.current.ttml = activeTrack.ttml;
+            videoAmLyricsRef.current.setAttribute('song-title', activeTrack.title);
+            videoAmLyricsRef.current.setAttribute('song-artist', 'Eraserheads');
+            injectShadowRootLiftStyles(videoAmLyricsRef.current.shadowRoot);
+          }
+
+          // Continuously update am-lyrics currentTime during playback
+          if (showSyncedLyrics && videoAmLyricsRef.current) {
+            const songTimeSeconds = Math.max(0, time - activeTrack.offset);
+            videoAmLyricsRef.current.currentTime = Math.round(songTimeSeconds * 1000);
+          }
+        }
       }
 
       if (movie?.endCreditsTime !== undefined && movie.endCreditsTime !== null && movie.endCreditsTime > 0) {
@@ -3514,6 +3924,24 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
             <div className="vplayer-controls-right desktop-only">
 
+              {/* Synced Lyrics Button (Ang Huling El Bimbo Play) */}
+              {hasLyricsSupport && (
+                <button
+                  className={`vplayer-control-btn tooltip lyrics-toggle-btn ${showSyncedLyrics ? 'active-control' : ''}`}
+                  onClick={toggleSyncedLyrics}
+                  title={showSyncedLyrics ? "Hide Lyrics" : "Synced Lyrics"}
+                  style={{ position: 'relative' }}
+                >
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill={showSyncedLyrics ? "rgba(255,255,255,0.22)" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    <line x1="8" y1="9" x2="13" y2="9" />
+                    <line x1="8" y1="13" x2="16" y2="13" />
+                  </svg>
+                  {showSyncedLyrics && <span className="lyrics-active-dot" />}
+                  <span className="tooltip-text">{showSyncedLyrics ? 'Hide Lyrics' : 'Synced Lyrics'}</span>
+                </button>
+              )}
+
               <div className="subtitles-wrapper">
                 <button className="vplayer-control-btn with-label tooltip" onClick={() => { setShowSubtitlesMenu(!showSubtitlesMenu); setShowSpeedMenu(false); }}>
                   <MessageSquareText size={38} />
@@ -3632,6 +4060,19 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
 
           {/* Mobile Bottom Fixed Row */}
           <div className="mobile-bottom-row mobile-only">
+            {hasLyricsSupport && (
+              <div
+                className={`mobile-bottom-btn ${showSyncedLyrics ? 'active' : ''}`}
+                onClick={toggleSyncedLyrics}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill={showSyncedLyrics ? "rgba(255,255,255,0.22)" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <line x1="8" y1="9" x2="13" y2="9" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                </svg>
+                <span>Lyrics</span>
+              </div>
+            )}
             <div className="mobile-bottom-btn" onClick={handleClipTrigger}>
               <Scissors size={20} />
               <span>Clip</span>
@@ -3647,6 +4088,171 @@ export default function VideoPlayer({ variant = 'default' }: VideoPlayerProps) {
           </div>
         </div>
       </div>
+
+      {/* Synced Lyrics Floating Pop-up Window for Ang Huling El Bimbo Play */}
+      {showSyncedLyrics && hasLyricsSupport && (
+        <div
+          ref={lyricsPopupRef}
+          className={`vplayer-synced-lyrics-popup ${lyricsPopupMode === 'center' && !lyricsDragPos ? 'is-centered' : 'is-corner'} ${lyricsDragPos ? 'is-dragged' : ''} ${mobilePullY > 0 ? 'is-pulling' : ''}`}
+          style={{
+            ...(lyricsDragPos ? {
+              left: `${lyricsDragPos.x}px`,
+              top: `${lyricsDragPos.y}px`,
+              right: 'auto',
+              bottom: 'auto',
+              transform: 'none'
+            } : {}),
+            ...(mobilePullY > 0 ? {
+              transform: `translateY(${mobilePullY}px)`,
+              opacity: Math.max(0.3, 1 - mobilePullY / 250),
+              transition: 'none'
+            } : {})
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
+          {/* Mobile Pull Down Handle Indicator */}
+          <div
+            className="vplayer-lyrics-pull-indicator mobile-only"
+            onTouchStart={handleHeaderTouchStart}
+            onTouchMove={handleHeaderTouchMove}
+            onTouchEnd={handleHeaderTouchEnd}
+          >
+            <span className="pull-indicator-bar" />
+          </div>
+
+          <div
+            className="vplayer-lyrics-header"
+            onMouseDown={handleLyricsHeaderMouseDown}
+            onTouchStart={handleHeaderTouchStart}
+            onTouchMove={handleHeaderTouchMove}
+            onTouchEnd={handleHeaderTouchEnd}
+            title="Drag to reposition popup"
+          >
+            {currentSong ? (
+              <div className="vplayer-lyrics-song-meta">
+                <img
+                  src={currentSong.thumb}
+                  onError={(e) => { (e.target as HTMLImageElement).src = currentSong.fallbackThumb; }}
+                  alt={currentSong.title}
+                  className="vplayer-lyrics-thumb"
+                />
+                <div className="vplayer-lyrics-title-group">
+                  <div className="vplayer-lyrics-song-title">{currentSong.title}</div>
+                  <div className="vplayer-lyrics-artist">{currentSong.artist}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="vplayer-lyrics-song-meta is-idle">
+                <div className="vplayer-lyrics-idle-icon-wrap">
+                  <Music size={18} />
+                </div>
+                <div className="vplayer-lyrics-title-group">
+                  <div className="vplayer-lyrics-song-title">Synced Lyrics</div>
+                  <div className="vplayer-lyrics-artist">No music playing</div>
+                </div>
+              </div>
+            )}
+
+            <div className="vplayer-lyrics-header-actions">
+              {currentSong ? (
+                <div className="vplayer-lyrics-live-badge">
+                  <span className="live-pulse-dot" />
+                  <span>SYNCED</span>
+                </div>
+              ) : (
+                <div className="vplayer-lyrics-standby-badge">
+                  <span className="standby-dot" />
+                  <span>IDLE</span>
+                </div>
+              )}
+
+              <button
+                className="vplayer-lyrics-mode-btn desktop-only"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLyricsDragPos(null);
+                  setLyricsPopupMode(prev => prev === 'corner' ? 'center' : 'corner');
+                }}
+                title={lyricsPopupMode === 'corner' ? "Center popup" : "Dock to corner"}
+                aria-label={lyricsPopupMode === 'corner' ? "Center popup" : "Dock to corner"}
+              >
+                {lyricsPopupMode === 'corner' ? <Maximize2 size={15} /> : <Minimize2 size={15} />}
+              </button>
+              <button
+                className="vplayer-lyrics-close-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSyncedLyrics(false);
+                  if (currentSong) {
+                    dismissedSongsRef.current.add(currentSong.id);
+                  }
+                  setLyricsDragPos(null);
+                }}
+                title="Close Lyrics"
+                aria-label="Close Lyrics"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="vplayer-lyrics-content"
+            onWheel={() => {
+              const el = videoAmLyricsRef.current as any;
+              if (el && !el.isProgrammaticScroll && !el.isClickSeeking) {
+                if (typeof el.handleUserScroll === 'function') {
+                  el.handleUserScroll();
+                } else if (typeof el.setUserScrolling === 'function') {
+                  el.setUserScrolling(true);
+                }
+              }
+            }}
+          >
+            {currentSong ? (
+              <am-lyrics
+                ref={videoAmLyricsRef}
+                class="video-am-lyrics-player"
+                song-title={currentSong.title}
+                song-artist="Eraserheads"
+                ttml={currentSong.ttml}
+                highlight-color="#ffffff"
+                line-motion="staggered"
+                autoscroll
+                interpolate
+                hide-played-lines
+              />
+            ) : (
+              <div className="vplayer-lyrics-empty-state">
+                <div className="vplayer-lyrics-empty-disc-wrap">
+                  <div className="vplayer-lyrics-empty-disc-ring">
+                    <div className="vplayer-lyrics-empty-disc-inner">
+                      <Music size={28} />
+                    </div>
+                  </div>
+                  <div className="vplayer-lyrics-soundwaves">
+                    <span className="wave-bar bar-1" />
+                    <span className="wave-bar bar-2" />
+                    <span className="wave-bar bar-3" />
+                    <span className="wave-bar bar-4" />
+                    <span className="wave-bar bar-5" />
+                  </div>
+                </div>
+                <h3 className="vplayer-lyrics-empty-title">No music is currently playing</h3>
+                <p className="vplayer-lyrics-empty-desc">
+                  Lyrics will automatically sync and highlight when a song begins in the musical
+                </p>
+                <div className="vplayer-lyrics-empty-tracks-pill">
+                  <span className="pill-dot" />
+                  <span>Eraserheads • Live Musical Cast</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* X-Ray Panel Overlay (Moved outside stage to allow portrait below-video layout) */}
       {showXRay && movie?.xRay && !isExpandingTrailer && !showRecommendation && (

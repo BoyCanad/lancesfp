@@ -197,6 +197,36 @@ export function setupEnhancedAmLyrics(): void {
       });
     });
   };
+
+  // 3. Patch _onTimeChanged to ensure played lines are dynamically updated during playback
+  const proto = AmLyricsClass.prototype;
+  const originalOnTimeChanged = proto._onTimeChanged;
+  if (originalOnTimeChanged && !proto.__enhancedPlayedPatched) {
+    proto.__enhancedPlayedPatched = true;
+    proto._onTimeChanged = function (oldTime: number, newTime: number) {
+      this.hidePlayedLines = true;
+      if (typeof this.updatePlayedLines === 'function') {
+        this.updatePlayedLines(newTime);
+      }
+      return originalOnTimeChanged.call(this, oldTime, newTime);
+    };
+  }
+
+  // 4. Patch setUserScrolling to sync classes on host element and container smoothly
+  const originalSetUserScrolling = proto.setUserScrolling;
+  if (originalSetUserScrolling && !proto.__enhancedUserScrollPatched) {
+    proto.__enhancedUserScrollPatched = true;
+    proto.setUserScrolling = function (value: boolean) {
+      originalSetUserScrolling.call(this, value);
+      if (value) {
+        this.classList.add('user-scrolling');
+        this.lyricsContainer?.classList.add('user-scrolling');
+      } else {
+        this.classList.remove('user-scrolling');
+        this.lyricsContainer?.classList.remove('user-scrolling');
+      }
+    };
+  }
 }
 
 /**
@@ -204,7 +234,30 @@ export function setupEnhancedAmLyrics(): void {
  */
 export function injectShadowRootLiftStyles(root: ShadowRoot | null | undefined): void {
   if (!root) return;
-  // Guard: if already injected, do nothing (prevents infinite mutation loops)
+
+  // Always ensure scroll / wheel / touch listeners are attached to .lyrics-container whenever it's present
+  const container = root.querySelector('.lyrics-container') as HTMLElement | null;
+  if (container && !(container as any).__enhancedScrollBound) {
+    (container as any).__enhancedScrollBound = true;
+    const amLyrics = root.host as any;
+
+    const onUserScrollActivity = () => {
+      if (amLyrics && !amLyrics.isProgrammaticScroll && !amLyrics.isClickSeeking) {
+        if (typeof amLyrics.handleUserScroll === 'function') {
+          amLyrics.handleUserScroll();
+        } else if (typeof amLyrics.setUserScrolling === 'function') {
+          amLyrics.setUserScrolling(true);
+        }
+      }
+    };
+
+    container.addEventListener('scroll', onUserScrollActivity, { passive: true });
+    container.addEventListener('wheel', onUserScrollActivity, { passive: true });
+    container.addEventListener('touchmove', onUserScrollActivity, { passive: true });
+    container.addEventListener('touchstart', onUserScrollActivity, { passive: true });
+  }
+
+  // Guard: if style already injected, do nothing further (prevents duplicate style injection)
   if (root.querySelector('#enhanced-am-lyrics-styles')) return;
 
   const style = document.createElement('style');
@@ -221,6 +274,217 @@ export function injectShadowRootLiftStyles(root: ShadowRoot | null | undefined):
     span.char {
       font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
       letter-spacing: -0.022em;
+    }
+
+    /* Desktop Balanced Lyric Typography */
+    @media (min-width: 769px) {
+      :host,
+      .lyrics-container {
+        --lyplus-font-size-base: 2.75rem !important;
+        --am-lyrics-wide-font-size: 2.75rem !important;
+        --am-lyrics-line-spacing: 2.2rem !important;
+        --am-lyrics-line-height: 1.28 !important;
+      }
+      .lyrics-line {
+        font-size: 2.75rem !important;
+        line-height: 1.28 !important;
+        margin-block-end: 2.2rem !important;
+      }
+    }
+
+    @media (min-width: 1300px) {
+      :host,
+      .lyrics-container {
+        --lyplus-font-size-base: 3.05rem !important;
+        --am-lyrics-wide-font-size: 3.05rem !important;
+        --am-lyrics-line-spacing: 2.4rem !important;
+        --am-lyrics-line-height: 1.28 !important;
+      }
+      .lyrics-line {
+        font-size: 3.05rem !important;
+        line-height: 1.28 !important;
+        margin-block-end: 2.4rem !important;
+      }
+    }
+
+    /* Video Player Compact Floating Lyrics Scale */
+    :host(.video-am-lyrics-player),
+    :host(.video-am-lyrics-player) .lyrics-container {
+      --lyplus-font-size-base: 1.95rem !important;
+      --am-lyrics-wide-font-size: 1.95rem !important;
+      --am-lyrics-line-spacing: 1.7rem !important;
+      --am-lyrics-line-height: 1.32 !important;
+      --lyrics-scroll-padding-top: 24% !important;
+      --am-lyrics-inline-padding: 1.2rem !important;
+    }
+    :host(.video-am-lyrics-player) .lyrics-line {
+      font-size: 1.95rem !important;
+      line-height: 1.32 !important;
+      margin-block-end: 1.7rem !important;
+    }
+
+    @media (max-width: 768px) {
+      :host(.video-am-lyrics-player),
+      :host(.video-am-lyrics-player) .lyrics-container {
+        --lyplus-font-size-base: 1.45rem !important;
+        --am-lyrics-compact-font-size: 1.45rem !important;
+        --am-lyrics-line-spacing: 1.25rem !important;
+        --am-lyrics-line-height: 1.3 !important;
+        --lyrics-scroll-padding-top: 20% !important;
+        --am-lyrics-inline-padding: 0.8rem !important;
+      }
+      :host(.video-am-lyrics-player) .lyrics-line {
+        font-size: 1.45rem !important;
+        line-height: 1.3 !important;
+        margin-block-end: 1.25rem !important;
+      }
+    }
+
+    @media (max-height: 520px) {
+      :host(.video-am-lyrics-player),
+      :host(.video-am-lyrics-player) .lyrics-container {
+        --lyplus-font-size-base: 1.22rem !important;
+        --am-lyrics-compact-font-size: 1.22rem !important;
+        --am-lyrics-line-spacing: 1.1rem !important;
+        --am-lyrics-line-height: 1.26 !important;
+        --lyrics-scroll-padding-top: 16% !important;
+        --am-lyrics-inline-padding: 0.5rem !important;
+      }
+      :host(.video-am-lyrics-player) .lyrics-line {
+        font-size: 1.22rem !important;
+        line-height: 1.26 !important;
+        margin-block-end: 1.1rem !important;
+      }
+    }
+
+    /* Dim unhighlighted words and inactive lines to authentic Apple Music contrast */
+    :host {
+      --lyplus-text-secondary: var(
+        --am-lyrics-text-secondary,
+        color-mix(in srgb, var(--lyplus-lyrics-palette, #ffffff), transparent 76%)
+      ) !important;
+    }
+
+    /* Apple Music Focus Reset: Remove any focus outline or box-shadow on lyric lines */
+    *,
+    *:focus,
+    *:focus-visible,
+    .lyrics-container:focus,
+    .lyrics-container:focus-visible,
+    .lyrics-line:focus,
+    .lyrics-line:focus-visible,
+    .lyrics-line:focus::before,
+    .lyrics-line:focus-visible::before {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Universal smooth animations for all lyric lines */
+    :host .lyrics-line,
+    .lyrics-container .lyrics-line,
+    .lyrics-line {
+      will-change: opacity, transform, filter;
+      transition:
+        opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* Inactive upcoming lines: subtle, atmospheric preview */
+    :host .lyrics-container:not(.user-scrolling):not(.touch-scrolling):not(.wheel-scrolling)
+      .lyrics-line:not(.active):not(.pre-active):not(.played),
+    .lyrics-container:not(.user-scrolling):not(.touch-scrolling):not(.wheel-scrolling)
+      .lyrics-line:not(.active):not(.pre-active):not(.played) {
+      opacity: 0.28 !important;
+      filter: blur(0.06em) !important;
+      transform: scale(0.97) !important;
+      transition:
+        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* Active currently-sung line: 100% white, sharp, full prominence */
+    :host .lyrics-line.active,
+    .lyrics-line.active {
+      opacity: 1 !important;
+      filter: none !important;
+      transform: scale(1) !important;
+    }
+
+    /* Pre-active upcoming line: smoothly illuminating */
+    :host .lyrics-line.pre-active,
+    .lyrics-line.pre-active {
+      opacity: 0.88 !important;
+      filter: blur(0.02em) !important;
+      transform: scale(0.99) !important;
+    }
+
+    /* Finished / Done lines: gracefully fade out when in normal playback */
+    :host .lyrics-container:not(.user-scrolling):not(.touch-scrolling):not(.wheel-scrolling)
+      .lyrics-line.played:not(.active):not(.pre-active):not(.lyrics-gap),
+    .lyrics-container:not(.user-scrolling):not(.touch-scrolling):not(.wheel-scrolling)
+      .lyrics-line.played:not(.active):not(.pre-active):not(.lyrics-gap) {
+      opacity: 0.05 !important;
+      filter: blur(0.08em) !important;
+      transform: scale(0.95) !important;
+      pointer-events: auto !important;
+      transition:
+        opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 1.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* =========================================================================
+       USER SCROLLING / BROWSING MODE:
+       When user scrolls, ALL lines (including played/finished lines) smoothly
+       FADE IN with a rich, silky Apple Music transition.
+       Overriding AmLyrics's built-in 'transition: none !important' with high specificity.
+       ========================================================================= */
+    :host .lyrics-container.user-scrolling .lyrics-line,
+    :host .lyrics-container.touch-scrolling .lyrics-line,
+    :host .lyrics-container.wheel-scrolling .lyrics-line,
+    .lyrics-container.user-scrolling .lyrics-line,
+    .lyrics-container.touch-scrolling .lyrics-line,
+    .lyrics-container.wheel-scrolling .lyrics-line {
+      opacity: 0.85 !important;
+      filter: blur(0px) !important;
+      transform: scale(1) !important;
+      transition:
+        opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* The currently active line remains fully bright while user is scrolling */
+    :host .lyrics-container.user-scrolling .lyrics-line.active,
+    .lyrics-container.user-scrolling .lyrics-line.active {
+      opacity: 1 !important;
+      filter: none !important;
+      transform: scale(1.02) !important;
+    }
+
+    /* Interactive hover brightening when browsing lyrics */
+    @media (hover: hover) and (pointer: fine) {
+      .lyrics-container .lyrics-line:hover {
+        opacity: 1 !important;
+        filter: none !important;
+        transform: scale(1.02) !important;
+        transition:
+          opacity 0.25s ease,
+          filter 0.25s ease,
+          transform 0.25s ease !important;
+      }
+    }
+
+
+    /* Prevent duplicate/overlapping letters: syllables with char children must stay completely transparent */
+    .lyrics-syllable.has-chars,
+    .lyrics-syllable.has-chars.finished,
+    .lyrics-line .lyrics-syllable.has-chars {
+      background-color: transparent !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
     }
 
     /* Hide top controls (header, romanization/translation toggles, download buttons) */
@@ -254,25 +518,47 @@ export function injectShadowRootLiftStyles(root: ShadowRoot | null | undefined):
       transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
     }
 
-    /* Force left alignment on mobile */
+    /* Duet line alignments */
+    .lyrics-line.singer-right {
+      text-align: right !important;
+    }
+    .lyrics-line.singer-right .lyrics-line-container,
+    .lyrics-line.singer-right .main-vocal-container {
+      text-align: right !important;
+      justify-content: flex-end !important;
+      transform-origin: right center !important;
+    }
+
+    /* Mobile duet & left alignment */
     @media (max-width: 768px) {
       .lyrics-container {
         padding-left: 0 !important;
         --am-lyrics-inline-padding: 0px !important;
       }
-      .lyrics-line,
-      .lyrics-line-container,
-      .main-vocal-container,
-      .background-vocal-wrap {
+      .lyrics-line:not(.singer-right),
+      .lyrics-line:not(.singer-right) .lyrics-line-container,
+      .lyrics-line:not(.singer-right) .main-vocal-container,
+      .lyrics-line:not(.singer-right) .background-vocal-wrap {
         text-align: left !important;
         justify-content: flex-start !important;
         transform-origin: left center !important;
       }
+      .lyrics-line.singer-right,
+      .lyrics-line.singer-right .lyrics-line-container,
+      .lyrics-line.singer-right .main-vocal-container,
+      .lyrics-line.singer-right .background-vocal-wrap {
+        text-align: right !important;
+        justify-content: flex-end !important;
+        transform-origin: right center !important;
+      }
       .lyrics-line {
         padding-left: 0 !important;
       }
-      .lyrics-syllable {
+      .lyrics-line:not(.singer-right) .lyrics-syllable {
         text-align: left !important;
+      }
+      .lyrics-line.singer-right .lyrics-syllable {
+        text-align: right !important;
       }
     }
   `;
