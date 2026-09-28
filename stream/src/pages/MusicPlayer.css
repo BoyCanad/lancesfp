@@ -386,6 +386,9 @@ am-lyrics.am-lyrics-player {
   --lyplus-text-primary: #ffffff;
   --lyplus-text-secondary: rgba(255, 255, 255, 0.24);
   --am-lyrics-text-secondary: rgba(255, 255, 255, 0.24);
+  --gap-dot-opacity: 0.38;
+  --lyplus-gap-dot-size: 0.42em;
+  --lyplus-gap-dot-margin: 0.18em;
 
   /* === LIFT & ALIGNMENT === */
   --am-lyrics-lift: 1.0;                  /* Calibrated gentle lift multiplier */

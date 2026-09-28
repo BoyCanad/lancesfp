@@ -4420,6 +4420,9 @@
   --lyplus-text-primary: #ffffff;
   --lyplus-text-secondary: rgba(255, 255, 255, 0.24);
   --am-lyrics-text-secondary: rgba(255, 255, 255, 0.24);
+  --gap-dot-opacity: 0.38;
+  --lyplus-gap-dot-size: 0.42em;
+  --lyplus-gap-dot-margin: 0.18em;
 
   /* Lift & smooth alignment variables */
   --am-lyrics-lift: 1.0;
@@ -4431,6 +4434,8 @@
 
   --am-lyrics-wide-font-size: 1.85rem;
   --am-lyrics-wide-line-spacing: 1.55rem;
+  --am-lyrics-wide-background-vocal-font-size: 0.72em;
+  --am-lyrics-compact-background-vocal-font-size: 0.82em;
   --lyplus-font-size-base: 1.85rem;
   --am-lyrics-line-spacing: 1.55rem;
   --am-lyrics-line-height: 1.32;

@@ -208,6 +208,21 @@ export function setupEnhancedAmLyrics(): void {
       if (typeof this.updatePlayedLines === 'function') {
         this.updatePlayedLines(newTime);
       }
+      // Ensure all active lines with background vocals have their background vocal expanded and visible
+      if (this.lyricsContainer && Array.isArray(this.activeLineIndices)) {
+        for (const lineIndex of this.activeLineIndices) {
+          const lineEl = typeof this._getLineElement === 'function' ? this._getLineElement(lineIndex) : null;
+          if (lineEl && lineEl.querySelector('.background-vocal-container')) {
+            if (!lineEl.classList.contains('bg-expanded')) {
+              const wrap = lineEl.querySelector('.background-vocal-wrap') as HTMLElement | null;
+              if (wrap) {
+                lineEl.style.setProperty('--am-lyrics-background-vocal-height', `${wrap.offsetHeight + 4}px`);
+              }
+              lineEl.classList.add('bg-expanded');
+            }
+          }
+        }
+      }
       return originalOnTimeChanged.call(this, oldTime, newTime);
     };
   }
@@ -225,6 +240,46 @@ export function setupEnhancedAmLyrics(): void {
         this.classList.remove('user-scrolling');
         this.lyricsContainer?.classList.remove('user-scrolling');
       }
+    };
+  }
+
+  // 5. Ensure EVERY background vocal line (x-bg) is placed below the main line (at the bottom)
+  AmLyricsClass.getBackgroundTextPlacement = function (
+    _line: any
+  ): 'before' | 'after' {
+    return 'after';
+  };
+
+  // 6. Enhance instrumental gap waiting dots ("...") contrast:
+  // am-lyrics natively animates gap dots from opacity 0.25 to 1.
+  // We calibrate the waiting opacity to 0.38 so it matches the inactive lyric line contrast,
+  // accompanied by an authentic Apple Music pop scale (0.95 -> 1.10).
+  const originalAnimate = Element.prototype.animate;
+  if (originalAnimate && !(Element.prototype as any).__enhancedDotAnimatePatched) {
+    (Element.prototype as any).__enhancedDotAnimatePatched = true;
+    Element.prototype.animate = function (
+      keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+      options?: number | KeyframeAnimationOptions
+    ): Animation {
+      if (
+        this instanceof HTMLElement &&
+        this.classList.contains('lyrics-syllable') &&
+        this.closest('.lyrics-gap')
+      ) {
+        if (
+          Array.isArray(keyframes) &&
+          keyframes.length === 2 &&
+          (keyframes[0] as any)?.opacity === 0.25 &&
+          (keyframes[1] as any)?.opacity === 1
+        ) {
+          const enhancedKeyframes: Keyframe[] = [
+            { opacity: 0.38, transform: 'scale(0.95)' },
+            { opacity: 1, transform: 'scale(1.10)' },
+          ];
+          return originalAnimate.call(this, enhancedKeyframes, options);
+        }
+      }
+      return originalAnimate.call(this, keyframes, options);
     };
   }
 }
@@ -392,9 +447,9 @@ export function injectShadowRootLiftStyles(root: ShadowRoot | null | undefined):
 
     /* Inactive upcoming lines: subtle, atmospheric preview */
     :host .lyrics-container:not(.user-scrolling):not(.touch-scrolling):not(.wheel-scrolling)
-      .lyrics-line:not(.active):not(.pre-active):not(.played),
+      .lyrics-line:not(.active):not(.pre-active):not(.played):not(.lyrics-gap),
     .lyrics-container:not(.user-scrolling):not(.touch-scrolling):not(.wheel-scrolling)
-      .lyrics-line:not(.active):not(.pre-active):not(.played) {
+      .lyrics-line:not(.active):not(.pre-active):not(.played):not(.lyrics-gap) {
       opacity: 0.28 !important;
       filter: blur(0.06em) !important;
       transform: scale(0.97) !important;
@@ -402,6 +457,50 @@ export function injectShadowRootLiftStyles(root: ShadowRoot | null | undefined):
         opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
         filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
         transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* Instrumental gap waiting dots ("...") contrast fix:
+       Solves waiting dots being too dark (previously multiplied 24% bg with 25% opacity = 6%).
+       Ensures waiting dots match the inactive lyric line contrast (~38% soft white)
+       and illuminate cleanly to 100% luminous white when active/finished. */
+    .lyrics-line.lyrics-gap {
+      filter: none !important;
+      contain: none !important;
+    }
+
+    .lyrics-gap .lyrics-syllable {
+      background-color: var(--lyplus-lyrics-palette, #ffffff) !important;
+      background-image: none !important;
+      -webkit-text-fill-color: initial !important;
+      border-radius: 50% !important;
+      opacity: var(--gap-dot-opacity, 0.38);
+      transform-origin: center center;
+      transition:
+        opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* Active currently lit or completed dots: 100% bright white with subtle Apple Music bloom */
+    .lyrics-gap.active .lyrics-syllable.finished,
+    .lyrics-gap.gap-exiting .lyrics-syllable.finished,
+    .lyrics-gap:not(.active):not(.gap-exiting).post-active-line .lyrics-syllable,
+    .lyrics-gap:not(.active):not(.gap-exiting).lyrics-activest .lyrics-syllable {
+      background-color: #ffffff !important;
+      opacity: 1 !important;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.6) !important;
+      animation: none !important;
+    }
+
+    @keyframes fade-gap {
+      from {
+        background-color: var(--lyplus-lyrics-palette, #ffffff) !important;
+        opacity: 0.38;
+      }
+      to {
+        background-color: #ffffff !important;
+        opacity: 1;
+      }
     }
 
     /* Active currently-sung line: 100% white, sharp, full prominence */
@@ -516,6 +615,38 @@ export function injectShadowRootLiftStyles(root: ShadowRoot | null | undefined):
     .lyrics-line.active .lyrics-word.word-started .lyrics-syllable.no-chars {
       transform: translate3d(0, calc(var(--char-rise-y, -2px) * var(--am-lyrics-lift, 1)), 0) !important;
       transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+    }
+
+    /* Background vocals placement: EVERY background vocal line "()" is displayed at the bottom */
+    .lyrics-line-container {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .lyrics-line-container .main-vocal-container {
+      order: 1 !important;
+      width: 100% !important;
+    }
+    .lyrics-line-container .background-vocal-container {
+      order: 2 !important;
+      width: 100% !important;
+    }
+    .lyrics-line-container .lyrics-romanization-container,
+    .lyrics-line-container .lyrics-translation-container {
+      order: 3 !important;
+    }
+
+    /* Ensure background vocals on any active line are always visible, expanded and animating */
+    .lyrics-line.active .background-vocal-container,
+    .lyrics-line.bg-expanded .background-vocal-container {
+      height: auto !important;
+      min-height: 1.25em !important;
+      overflow: visible !important;
+    }
+    .lyrics-line.active .background-vocal-wrap,
+    .lyrics-line.bg-expanded .background-vocal-wrap {
+      opacity: 1 !important;
+      transform: translateY(0) scale(1) !important;
+      visibility: visible !important;
     }
 
     /* Duet line alignments */

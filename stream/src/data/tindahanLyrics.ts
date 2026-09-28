@@ -476,8 +476,8 @@ export const tindahanLyrics = [
     "time": 181.873,
     "text": "(Oh, Aling Nena!) Please naman, maawa ka, ha-ha-ha",
     "words": [
-      { "text": "(Oh, ", "start": 182.123, "end": 182.123 },
-      { "text": "Aling ", "start": 182.123, "end": 182.475 },
+      { "text": "(Oh, ", "start": 181.873, "end": 182.150 },
+      { "text": "Aling ", "start": 182.150, "end": 182.475 },
       { "text": "Nena!) ", "start": 182.475, "end": 183.251 },
       { "text": "Please ", "start": 183.251, "end": 183.601 },
       { "text": "naman, ", "start": 183.601, "end": 184.190 },
